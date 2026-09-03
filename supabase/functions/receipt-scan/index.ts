@@ -3,7 +3,7 @@
 // form rather than saving anything itself.
 //
 // Two providers, tried in order:
-//   1. Gemini 2.5 Flash — free tier, tried first on every scan
+//   1. Gemini 3.6 Flash — free tier, tried first on every scan
 //   2. Qwen2.5-VL-72B (via OpenRouter) — only called if Gemini fails
 //      outright or comes back with something unusable (no valid amount)
 // This is a fallback, not a race: Qwen only gets called — and only costs
@@ -53,6 +53,33 @@ const RECEIPT_SCHEMA = {
     currency: { type: 'string', description: 'Three-letter ISO currency code the receipt is in, e.g. USD, INR, EUR.' },
     date: { type: 'string', description: 'The receipt date in YYYY-MM-DD format.' },
     category: { type: 'string', enum: CATEGORIES, description: 'Best-fit category from the given list.' },
+    items: {
+      type: 'array',
+      description:
+        'Individual line items on the bill, e.g. each dish on a restaurant check — only include this if the ' +
+        'receipt actually itemizes purchases legibly. Omit entirely for a single-line receipt (e.g. a taxi fare) ' +
+        'or one where line items are unreadable.',
+      items: {
+        type: 'object',
+        properties: {
+          description: { type: 'string', description: "The item name, e.g. 'Margherita Pizza'." },
+          amount: {
+            type: 'number',
+            description: 'That line’s total price (quantity × unit price already multiplied out).',
+          },
+        },
+      },
+    },
+    tax: {
+      type: 'number',
+      description: 'Sales tax / VAT / GST as its own line, if the receipt shows one separately from the total.',
+    },
+    tip: {
+      type: 'number',
+      description:
+        'Tip and/or service charge as its own line, if the receipt shows one separately from the total. ' +
+        'If a delivery fee is present with no clear tax or tip line, put it here.',
+    },
   },
 }
 
@@ -75,7 +102,7 @@ function isUsable(result: unknown): result is { amount: number } {
 
 async function tryGemini(apiKey: string, imageBase64: string, mimeType: string) {
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -116,12 +143,20 @@ async function tryQwen(apiKey: string, imageBase64: string, mimeType: string) {
         {
           role: 'user',
           content: [
-            { type: 'text', text: `${PROMPT}\n\nRespond with ONLY the JSON object, no other text.` },
+            {
+              type: 'text',
+              text: `${PROMPT}\n\nJSON schema:\n${JSON.stringify(RECEIPT_SCHEMA)}\n\nRespond with ONLY the JSON object, no other text.`,
+            },
             { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}` } },
           ],
         },
       ],
       response_format: { type: 'json_object' },
+      // Without an explicit cap, OpenRouter defaults to requesting the
+      // model's full context window (100k+ tokens) for the reply, which
+      // can exceed what a free/low-credit account can afford — even
+      // though the actual response here is one small JSON object.
+      max_tokens: 1024,
     }),
   })
 

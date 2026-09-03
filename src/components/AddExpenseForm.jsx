@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { formatMoney } from '../lib/fx'
 import { useLiveRate } from '../lib/useLiveRate'
-import { splitEvenly, splitByPercentages } from '../lib/split'
+import { splitEvenly, splitByPercentages, splitItemized } from '../lib/split'
 import { CATEGORIES } from '../lib/categories'
 import CurrencySelect from './CurrencySelect'
 
@@ -10,6 +10,7 @@ const SPLIT_MODES = [
   { id: 'equal', label: 'Equal' },
   { id: 'percentage', label: 'Percentage' },
   { id: 'exact', label: 'Exact amounts' },
+  { id: 'itemized', label: 'Itemized' },
 ]
 
 function fileToBase64(file) {
@@ -45,6 +46,9 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
     return {}
   })
   const [saveAsDefault, setSaveAsDefault] = useState(false)
+  const [items, setItems] = useState([]) // { id, description, amount: string, participantIds: string[] }
+  const [tax, setTax] = useState('') // split proportionally by item subtotal
+  const [tip, setTip] = useState('') // split proportionally by item subtotal
 
   const [receiptFile, setReceiptFile] = useState(null)
   const [scanning, setScanning] = useState(false)
@@ -56,7 +60,15 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
 
   const { rate, loading: rateLoading, error: rateError } = useLiveRate(currency, group.home_currency)
 
-  const parsedAmount = parseFloat(amount) || 0
+  const taxNum = parseFloat(tax) || 0
+  const tipNum = parseFloat(tip) || 0
+  const itemsTotal = useMemo(
+    () => items.reduce((sum, it) => sum + (parseFloat(it.amount) || 0), 0),
+    [items]
+  )
+  const itemizedTotal = Math.round((itemsTotal + taxNum + tipNum) * 100) / 100
+
+  const parsedAmount = splitMode === 'itemized' ? itemizedTotal : parseFloat(amount) || 0
   const homeEquivalent = rate ? parsedAmount * rate : null
 
   const equalShares = useMemo(() => {
@@ -78,8 +90,48 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
   const exactTotal = participantIds.reduce((sum, id) => sum + (parseFloat(exactShares[id]) || 0), 0)
   const exactMismatch = splitMode === 'exact' && Math.abs(exactTotal - parsedAmount) > 0.01
 
+  const itemizedShares = useMemo(() => {
+    if (splitMode !== 'itemized' || participantIds.length === 0) return {}
+    return splitItemized(
+      items.map((it) => ({ amount: parseFloat(it.amount) || 0, participantIds: it.participantIds })),
+      participantIds,
+      taxNum,
+      tipNum
+    ).shares
+  }, [splitMode, items, participantIds, taxNum, tipNum])
+
   function toggleParticipant(id) {
     setParticipantIds((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]))
+  }
+
+  function addItem() {
+    setItems((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), description: '', amount: '', participantIds: [...participantIds] },
+    ])
+  }
+
+  function removeItem(id) {
+    setItems((prev) => prev.filter((it) => it.id !== id))
+  }
+
+  function updateItem(id, patch) {
+    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)))
+  }
+
+  function toggleItemParticipant(itemId, userId) {
+    setItems((prev) =>
+      prev.map((it) =>
+        it.id === itemId
+          ? {
+              ...it,
+              participantIds: it.participantIds.includes(userId)
+                ? it.participantIds.filter((id) => id !== userId)
+                : [...it.participantIds, userId],
+            }
+          : it
+      )
+    )
   }
 
   async function handleReceiptSelected(e) {
@@ -110,6 +162,27 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
       if (data?.currency) setCurrency(data.currency)
       if (data?.date) setDate(data.date)
       if (data?.category && CATEGORIES.includes(data.category)) setCategory(data.category)
+
+      // Itemized receipts are the higher-fidelity result — switch straight
+      // to that split mode rather than leaving a good extraction unused.
+      // Every item starts assigned to everyone; the user narrows it down
+      // to whoever actually ordered each thing.
+      const usableItems = Array.isArray(data?.items)
+        ? data.items.filter((it) => it && typeof it.amount === 'number' && it.amount > 0)
+        : []
+      if (usableItems.length > 0) {
+        setSplitMode('itemized')
+        setItems(
+          usableItems.map((it) => ({
+            id: crypto.randomUUID(),
+            description: typeof it.description === 'string' ? it.description : '',
+            amount: String(it.amount),
+            participantIds: [...participantIds],
+          }))
+        )
+        if (typeof data?.tax === 'number' && data.tax >= 0) setTax(String(data.tax))
+        if (typeof data?.tip === 'number' && data.tip >= 0) setTip(String(data.tip))
+      }
     } catch (err) {
       setScanError(err.message || 'Could not read that receipt — you can still fill this in by hand.')
     } finally {
@@ -128,6 +201,15 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
     setError('')
 
     if (!description.trim()) return setError('Give the expense a short description.')
+    if (splitMode === 'itemized') {
+      if (items.length === 0) return setError('Add at least one item.')
+      if (items.some((it) => !it.description.trim() || !(parseFloat(it.amount) > 0))) {
+        return setError('Give every item a description and an amount greater than zero.')
+      }
+      if (items.some((it) => it.participantIds.filter((id) => participantIds.includes(id)).length === 0)) {
+        return setError('Assign every item to at least one person.')
+      }
+    }
     if (parsedAmount <= 0) return setError('Enter an amount greater than zero.')
     if (participantIds.length === 0) return setError('Pick at least one person to split with.')
     if (!rate) return setError('Still fetching the exchange rate — try again in a moment.')
@@ -142,7 +224,9 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
         ? equalShares
         : splitMode === 'percentage'
           ? percentageShareAmounts
-          : Object.fromEntries(participantIds.map((id) => [id, parseFloat(exactShares[id]) || 0]))
+          : splitMode === 'itemized'
+            ? itemizedShares
+            : Object.fromEntries(participantIds.map((id) => [id, parseFloat(exactShares[id]) || 0]))
 
     const { data: expense, error: expenseError } = await supabase
       .from('expenses')
@@ -158,6 +242,16 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
         split_type: splitMode,
         category,
         note: note.trim() || null,
+        items:
+          splitMode === 'itemized'
+            ? items.map((it) => ({
+                description: it.description.trim(),
+                amount: Math.round((parseFloat(it.amount) || 0) * 100) / 100,
+                participant_ids: it.participantIds.filter((id) => participantIds.includes(id)),
+              }))
+            : null,
+        tax: splitMode === 'itemized' ? taxNum : null,
+        tip: splitMode === 'itemized' ? tipNum : null,
         created_by: currentUserId,
       })
       .select()
@@ -189,7 +283,7 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
 
     // Best-effort extras — the expense itself is already safely saved, so a
     // failure in either of these shouldn't block closing the form.
-    if (saveAsDefault && splitMode !== 'exact') {
+    if (saveAsDefault && splitMode !== 'exact' && splitMode !== 'itemized') {
       await supabase.rpc('update_default_split', {
         gid: group.id,
         config: {
@@ -303,14 +397,22 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
 
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-sm text-ink-soft mb-1.5">Amount</label>
-              <input
-                inputMode="decimal"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
-                className="num w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-ink text-lg focus:border-primary outline-none"
-              />
+              <label className="block text-sm text-ink-soft mb-1.5">
+                {splitMode === 'itemized' ? 'Total (from items)' : 'Amount'}
+              </label>
+              {splitMode === 'itemized' ? (
+                <div className="num w-full rounded-lg border border-line bg-paper-raised px-3.5 py-2.5 text-ink text-lg">
+                  {parsedAmount.toFixed(2)}
+                </div>
+              ) : (
+                <input
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="num w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-ink text-lg focus:border-primary outline-none"
+                />
+              )}
             </div>
             <div>
               <label className="block text-sm text-ink-soft mb-1.5">Currency</label>
@@ -457,7 +559,111 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
                 {percentageTotal.toFixed(1)}% of 100% assigned
               </p>
             )}
-            {splitMode !== 'exact' && (
+
+            {splitMode === 'itemized' && (
+              <div className="mt-3 space-y-3">
+                <ul className="space-y-2.5">
+                  {items.map((it) => (
+                    <li key={it.id} className="rounded-xl border border-line p-3 space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          value={it.description}
+                          onChange={(e) => updateItem(it.id, { description: e.target.value })}
+                          placeholder="Item"
+                          className="flex-1 min-w-0 rounded-lg border border-line bg-paper px-2.5 py-1.5 text-sm focus:border-primary outline-none"
+                        />
+                        <input
+                          inputMode="decimal"
+                          value={it.amount}
+                          onChange={(e) => updateItem(it.id, { amount: e.target.value })}
+                          placeholder="0.00"
+                          className="num w-20 shrink-0 rounded-lg border border-line bg-paper px-2.5 py-1.5 text-sm text-right focus:border-primary outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeItem(it.id)}
+                          className="shrink-0 text-ink-soft hover:text-owe text-lg leading-none px-1"
+                          aria-label="Remove item"
+                        >
+                          ×
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {participantIds.map((id) => {
+                          const member = members.find((m) => m.user_id === id)
+                          const active = it.participantIds.includes(id)
+                          return (
+                            <button
+                              key={id}
+                              type="button"
+                              onClick={() => toggleItemParticipant(it.id, id)}
+                              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                                active
+                                  ? 'bg-primary text-on-primary border-primary'
+                                  : 'border-line text-ink-soft hover:border-primary'
+                              }`}
+                            >
+                              {id === currentUserId ? 'You' : (member?.display_name ?? '—')}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  type="button"
+                  onClick={addItem}
+                  className="w-full rounded-xl border border-dashed border-line py-2 text-sm text-ink-soft hover:text-ink hover:border-primary transition-colors"
+                >
+                  + Add item
+                </button>
+
+                <div className="flex gap-3">
+                  <div className="flex-1 flex items-center gap-2">
+                    <label className="text-sm text-ink-soft shrink-0">Tax</label>
+                    <input
+                      inputMode="decimal"
+                      value={tax}
+                      onChange={(e) => setTax(e.target.value)}
+                      placeholder="0.00"
+                      className="num flex-1 min-w-0 rounded-lg border border-line bg-paper px-3 py-1.5 text-sm text-right focus:border-primary outline-none"
+                    />
+                  </div>
+                  <div className="flex-1 flex items-center gap-2">
+                    <label className="text-sm text-ink-soft shrink-0">Tip</label>
+                    <input
+                      inputMode="decimal"
+                      value={tip}
+                      onChange={(e) => setTip(e.target.value)}
+                      placeholder="0.00"
+                      className="num flex-1 min-w-0 rounded-lg border border-line bg-paper px-3 py-1.5 text-sm text-right focus:border-primary outline-none"
+                    />
+                  </div>
+                </div>
+                {(taxNum > 0 || tipNum > 0) && (
+                  <p className="text-xs text-ink-soft">Both split proportionally to what each person ordered.</p>
+                )}
+
+                {participantIds.length > 0 && (
+                  <ul className="rounded-xl border border-line divide-y divide-line overflow-hidden">
+                    {participantIds.map((id) => (
+                      <li key={id} className="flex items-center justify-between px-3.5 py-2 text-sm">
+                        <span className="text-ink truncate">
+                          {id === currentUserId ? 'You' : members.find((m) => m.user_id === id)?.display_name}
+                        </span>
+                        <span className="num text-ink-soft shrink-0">
+                          {currency} {(itemizedShares[id] ?? 0).toFixed(2)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {splitMode !== 'exact' && splitMode !== 'itemized' && (
               <label className="mt-2.5 flex items-center gap-2 text-xs text-ink-soft cursor-pointer">
                 <input
                   type="checkbox"

@@ -241,7 +241,7 @@ APIs — though at personal-app volume, realistically $0.
 
 Two providers, tried in order, so you can configure either or both:
 
-1. **Gemini 2.5 Flash** (tried first) — free tier, no card required for
+1. **Gemini 3.6 Flash** (tried first) — free tier, no card required for
    normal personal usage levels.
 2. **Qwen2.5-VL-72B via OpenRouter** (fallback) — only called, and only
    ever costs anything, when Gemini fails outright or can't find a valid
@@ -267,9 +267,13 @@ supabase functions deploy receipt-scan
 
 In the add-expense form, "Scan a receipt" should now read a photo and
 pre-fill description, amount, currency, date, and category — review
-before saving, same as anything auto-filled. If only one secret is set,
-that's fine — the function uses whichever provider(s) it has and skips
-the other.
+before saving, same as anything auto-filled. If the receipt itemizes
+legibly (a restaurant check, say), it also pulls out each line item and
+switches the form to the **Itemized** split mode, so different items can
+be assigned to whoever actually ordered them — any tax/tip/delivery gets
+split proportionally by what each person ordered rather than evenly. If
+only one secret is set, that's fine — the function uses whichever
+provider(s) it has and skips the other.
 
 Same caveat as the admin function: written but not run end-to-end before
 handing it to you, since I can't call either vision API from my sandbox.
@@ -284,7 +288,7 @@ make sense.
   they enter it under "Join with a code" after creating their own account.
 - **Add an expense**: scan a receipt or fill it in by hand — description,
   category, amount and currency, who paid, who to split it between
-  (equal/percentage/exact), and an optional note. If the expense currency
+  (equal/percentage/exact/itemized), and an optional note. If the expense currency
   differs from the group's home currency, you'll see the live converted
   amount before saving.
 - **Balances tab** shows each person's net position and the smallest set of

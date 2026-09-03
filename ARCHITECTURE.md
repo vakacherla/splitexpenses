@@ -17,10 +17,16 @@ permissions. Two Edge Functions exist specifically because two operations
 need a secret the browser can never hold: `admin-users` (the Supabase
 service-role key) and `receipt-scan` (the Gemini/OpenRouter API keys).
 
-**This shape is correct for what this app actually is** — a handful of
-family/friend groups, not a multi-tenant SaaS product. The risks below are
-about how it's built and operated, not about needing a different
-architecture entirely. Don't read "here are 8 risks" as "rebuild this."
+**This shape is still correct** — the multi-currency, receipt-scanning,
+and admin-tier growth this session all happened *inside* these same four
+boxes (Postgres, Auth, Storage, Functions); none of it needed a new kind
+of infrastructure. One thing has shifted since this framing was first
+written, though: group-owner and co-manager permissions were built
+specifically so multiple families can each self-manage their own group
+without you as a bottleneck — "not a multi-tenant SaaS product" is less
+true than it was. Still true: nothing here needs rebuilding for that: the
+architecture already supports it, it's the operational habits (deploy
+process, git) that haven't caught up yet — see the decision log below.
 
 ## What's already solid
 
@@ -41,7 +47,7 @@ Worth naming plainly, since a review that's all risk isn't credible:
 
 ## The risks, in priority order
 
-### P0 — addressed
+### P0 — addressed, then revisited (see the 2026-09-03 decision log entry — the recommendation changed)
 
 **No CI, no repo-based deploy.** Every deploy up to this point was:
 download a zip, manually sync it into a local folder, `grep` to confirm
@@ -157,3 +163,16 @@ makes deploy frequency itself the bottleneck, or this moves toward a
 multi-tenant/SaaS product** — see the P0 section above for the reasoning
 in full. Revisit this decision, don't just re-read it, if either
 condition is met — the tradeoffs may look different by then.
+
+**2026-09-03 — Revisiting the above.** Both trigger conditions are now
+arguably met: this session alone shipped 13 migrations and rebuilt the
+group-permission model twice, and two deploy-verification incidents
+(stale schema cache, a deploy that reported success but wasn't actually
+live) cost more real time than any single bug did. Separately, `npm run
+deploy` never solved the file-*sync* step — every round this session
+still went zip → download → unzip → copy → grep-check before the script
+even ran. Recommendation carried into `HANDOFF.md`: move to Git now, and
+seriously consider Claude Code specifically, since it edits the actual
+project files directly rather than a sandboxed copy that has to be
+synced back — which is what actually caused both incidents above, not
+anything wrong with the app's code itself.

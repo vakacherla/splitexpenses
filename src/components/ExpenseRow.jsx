@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 import { formatMoney } from '../lib/fx'
 import { CATEGORY_COLORS } from '../lib/categories'
 
-const SPLIT_LABELS = { percentage: 'split by %', exact: 'custom split' }
+const SPLIT_LABELS = { percentage: 'split by %', exact: 'custom split', itemized: 'itemized' }
 
 export default function ExpenseRow({ expense, membersMap, currentUserId, homeCurrency, onDelete }) {
   const [open, setOpen] = useState(false)
@@ -65,6 +65,34 @@ export default function ExpenseRow({ expense, membersMap, currentUserId, homeCur
       {open && (
         <div className="pb-4 pl-[3.75rem] pr-2 -mt-1">
           {expense.note && <p className="text-sm text-ink-soft italic mb-2">{expense.note}</p>}
+          {expense.split_type === 'itemized' && Array.isArray(expense.items) && expense.items.length > 0 && (
+            <ul className="mb-2.5 space-y-0.5">
+              {expense.items.map((item, i) => (
+                <li key={i} className="flex justify-between text-xs text-ink-soft">
+                  <span className="truncate pr-2">
+                    {item.description}
+                    {' — '}
+                    {item.participant_ids
+                      .map((id) => (id === currentUserId ? 'You' : (membersMap[id]?.display_name ?? '—')))
+                      .join(', ')}
+                  </span>
+                  <span className="num shrink-0">{formatMoney(item.amount, expense.currency)}</span>
+                </li>
+              ))}
+              {expense.tax > 0 && (
+                <li className="flex justify-between text-xs text-ink-soft">
+                  <span>Tax</span>
+                  <span className="num">{formatMoney(expense.tax, expense.currency)}</span>
+                </li>
+              )}
+              {expense.tip > 0 && (
+                <li className="flex justify-between text-xs text-ink-soft">
+                  <span>Tip</span>
+                  <span className="num">{formatMoney(expense.tip, expense.currency)}</span>
+                </li>
+              )}
+            </ul>
+          )}
           <ul className="space-y-1">
             {expense.expense_splits.map((s) => (
               <li key={s.user_id} className="flex justify-between text-sm text-ink-soft">

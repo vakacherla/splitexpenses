@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { splitEvenly, splitByPercentages } from './split'
+import { splitEvenly, splitByPercentages, splitItemized } from './split'
 
 describe('splitEvenly', () => {
   it('splits an amount that divides cleanly', () => {
@@ -91,5 +91,85 @@ describe('splitByPercentages', () => {
         expect(sum).toBe(Math.round(total * 100) / 100)
       }
     }
+  })
+})
+
+describe('splitItemized', () => {
+  it('splits an item evenly among only the people assigned to it', () => {
+    const { shares, total } = splitItemized(
+      [{ amount: 20, participantIds: ['a', 'b'] }],
+      ['a', 'b', 'c']
+    )
+    expect(shares).toEqual({ a: 10, b: 10, c: 0 })
+    expect(total).toBe(20)
+  })
+
+  it('sums multiple items per person across different assignments', () => {
+    const { shares, total } = splitItemized(
+      [
+        { amount: 30, participantIds: ['a'] }, // a's dish
+        { amount: 20, participantIds: ['b'] }, // b's dish
+        { amount: 10, participantIds: ['a', 'b'] }, // shared appetizer
+      ],
+      ['a', 'b']
+    )
+    expect(shares).toEqual({ a: 35, b: 25 })
+    expect(total).toBe(60)
+  })
+
+  it('splits tax proportionally to each person\'s item subtotal', () => {
+    // a ordered 75% of the food, b ordered 25% — tax should follow suit
+    const { shares, total } = splitItemized(
+      [
+        { amount: 75, participantIds: ['a'] },
+        { amount: 25, participantIds: ['b'] },
+      ],
+      ['a', 'b'],
+      20
+    )
+    expect(shares.a).toBeCloseTo(90, 5) // 75 + 75% of 20
+    expect(shares.b).toBeCloseTo(30, 5) // 25 + 25% of 20
+    expect(total).toBe(120)
+  })
+
+  it('splits tip proportionally to each person\'s item subtotal, independently of tax', () => {
+    const { shares, total } = splitItemized(
+      [
+        { amount: 75, participantIds: ['a'] },
+        { amount: 25, participantIds: ['b'] },
+      ],
+      ['a', 'b'],
+      20, // tax
+      10 // tip
+    )
+    expect(shares.a).toBeCloseTo(97.5, 5) // 75 + 75% of 20 (=15) + 75% of 10 (=7.5)
+    expect(shares.b).toBeCloseTo(32.5, 5) // 25 + 25% of 20 (=5) + 25% of 10 (=2.5)
+    expect(total).toBe(130)
+  })
+
+  it('falls back to an even split of tax/tip when nobody has an item subtotal yet', () => {
+    const { shares, total } = splitItemized([], ['a', 'b'], 10, 4)
+    expect(shares.a).toBeCloseTo(7, 5)
+    expect(shares.b).toBeCloseTo(7, 5)
+    expect(total).toBe(14)
+  })
+
+  it('ignores an item assigned to nobody in the participant list', () => {
+    const { shares } = splitItemized([{ amount: 15, participantIds: ['ghost'] }], ['a', 'b'])
+    expect(shares).toEqual({ a: 0, b: 0 })
+  })
+
+  it('always sums shares back to exactly the total, across uneven splits', () => {
+    const { shares, total } = splitItemized(
+      [
+        { amount: 33.33, participantIds: ['a', 'b', 'c'] },
+        { amount: 10, participantIds: ['a'] },
+      ],
+      ['a', 'b', 'c'],
+      7.77,
+      3.21
+    )
+    const sum = Math.round(Object.values(shares).reduce((s, v) => s + v, 0) * 100) / 100
+    expect(sum).toBe(total)
   })
 })

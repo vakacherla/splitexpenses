@@ -72,6 +72,25 @@ own project, safe to make test data.
       breakdown
 - [ ] **P0** — Deleting an expense removes it from the ledger *and*
       correctly updates Balances afterward
+- [ ] **P1** — Scan a receipt (needs `GEMINI_API_KEY` and/or
+      `OPENROUTER_API_KEY` set) → description, amount, currency, date, and
+      category pre-fill correctly; a clearly unreadable photo fails with a
+      message rather than silently filling in wrong data
+- [ ] **P1** — Scan an itemized receipt (e.g. a restaurant check) → line
+      items pre-fill and the form switches to Itemized mode automatically
+- [ ] **P0** — Itemized split: assign different items to different people,
+      enter tax and tip in their own fields → each person's share reflects
+      only what they were assigned, plus their proportional share of both
+      tax and tip (someone who ordered more of the bill owes more of each)
+- [ ] **P0** — Itemized split: an item assigned to nobody (or everyone
+      unassigned from a member who's then unchecked from the expense) is
+      blocked from saving with a clear message
+- [ ] **P1** — Itemized split: remove/add item rows, retoggle which people
+      are on an item — the live per-person total at the bottom updates
+      correctly and the computed total stays in sync
+- [ ] **P1** — Expanding an itemized expense's row shows the per-item
+      breakdown (who it was assigned to) alongside the final per-person
+      totals
 
 ## Balances & settling up
 

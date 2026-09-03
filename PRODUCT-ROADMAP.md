@@ -44,7 +44,7 @@ query any time, not locked in a vendor's export button.
 | Category reports/charts | Strong | Absent | Strong | Absent |
 | Recurring expenses | **Absent** | Strong | Strong | Adequate (recurring *payments*, not shared splits) |
 | Receipt scanning (OCR) | **Absent** | Absent | Strong | Absent |
-| Itemized bill splitting | **Absent** | Weak | Strong | Absent |
+| Itemized bill splitting | Strong | Weak | Strong | Absent |
 | Search/filter expenses | **Absent** | Weak | Strong | Adequate |
 | Default/saved split settings | **Absent** | Absent | Strong | Absent |
 | Data export | **Absent** (manual SQL) | Weak | Strong | Absent |
@@ -71,6 +71,25 @@ query any time, not locked in a vendor's export button.
 
 ### Next — real features, real effort, still clearly worth it
 
+- **Edit an existing expense.** Right now the only way to fix a mistake
+  (wrong item, wrong split, wrong amount) is to delete the whole expense
+  and re-add it from scratch — there's no edit path for any split type,
+  itemized or otherwise. Real effort because it's not just a form
+  re-open: changing amount/currency/split touches exchange_rate,
+  amount_in_home, and every row in expense_splits, all of which need to
+  stay consistent with Balances afterward. Worth building once the
+  add-expense form itself (equal/percentage/exact/itemized) has settled
+  down, so there's one stable shape to build "edit" around rather than
+  chasing a moving target. Still open.
+- **Visual polish pass.** Functionally solid, visually still fairly
+  plain. Concrete, roughly effort-ordered: category icons instead of
+  plain colored dots on expense rows; loading skeletons instead of
+  "Loading…" text; a more visual Balances tab (avatar stacks, a simple
+  colored bar per person's net position, rather than a plain list); a
+  touch more warmth on empty states. None of these change behavior, all
+  of them change how the app feels to hand to family who aren't going to
+  read a README first. Still open.
+
 - **Push notifications / activity feed.** "Someone added an expense" or
   "you were asked to settle up" is what makes an ongoing group actually
   stay current instead of going stale between trips. Needs a service
@@ -78,12 +97,14 @@ query any time, not locked in a vendor's export button.
   a proper feature, not an afternoon. Still open.
 - ✅ **Shipped** — receipt photo capture + AI extraction, via the optional
   `receipt-scan` Edge Function (Supabase Storage for the photo, Gemini
-  2.5 Flash as the free primary provider with Qwen2.5-VL-72B as an
-  automatic paid fallback for receipts Gemini can't read). Line-item
-  itemization (assigning individual receipt items to specific people,
-  rather than the whole receipt to one category) is the one piece of the
-  original idea not built — worth a follow-up if restaurant splits are
-  common enough to justify it.
+  3.6 Flash as the free primary provider with Qwen2.5-VL-72B as an
+  automatic paid fallback for receipts Gemini can't read). Now including
+  line-item itemization: the extraction also pulls individual receipt
+  items where legible, the add-expense form gets a fourth "Itemized"
+  split mode alongside equal/percentage/exact, and tax and tip (as
+  separate figures) each split proportionally by what each person
+  actually ordered — the restaurant-split case the original idea was
+  missing.
 - **True offline mode.** Add an expense with no signal, sync when
   connectivity returns. Requires a service worker, local write queue,
   and conflict handling for concurrent edits — a genuine architecture
