@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+/* Enables class-based dark mode: any element under a .dark ancestor (we put
+   it on <html>) gets dark: utilities. We mostly don't need dark: utilities
+   directly though — see the .dark block below, which redefines the same
+   custom properties every component already uses (bg-paper, text-ink,
+   etc.), so the whole app re-themes without touching component code. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: "Fraunces", "Iowan Old Style", serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
+
+  --color-paper: #f6f4ec;
+  --color-paper-raised: #fcfbf6;
+  --color-ink: #16241d;
+  --color-ink-soft: #45503f;
+  --color-muted: #6f7566;
+  --color-line: #ddd8c6;
+
+  --color-primary: #2f5233;
+  --color-primary-dark: #1f3722;
+  --color-primary-tint: #e7ede4;
+  /* Text/icons sitting on top of bg-primary. Deliberately its own token
+     rather than reusing paper-raised: paper-raised is a surface color that
+     flips between modes, but text on a primary-colored button needs to stay
+     legible against primary in *both* modes, which turns out to need a
+     different value in each mode (see the .dark override below). */
+  --color-on-primary: #fcfbf6;
+
+  --color-accent: #b8901f;
+  --color-accent-tint: #f4ecd6;
+
+  --color-owe: #a04338;
+  --color-owe-tint: #f5e6e2;
+  --color-owed: #2f6b4f;
+  --color-owed-tint: #e2ede6;
+
+  --shadow-raised: 0 1px 2px rgba(22, 36, 29, 0.06), 0 8px 24px -12px rgba(22, 36, 29, 0.18);
+}
+
+/* Dark mode: same tokens, different values. Every component already reads
+   these via Tailwind utilities (bg-paper, text-ink, border-line, ...), so
+   nothing else needs to change — the whole app re-themes from here. */
+.dark {
+  --color-paper: #12180f;
+  --color-paper-raised: #1a2216;
+  --color-ink: #e9e4d4;
+  --color-ink-soft: #b7c0a8;
+  --color-muted: #838a76;
+  --color-line: #303a2b;
+
+  --color-primary: #5fa66a;
+  --color-primary-dark: #4a8a54;
+  --color-primary-tint: #1e2b1c;
+  --color-on-primary: #12180f;
+
+  --color-accent: #d1a53c;
+  --color-accent-tint: #2c2515;
+
+  --color-owe: #d1695a;
+  --color-owe-tint: #2e1a16;
+  --color-owed: #4fa377;
+  --color-owed-tint: #17251d;
+
+  --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    color-scheme: light dark;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-feature-settings: "tnum" 1;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  ::selection {
+    background-color: var(--color-accent-tint);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

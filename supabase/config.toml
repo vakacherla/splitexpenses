@@ -1,0 +1,18 @@
+[functions.admin-users]
+# The platform's own JWT gate runs before our function code does — including
+# on the browser's CORS preflight (OPTIONS) request, which never carries a
+# login token. That preflight gets rejected before it reaches us, and the
+# browser reports it as a generic "failed to send a request" with no useful
+# detail. Turning this off is safe here specifically because index.ts does
+# its own, more precise check: it reads the caller's token, confirms
+# they're signed in, and confirms profiles.is_admin is true, before doing
+# anything privileged. Nothing is actually left unauthenticated.
+verify_jwt = false
+
+[functions.receipt-scan]
+# Same CORS-preflight reasoning as admin-users above. This function checks
+# the caller is signed in (not who they are — any member can scan a
+# receipt), so turning off the platform gate doesn't remove that check,
+# just moves it into the function's own code where it can also handle the
+# OPTIONS preflight correctly.
+verify_jwt = false
