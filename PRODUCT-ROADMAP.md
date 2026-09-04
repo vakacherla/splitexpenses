@@ -153,6 +153,12 @@ query any time, not locked in a vendor's export button.
 
 ### Next — real features, real effort, still clearly worth it
 
+**Priority order set 2026-09-04**, for the four items still genuinely open
+in this section: **1. CSV bulk-import, 2. Log an expense by typing a
+sentence, 3. Push notifications / activity feed, 4. Shared Fund mode**
+(tracked separately — see its own BRD, out for family review). Not yet
+started; this just records the agreed order before picking one up.
+
 - ✅ **Shipped** — edit an existing expense. User feedback: real friction
   in practice, not hypothetical — the only way to fix a mistake used to
   be deleting the whole expense and re-adding it from scratch, for any
@@ -354,6 +360,15 @@ query any time, not locked in a vendor's export button.
       re-scanning), and both surfaces use the same gold/accent color
       rather than the same green as Edit/Duplicate, so it reads as
       "worth noticing."
+- **Custom group icon.** Came up while reviewing the visual-polish pass
+  (2026-09-04): a decorative per-group icon badge got added to the
+  Dashboard mockup, auto-assigned for visual variety — the natural next
+  ask is letting the group's owner/manager upload their own image
+  instead. A real feature, not a UI tweak: a `groups.icon_path` column, a
+  Storage bucket + policy (same shape as the existing `avatars` bucket —
+  public, owner/manager-only write), and an upload control in group
+  creation and Group settings, falling back to the auto-assigned
+  decorative icon when unset. Still open — not scoped further yet.
 - **CSV bulk-import.** The real intent: someone's already tracking a
   group's expenses in a spreadsheet and wants to bring the backlog in at
   once instead of re-entering every row by hand — not a general-purpose

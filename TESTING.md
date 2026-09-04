@@ -30,6 +30,14 @@ own project, safe to make test data.
 
 ## Groups
 
+- [ ] **P0** — Dashboard hero shows a real greeting with your actual first
+      name and a group count that matches your real group list; the same
+      greeting persists across navigating away and back within one
+      browser session, but can differ after closing and reopening the tab
+- [ ] **P1** — Each group card shows real member avatars (a photo for
+      anyone who's set one, initials for anyone who hasn't) — hovering
+      one shows their name in a small tooltip; the per-group icon badge
+      and accent color stay the same across reloads for the same group
 - [ ] **P0** — Create a group → appears on Dashboard, you're its only
       member, invite code is visible under Members
 - [ ] **P0** — Second account joins with the correct invite code → shows

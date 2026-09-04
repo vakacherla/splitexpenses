@@ -95,6 +95,25 @@
   }
 }
 
+/* Dashboard group-card entrance — the global reduced-motion rule below
+   already collapses this to ~0ms when preferred, so it still resolves to
+   the visible end state instantly rather than staying invisible. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-rise-in {
+  opacity: 0;
+  animation: rise-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

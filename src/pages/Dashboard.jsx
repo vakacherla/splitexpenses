@@ -5,8 +5,19 @@ import { useAuth } from '../context/AuthContext'
 import CurrencySelect from '../components/CurrencySelect'
 import { SkeletonRows } from '../components/Skeleton'
 import EmptyState from '../components/EmptyState'
+import Avatar from '../components/Avatar'
+import GroupIcon, { hashString } from '../components/GroupIcon'
 import { runSync } from '../lib/offlineQueue'
 import { getCachedDashboard, setCachedDashboard } from '../lib/offlineCache'
+import { pickGreetingTemplate } from '../lib/greetings'
+
+// Purely decorative per-group accent — no "color" field exists or is being
+// added, this just picks one deterministically from the group's own id so
+// it stays the same on every visit rather than reshuffling.
+const ACCENTS = ['#2f5233', '#b8901f', '#a04338', '#4a6a8a', '#6b4a8a', '#3a7d7d']
+function accentFor(id) {
+  return ACCENTS[hashString(id) % ACCENTS.length]
+}
 
 export default function Dashboard() {
   const { user, profile } = useAuth()
@@ -14,6 +25,9 @@ export default function Dashboard() {
   const [groups, setGroups] = useState(null)
   const [error, setError] = useState('')
   const [stale, setStale] = useState(null)
+  const [greetingTemplate] = useState(pickGreetingTemplate)
+  const firstName = profile?.display_name?.split(' ')[0] ?? 'there'
+  const greetingTitle = greetingTemplate.title.replace('{name}', firstName)
 
   const [showCreate, setShowCreate] = useState(false)
   const [newName, setNewName] = useState('')
@@ -36,7 +50,9 @@ export default function Dashboard() {
       // too, not just everyone else's.
       const { data, error } = await supabase
         .from('group_members')
-        .select('groups(id, name, home_currency, invite_code, created_at, archived_at, group_members(user_id))')
+        .select(
+          'groups(id, name, home_currency, invite_code, created_at, archived_at, group_members(user_id, nickname, profiles(display_name, avatar_path)))'
+        )
         .eq('user_id', user.id)
       if (error) throw error
       const myGroups = (data ?? [])
@@ -113,46 +129,70 @@ export default function Dashboard() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-10">
-      <div className="flex items-end justify-between gap-4 mb-8">
-        <div>
-          <h1 className="font-display text-2xl sm:text-3xl text-ink">
-            {profile ? `Hey, ${profile.display_name.split(' ')[0]}` : 'Your groups'}
+      <div
+        className="relative mb-9 overflow-hidden rounded-3xl border border-line p-7 sm:p-9 shadow-raised"
+        style={{
+          backgroundImage:
+            'linear-gradient(155deg, var(--color-paper-raised) 0%, color-mix(in srgb, var(--color-paper-raised) 88%, var(--color-primary-tint)) 100%)',
+        }}
+      >
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute -bottom-8 right-1 font-display text-[180px] sm:text-[220px] font-semibold leading-none text-ink opacity-[0.035]"
+        >
+          {greetingTemplate.wm}
+        </span>
+        <div className="relative">
+          <span className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary-tint px-3 py-1 font-mono text-[11px] uppercase tracking-wide text-primary">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+            {groups ? `${groups.length} group${groups.length === 1 ? '' : 's'}` : 'Your groups'}
+          </span>
+          <h1 className="font-display text-3xl sm:text-[42px] leading-[1.1] tracking-tight text-ink">
+            {greetingTitle}
           </h1>
-          <p className="text-sm text-ink-soft mt-1">Every ledger you're part of, in one place.</p>
+          <p className="mt-2 max-w-md text-[15.5px] text-ink-soft">{greetingTemplate.sub}</p>
           {stale && (
-            <p className="text-xs text-ink-soft mt-1">
+            <p className="mt-2 text-xs text-ink-soft">
               Showing saved data from{' '}
-              {new Date(stale).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}{' '}
+              {new Date(stale).toLocaleString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+              })}{' '}
               — reconnect to refresh.
             </p>
           )}
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              onClick={() => {
+                setShowCreate((v) => !v)
+                setShowJoin(false)
+              }}
+              className="rounded-full px-5 py-2.5 text-sm font-semibold text-on-primary shadow-[0_1px_1px_rgba(0,0,0,0.1),0_10px_20px_-8px_color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition-transform hover:-translate-y-0.5"
+              style={{
+                backgroundImage:
+                  'linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 88%, white 12%), var(--color-primary-dark))',
+              }}
+            >
+              ＋ New group
+            </button>
+            <button
+              onClick={() => {
+                setShowJoin((v) => !v)
+                setShowCreate(false)
+              }}
+              className="rounded-full border border-line bg-paper-raised px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent"
+            >
+              Join with a code
+            </button>
+          </div>
         </div>
       </div>
 
       {error && (
         <div className="mb-6 rounded-lg border border-owe/30 bg-owe-tint text-owe text-sm px-4 py-3">{error}</div>
       )}
-
-      <div className="flex flex-wrap gap-3 mb-8">
-        <button
-          onClick={() => {
-            setShowCreate((v) => !v)
-            setShowJoin(false)
-          }}
-          className="rounded-full bg-primary text-on-primary text-sm font-medium px-4 py-2 hover:bg-primary-dark transition-colors"
-        >
-          New group
-        </button>
-        <button
-          onClick={() => {
-            setShowJoin((v) => !v)
-            setShowCreate(false)
-          }}
-          className="rounded-full border border-line text-ink text-sm font-medium px-4 py-2 hover:border-primary transition-colors"
-        >
-          Join with a code
-        </button>
-      </div>
 
       {showCreate && (
         <form
@@ -231,31 +271,79 @@ export default function Dashboard() {
           subtitle="Start one, or join a friend's with their invite code."
         />
       ) : (
-        <ul className="divide-y divide-line border-y border-line">
-          {groups.map((g) => (
-            <li key={g.id}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {groups.map((g, idx) => {
+            const accent = accentFor(g.id)
+            return (
               <Link
+                key={g.id}
                 to={`/groups/${g.id}`}
-                className="flex items-center justify-between py-4 group hover:bg-paper-raised transition-colors -mx-2 px-2 rounded-lg"
+                className="group/card animate-rise-in relative block overflow-hidden rounded-[20px] border border-line bg-paper-raised p-6 shadow-[0_1px_2px_rgba(22,36,29,0.04)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_28px_44px_-20px_rgba(22,36,29,0.3)]"
+                style={{ animationDelay: `${idx * 0.07}s` }}
               >
-                <div>
-                  <p className="font-display text-lg text-ink">{g.name}</p>
-                  <p className="text-sm text-ink-soft mt-0.5">
-                    {g.group_members.length} member{g.group_members.length === 1 ? '' : 's'} · {g.home_currency}
-                  </p>
-                </div>
-                <svg
-                  className="w-4 h-4 text-ink-soft group-hover:text-primary group-hover:translate-x-0.5 transition-all"
-                  viewBox="0 0 16 16"
-                  fill="none"
+                <span
                   aria-hidden="true"
+                  className="absolute inset-x-0 top-0 h-1"
+                  style={{ backgroundImage: `linear-gradient(90deg, ${accent}, ${accent}66)` }}
+                />
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-1.5 -top-3.5 select-none font-display text-[84px] font-bold leading-none opacity-[0.06]"
+                  style={{ color: accent }}
                 >
-                  <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                  {g.name[0]?.toUpperCase()}
+                </span>
+
+                <div className="mb-4 flex items-start justify-between">
+                  <div className="flex -space-x-2.5">
+                    {g.group_members.slice(0, 4).map((m) => {
+                      const memberName = m.nickname || m.profiles?.display_name || 'Member'
+                      return (
+                        <div key={m.user_id} className="group/avatar relative rounded-full ring-2 ring-paper-raised">
+                          <Avatar avatarPath={m.profiles?.avatar_path} name={memberName} size="md" />
+                          <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-md bg-ink px-2.5 py-1 font-body text-[11.5px] font-medium text-paper opacity-0 transition-all duration-150 group-hover/avatar:translate-y-0 group-hover/avatar:opacity-100">
+                            {memberName}
+                          </span>
+                          <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-[7px] -translate-x-1/2 translate-y-1 border-[5px] border-transparent border-t-ink opacity-0 transition-all duration-150 group-hover/avatar:translate-y-0 group-hover/avatar:opacity-100" />
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full border border-line text-ink-soft transition-transform duration-200 group-hover/card:translate-x-0.5">
+                    <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+                      <path
+                        d="M6 3l5 5-5 5"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
+                </div>
+
+                <p className="mb-1 flex items-center gap-2.5 font-display text-xl font-semibold leading-tight text-ink">
+                  <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
+                    style={{ backgroundColor: `${accent}24`, color: accent }}
+                  >
+                    <GroupIcon id={g.id} />
+                  </span>
+                  {g.name}
+                </p>
+                <p className="mb-4 pl-[46px] text-sm text-ink-soft">
+                  {g.group_members.length} member{g.group_members.length === 1 ? '' : 's'}
+                </p>
+
+                <div className="flex items-center justify-between border-t border-line pt-3.5 font-mono text-[11px] text-ink-soft">
+                  <span>
+                    Home currency · <span className="font-semibold" style={{ color: accent }}>{g.home_currency}</span>
+                  </span>
+                </div>
               </Link>
-            </li>
-          ))}
-        </ul>
+            )
+          })}
+        </div>
       )}
     </div>
   )
