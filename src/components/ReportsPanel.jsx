@@ -3,6 +3,7 @@ import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis
 import { formatMoney } from '../lib/fx'
 import { CATEGORY_COLORS } from '../lib/categories'
 import { useTheme } from '../context/ThemeContext'
+import EmptyState from './EmptyState'
 
 // Recharts needs literal colors (it sets SVG attributes directly, which
 // can't resolve our CSS custom properties), so the light/dark values for
@@ -47,10 +48,15 @@ export default function ReportsPanel({ expenses, members, homeCurrency, currentU
 
   if (expenses.length === 0) {
     return (
-      <div className="text-center border border-dashed border-line rounded-2xl py-16 px-6">
-        <p className="font-display text-lg text-ink mb-1">Nothing to report yet</p>
-        <p className="text-sm text-ink-soft">Add a few expenses and this fills in.</p>
-      </div>
+      <EmptyState
+        icon={
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4">
+            <path d="M4 16V9M10 16V4M16 16v-6" strokeLinecap="round" />
+          </svg>
+        }
+        title="Nothing to report yet"
+        subtitle="Add a few expenses and this fills in."
+      />
     )
   }
 

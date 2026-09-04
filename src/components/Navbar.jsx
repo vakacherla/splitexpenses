@@ -28,10 +28,12 @@ export default function Navbar() {
             {profile && (
               <Link
                 to="/profile"
-                className="hidden sm:flex items-center gap-2 text-sm text-ink-soft hover:text-ink"
+                aria-label="Profile"
+                title="Profile"
+                className="flex items-center gap-2 text-sm text-ink-soft hover:text-ink"
               >
                 <Avatar avatarPath={profile.avatar_path} name={profile.display_name} size="sm" />
-                {profile.display_name}
+                <span className="hidden sm:inline">{profile.display_name}</span>
               </Link>
             )}
             <Link

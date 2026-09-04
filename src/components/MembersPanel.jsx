@@ -9,16 +9,10 @@ export default function MembersPanel({
   currentUserId,
   isOwner,
   canManage,
-  onRename,
   onRemoveMember,
-  onDeleteGroup,
   onToggleManager,
 }) {
   const [copied, setCopied] = useState(false)
-  const [renaming, setRenaming] = useState(false)
-  const [nameDraft, setNameDraft] = useState(group.name)
-  const [deleteConfirmText, setDeleteConfirmText] = useState('')
-  const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   async function copyCode() {
     try {
@@ -28,12 +22,6 @@ export default function MembersPanel({
     } catch {
       // clipboard unavailable — the code is still visible to copy by hand
     }
-  }
-
-  function saveRename() {
-    const trimmed = nameDraft.trim()
-    if (trimmed && trimmed !== group.name) onRename(trimmed)
-    setRenaming(false)
   }
 
   return (
@@ -124,97 +112,6 @@ export default function MembersPanel({
           })}
         </ul>
       </div>
-
-      {canManage && (
-        <div>
-          <h3 className="font-display text-lg text-ink mb-3">Group settings</h3>
-          <div className="rounded-xl border border-line bg-paper-raised p-5 space-y-4">
-            <div>
-              <p className="text-xs text-ink-soft mb-1.5">Group name</p>
-              {renaming ? (
-                <div className="flex items-center gap-2">
-                  <input
-                    autoFocus
-                    value={nameDraft}
-                    onChange={(e) => setNameDraft(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') saveRename()
-                      if (e.key === 'Escape') setRenaming(false)
-                    }}
-                    className="flex-1 rounded-lg border border-line bg-paper px-3 py-1.5 text-ink focus:border-primary outline-none"
-                  />
-                  <button onClick={saveRename} className="text-xs font-medium text-primary hover:underline shrink-0">
-                    Save
-                  </button>
-                  <button
-                    onClick={() => {
-                      setRenaming(false)
-                      setNameDraft(group.name)
-                    }}
-                    className="text-xs text-ink-soft hover:text-ink shrink-0"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <p className="text-ink">{group.name}</p>
-                  <button
-                    onClick={() => setRenaming(true)}
-                    className="text-xs font-medium text-primary hover:underline"
-                  >
-                    Rename
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="pt-4 border-t border-line">
-              <p className="text-xs text-owe mb-2">Danger zone</p>
-              {!confirmingDelete ? (
-                <button
-                  onClick={() => setConfirmingDelete(true)}
-                  className="text-sm text-owe hover:underline"
-                >
-                  Delete this group
-                </button>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-sm text-ink-soft">
-                    This removes {group.name} from everyone's dashboard right away. Nothing is actually
-                    deleted — the app's admin can restore it, in full, for 30 days. After that it's gone for
-                    good. Type the group name to confirm.
-                  </p>
-                  <input
-                    value={deleteConfirmText}
-                    onChange={(e) => setDeleteConfirmText(e.target.value)}
-                    placeholder={group.name}
-                    className="w-full rounded-lg border border-owe/40 bg-paper px-3.5 py-2 text-sm text-ink focus:border-owe outline-none"
-                  />
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={onDeleteGroup}
-                      disabled={deleteConfirmText !== group.name}
-                      className="rounded-full bg-owe text-on-primary text-sm font-medium px-4 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      Delete this group
-                    </button>
-                    <button
-                      onClick={() => {
-                        setConfirmingDelete(false)
-                        setDeleteConfirmText('')
-                      }}
-                      className="text-xs text-ink-soft hover:text-ink"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

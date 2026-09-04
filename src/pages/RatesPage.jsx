@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabaseClient'
 import { fetchSupportedCurrencies, FALLBACK_CURRENCIES, getAllRates } from '../lib/fx'
 import CurrencySelect from '../components/CurrencySelect'
+import { SkeletonRows } from '../components/Skeleton'
 
 export default function RatesPage() {
   const { user } = useAuth()
@@ -98,7 +99,7 @@ export default function RatesPage() {
       <div>
         <h2 className="font-display text-lg text-ink mb-3">1 {base} equals</h2>
         {loading ? (
-          <p className="text-sm text-ink-soft">Loading…</p>
+          <SkeletonRows count={8} />
         ) : (
           <ul className="divide-y divide-line border-y border-line">
             {Object.entries(currencies)

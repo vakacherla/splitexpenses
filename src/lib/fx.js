@@ -1,6 +1,6 @@
 // Live exchange rates via the Frankfurter API (https://frankfurter.dev),
 // a free, keyless service built on European Central Bank reference rates.
-// Rates publish once per weekday, so we cache aggressively per session.
+// Rates publish once per weekday, so we cache aggressively.
 
 const API_BASE = 'https://api.frankfurter.dev/v1'
 const rateCache = new Map() // `${from}_${to}` -> { rate, date }
@@ -8,7 +8,11 @@ const CACHE_KEY = 'ledger_fx_cache_v1'
 
 function loadPersistedCache() {
   try {
-    const raw = sessionStorage.getItem(CACHE_KEY)
+    // localStorage, not sessionStorage — a rate from yesterday is far more
+    // useful than losing it every time the tab closes, which matters for
+    // offline mode's "stale is better than nothing" fallback below over a
+    // multi-day trip with intermittent connectivity.
+    const raw = localStorage.getItem(CACHE_KEY)
     if (!raw) return
     const parsed = JSON.parse(raw)
     Object.entries(parsed).forEach(([key, value]) => rateCache.set(key, value))
@@ -19,7 +23,7 @@ function loadPersistedCache() {
 
 function persistCache() {
   try {
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify(Object.fromEntries(rateCache)))
+    localStorage.setItem(CACHE_KEY, JSON.stringify(Object.fromEntries(rateCache)))
   } catch {
     // storage unavailable (private browsing, quota) — safe to skip
   }
@@ -71,6 +75,16 @@ export async function getRate(from, to) {
   rateCache.set(key, { rate, date: today })
   persistCache()
   return rate
+}
+
+// Synchronous, no network — reads whatever's already in the (persisted)
+// cache without fetching. Used for optimistic display of an offline-queued
+// expense's home-currency estimate before the sync engine resolves the
+// real rate; returns null when nothing's cached yet for this pair, so
+// callers can show "pending" rather than a fabricated number.
+export function peekCachedRate(from, to) {
+  if (from === to) return 1
+  return rateCache.get(`${from}_${to}`)?.rate ?? null
 }
 
 export async function convert(amount, from, to) {

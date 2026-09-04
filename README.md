@@ -99,6 +99,14 @@ this:
   solve this any differently — it links out too, it just doesn't pre-fill
   a recipient either. No handle set, no button; the settle-up flow itself
   still works exactly as before regardless.
+  **UPI specifically is unreliable on iOS**: not every bank's own app
+  registers itself as a handler for the `upi://` scheme (confirmed with
+  ICICI's and HDFC's apps — neither opened from the link), and iOS gives
+  no feedback when nothing catches it — it just silently does nothing,
+  unlike Android's app picker. There's no way to detect this from the
+  app's side, so the fix is a fallback, not a smarter link: the
+  recipient's raw payment ID is always shown, copyable, right next to
+  the button, with a note explaining when to use it.
 - **A group's default split** (who's normally included, equal vs.
   percentage) can be saved from the add-expense form and is then
   suggested — never forced — the next time anyone in that group adds an
@@ -281,7 +289,59 @@ If a scan fails, the error message should say which provider(s) were
 tried and why, rather than failing silently — share it if it doesn't
 make sense.
 
-## 6. Using it
+## 6. Set up settle-up reminders (optional)
+
+Skip this entirely if you don't want it — nothing else depends on it.
+Two ways someone gets nudged about money they owe:
+
+1. **Manual** — a "Remind" button on the Balances tab's suggested
+   settle-up list, next to "Record payment", visible to whoever's owed
+   money.
+2. **Automatic** — once a group's optional end date (set under its
+   Members tab → Group settings) passes, anyone who still owes money
+   there gets nudged once, then again every 3 days for as long as it
+   stays unsettled.
+
+Both send by whichever of email/push you actually configure — neither
+is required, and each works independently of the other.
+
+**Email**, via [Resend](https://resend.com) (free tier is plenty at
+personal-app volume):
+```bash
+supabase secrets set RESEND_API_KEY=your-key-here
+```
+Optionally also set `RESEND_FROM` if you've verified your own sending
+domain with Resend — otherwise it falls back to Resend's own shared
+`onboarding@resend.dev` address, which works fine for testing but is
+more likely to land in spam long-term.
+
+**Push notifications** need a one-time VAPID keypair — generate your own
+with:
+```bash
+npx web-push generate-vapid-keys
+```
+then set the private half server-side and the public half in `.env`
+(never the other way around):
+```bash
+supabase secrets set VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:you@example.com
+# and in .env:
+# VITE_VAPID_PUBLIC_KEY=...
+```
+Each person who wants push notifications turns them on themselves, from
+their own device, under Profile → Notifications — it's a per-device
+browser permission, not something set once for the whole group.
+
+Deploy both functions:
+```bash
+supabase functions deploy remind
+supabase functions deploy trip-reminders-cron
+```
+
+The automatic sweep runs off a `pg_cron` schedule created by migration
+016 — nothing further to deploy for that part, but it does mean this
+needs a Supabase plan where `pg_cron`/`pg_net` are available.
+
+## 7. Using it
 
 - **Create a group** from the dashboard, pick its home currency.
 - **Invite people** via the 6-character code on the group's Members tab —
@@ -290,7 +350,20 @@ make sense.
   category, amount and currency, who paid, who to split it between
   (equal/percentage/exact/itemized), and an optional note. If the expense currency
   differs from the group's home currency, you'll see the live converted
-  amount before saving.
+  amount before saving. Any group member can **Duplicate** an existing
+  expense (next to Edit, once you expand it) to pre-fill a new one with
+  the same details — handy for a recurring rent or utility bill — except
+  the date, which defaults to today, and the receipt, which isn't copied.
+  Skipped the scan and want to attach a receipt afterward? **Attach
+  receipt** appears next to "Edit" once you expand an expense that doesn't
+  have one yet.
+- **No signal, no problem.** Add, edit, or delete an expense (or record a
+  settlement) with no connection at all — it shows up right away tagged
+  "Pending sync" and syncs automatically the moment you're back online. A
+  banner at the top of the app tracks anything still waiting, with a
+  manual retry if it doesn't sync on its own. Receipts are the one thing
+  that still needs a connection (scanning is a live AI call) — attach one
+  once you're reconnected instead.
 - **Balances tab** shows each person's net position and the smallest set of
   payments needed to settle everyone up. Recording a payment shows a
   pre-filled UPI/Venmo/PayPal link once the recipient's added their
@@ -302,7 +375,8 @@ make sense.
   a category × person table.
 - **Admin** (only visible to admins) opens with a platform-wide
   **Overview** (total groups, users, active users, expenses logged,
-  settlements recorded) and a **Reports** tab — spend by category and by
+  settlements recorded — each stat is clickable, jumping straight to the
+  tab that explains it) and a **Reports** tab — spend by category and by
   group, across every group on the platform. Multi-currency is handled by
   grouping rather than converting: a INR group and a USD group each get
   their own total rather than being added into one number using today's
@@ -315,10 +389,23 @@ make sense.
   a regular admin can't do — only a super admin can change anyone's
   admin status, including their own (nobody, not even a super admin, can
   act on their own account here, which is also what makes it structurally
-  impossible to ever end up with zero super admins). The **Groups** tab
-  lists every group, with the option to rename or archive one, and a
-  **Trash** tab lists every deleted expense platform-wide, restorable or
-  permanently purgeable the same way as archived groups.
+  impossible to ever end up with zero super admins). A super admin also
+  sees a **Manage groups** control on each user's row — it lists every
+  group that person is currently in (each with its own **Remove**), plus
+  a picker to add them to any active group directly, bypassing the invite
+  code entirely. Adding rescues an account that signed up but never
+  got/used an invite code and would otherwise sit with zero groups
+  forever; removing exists specifically to undo a super admin's own
+  mistake (wrong group picked) without needing to also be that group's
+  owner/manager — day-to-day removal is still the group owner/manager's
+  job (Group settings, below). The **Groups** tab
+  lists every group, with the option to rename or archive one, and shows
+  who created it and when (the `created_by`/`created_at` columns have
+  always existed — this just surfaces them for platform-wide
+  traceability). A **Settlements** tab lists every settlement recorded
+  across every group — who paid whom, in which group, when, and how
+  much — and a **Trash** tab lists every deleted expense platform-wide,
+  restorable or permanently purgeable the same way as archived groups.
 - **Group settings**, on the Members tab, is visible to whoever created
   that group **or a manager they've named** — rename it, remove a
   regular member (blocked while they still have an outstanding balance,
@@ -328,7 +415,14 @@ make sense.
   link next to that person on the Members tab) — a manager gets the same
   day-to-day powers but can't appoint another manager or touch the
   creator's own membership. None of this needs the platform admin — a
-  family member who starts their own group runs it themselves.
+  family member who starts their own group runs it themselves. The same
+  panel also has **Duplicate this group** — copies every member (with
+  their manager roles) and the home currency into a fresh group with its
+  own new invite code, for when the same people are doing a next trip
+  together. Expenses, settlements, and trip dates deliberately don't come
+  along; it's a blank ledger, not a continuation. Whoever duplicates it
+  becomes the new group's owner, regardless of their role in the
+  original.
 - **Exchange rates** (the swap icon in the nav) is a standalone,
   informational page — pick a currency, see it against every currency
   the app supports, or use the quick-convert box for a one-off amount.
@@ -390,11 +484,13 @@ supabase/
 ## Ideas for later
 
 - Push notifications when someone adds an expense
-- Recurring/scheduled expenses (a "duplicate this expense" shortcut would
-  cover most of the value without full automation)
+- ~~Recurring/scheduled expenses (a "duplicate this expense" shortcut would
+  cover most of the value without full automation)~~ — shipped, see "Add an
+  expense" above
 - Date-range filtering on the Reports tab
 - ~~Per-group owner roles (separate from the platform-admin layer)~~ — shipped
-- True offline mode (a real architecture change — see `PRODUCT-ROADMAP.md`)
+- ~~True offline mode (a real architecture change — see
+  `PRODUCT-ROADMAP.md`)~~ — shipped
 
 See [`PRODUCT-ROADMAP.md`](./PRODUCT-ROADMAP.md) for a fuller,
 prioritized version of this list, benchmarked against what Splitwise and

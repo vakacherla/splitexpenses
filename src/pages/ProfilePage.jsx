@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import { PAYMENT_PROVIDERS } from '../lib/paymentLinks'
 import Avatar from '../components/Avatar'
+import NotificationSettings from '../components/NotificationSettings'
 
 export default function ProfilePage() {
   const { user, refreshProfile } = useAuth()
@@ -250,6 +251,10 @@ export default function ProfilePage() {
           {saved && <span className="text-sm text-primary">Saved</span>}
         </div>
       </form>
+
+      <div className="mt-10 pt-6 border-t border-line">
+        <NotificationSettings userId={user.id} />
+      </div>
 
       {memberships && memberships.length > 0 && (
         <div className="mt-10 pt-6 border-t border-line">

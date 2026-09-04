@@ -106,7 +106,38 @@ export default function HelpPage() {
           <p>
             <strong className="text-ink">Scanning a receipt</strong> (if your group has this turned on): tap
             "Scan a receipt" and take a photo — the description, amount, date, and category fill in
-            automatically. Always double-check before saving; it's a starting point, not the final word.
+            automatically. If the photo shows individual items, it can even split the bill "Itemized" —
+            assign each item to whoever actually ordered it, and tax/tip get shared proportionally. Always
+            double-check before saving; it's a starting point, not the final word.
+          </p>
+          <p>
+            <strong className="text-ink">Skipped the scan, or want to add the photo later?</strong> Expand any
+            expense that doesn't have a receipt yet and tap <strong className="text-ink">"Attach receipt"</strong> —
+            same option also sits inside "Edit" if that's where you go looking for it first.
+          </p>
+          <p>
+            <strong className="text-ink">Recurring expense, like rent?</strong> Expand it and tap{' '}
+            <strong className="text-ink">"Duplicate"</strong> — it pre-fills a new expense with the same
+            details (today's date, no receipt), so re-logging it is a few seconds instead of a fresh form.
+          </p>
+        </Section>
+
+        <Section title="Working offline">
+          <p>
+            No signal doesn't mean you can't log an expense. Add, edit, or delete an expense — or record a
+            settlement — with no connection at all, and it shows up right away tagged{' '}
+            <strong className="text-ink">"Pending sync."</strong> A banner at the top of the app tracks
+            anything still waiting; everything syncs on its own the moment you're back online, with a manual
+            "Retry now" if it doesn't happen right away.
+          </p>
+          <p>
+            The one thing that still needs a connection is a receipt — scanning is a live photo-reading step,
+            so it isn't available while offline. Add the expense now and attach the photo once you're
+            reconnected instead.
+          </p>
+          <p>
+            If two people happen to edit the very same expense while both offline, whichever edit syncs last
+            wins — you'll see a note naming what got overwritten, so nothing changes silently.
           </p>
         </Section>
 
@@ -172,9 +203,10 @@ export default function HelpPage() {
             you've already logged.
           </p>
           <p>
-            <strong className="text-ink">Can I edit or delete an expense?</strong> Tap it to expand, and
-            anyone in the group can remove it from there. There's currently no edit — delete and re-add if
-            something's wrong.
+            <strong className="text-ink">Can I edit or delete an expense?</strong> Tap it to expand — if you
+            entered it or paid for it, you'll see "Edit" and "Delete this expense" right there, for any split
+            type. Deleting is a soft delete: it disappears from your ledger immediately, and only the app's
+            admin can recover it (for 30 days) if that turns out to be a mistake.
           </p>
           <p>
             <strong className="text-ink">Can I be in more than one group?</strong> Yes — your dashboard lists

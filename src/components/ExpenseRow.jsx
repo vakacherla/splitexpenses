@@ -1,13 +1,28 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { formatMoney } from '../lib/fx'
 import { CATEGORY_COLORS } from '../lib/categories'
+import CategoryIcon from './CategoryIcon'
 
 const SPLIT_LABELS = { percentage: 'split by %', exact: 'custom split', itemized: 'itemized' }
 
-export default function ExpenseRow({ expense, membersMap, currentUserId, homeCurrency, onDelete }) {
+export default function ExpenseRow({
+  expense,
+  membersMap,
+  currentUserId,
+  homeCurrency,
+  isMember,
+  onEdit,
+  onDelete,
+  onDuplicate,
+  onAttached,
+}) {
   const [open, setOpen] = useState(false)
   const [receiptUrl, setReceiptUrl] = useState(null)
+  const [attaching, setAttaching] = useState(false)
+  const [attachError, setAttachError] = useState('')
+  const attachInputRef = useRef(null)
+  const canEdit = expense.created_by === currentUserId || expense.paid_by === currentUserId
   const payerName = expense.paid_by === currentUserId ? 'You' : membersMap[expense.paid_by]?.display_name ?? '—'
   const dateLabel = new Date(expense.expense_date + 'T00:00:00').toLocaleDateString(undefined, {
     month: 'short',
@@ -25,6 +40,29 @@ export default function ExpenseRow({ expense, membersMap, currentUserId, homeCur
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, expense.receipt_path])
 
+  async function handleAttachReceipt(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAttaching(true)
+    setAttachError('')
+    const ext = file.name.split('.').pop() || 'jpg'
+    const path = `${expense.group_id}/${expense.id}.${ext}`
+    const { error: uploadError } = await supabase.storage.from('receipts').upload(path, file, { upsert: true })
+    if (uploadError) {
+      setAttaching(false)
+      setAttachError(uploadError.message)
+      return
+    }
+    const { error: updateError } = await supabase.from('expenses').update({ receipt_path: path }).eq('id', expense.id)
+    setAttaching(false)
+    if (updateError) {
+      setAttachError(updateError.message)
+      return
+    }
+    if (attachInputRef.current) attachInputRef.current.value = ''
+    onAttached?.()
+  }
+
   return (
     <li className="border-b border-line last:border-b-0">
       <button
@@ -37,15 +75,19 @@ export default function ExpenseRow({ expense, membersMap, currentUserId, homeCur
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span
-              className="h-1.5 w-1.5 rounded-full shrink-0"
-              style={{ backgroundColor: CATEGORY_COLORS[expense.category] ?? '#9a958a' }}
-              aria-hidden="true"
-            />
+            <CategoryIcon category={expense.category} color={CATEGORY_COLORS[expense.category] ?? '#9a958a'} />
             <p className="text-ink truncate">{expense.description}</p>
             {expense.receipt_path && (
               <span className="text-ink-soft shrink-0" aria-label="Has receipt photo" title="Has receipt photo">
                 📎
+              </span>
+            )}
+            {expense._pendingSync && (
+              <span
+                className="text-xs text-accent border border-accent/30 bg-accent-tint rounded-full px-2 py-0.5 shrink-0"
+                title="Saved on this device — will sync once you're back online"
+              >
+                Pending sync
               </span>
             )}
           </div>
@@ -57,7 +99,9 @@ export default function ExpenseRow({ expense, membersMap, currentUserId, homeCur
         <div className="text-right shrink-0">
           <p className="num text-ink">{formatMoney(expense.amount, expense.currency)}</p>
           {expense.currency !== homeCurrency && (
-            <p className="num text-xs text-ink-soft">{formatMoney(expense.amount_in_home, homeCurrency)}</p>
+            <p className="num text-xs text-ink-soft">
+              {expense.amount_in_home != null ? formatMoney(expense.amount_in_home, homeCurrency) : '≈ pending'}
+            </p>
           )}
         </div>
       </button>
@@ -106,7 +150,7 @@ export default function ExpenseRow({ expense, membersMap, currentUserId, homeCur
               </li>
             ))}
           </ul>
-          <div className="flex items-center gap-4 mt-2">
+          <div className="flex items-center gap-4 mt-2 flex-wrap">
             {expense.receipt_path && (
               <a
                 href={receiptUrl ?? undefined}
@@ -117,12 +161,44 @@ export default function ExpenseRow({ expense, membersMap, currentUserId, homeCur
                 {receiptUrl ? 'View receipt' : 'Loading receipt…'}
               </a>
             )}
-            {(expense.created_by === currentUserId || expense.paid_by === currentUserId) && (
-              <button onClick={() => onDelete(expense.id)} className="text-xs text-owe hover:underline">
-                Delete this expense
+            {!expense.receipt_path && canEdit && !expense._pendingSync && (
+              <>
+                <input
+                  ref={attachInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAttachReceipt}
+                />
+                <button
+                  onClick={() => attachInputRef.current?.click()}
+                  disabled={attaching}
+                  className="text-xs font-medium text-accent hover:underline disabled:opacity-50"
+                >
+                  {attaching ? 'Attaching…' : 'Attach receipt'}
+                </button>
+              </>
+            )}
+            {!expense.receipt_path && canEdit && expense._pendingSync && (
+              <span className="text-xs text-ink-soft italic">Attach a receipt once this syncs</span>
+            )}
+            {isMember && (
+              <button onClick={() => onDuplicate(expense)} className="text-xs text-primary hover:underline">
+                Duplicate
               </button>
             )}
+            {canEdit && (
+              <>
+                <button onClick={() => onEdit(expense)} className="text-xs text-primary hover:underline">
+                  Edit
+                </button>
+                <button onClick={() => onDelete(expense.id)} className="text-xs text-owe hover:underline">
+                  Delete this expense
+                </button>
+              </>
+            )}
           </div>
+          {attachError && <p className="mt-1.5 text-xs text-owe">{attachError}</p>}
         </div>
       )}
     </li>

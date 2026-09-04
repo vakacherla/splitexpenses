@@ -2,6 +2,8 @@ import { useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { formatMoney } from '../lib/fx'
 import { useLiveRate } from '../lib/useLiveRate'
+import { useOnlineStatus } from '../lib/useOnlineStatus'
+import { enqueue } from '../lib/offlineQueue'
 import { splitEvenly, splitByPercentages, splitItemized } from '../lib/split'
 import { CATEGORIES } from '../lib/categories'
 import CurrencySelect from './CurrencySelect'
@@ -22,43 +24,83 @@ function fileToBase64(file) {
   })
 }
 
-export default function AddExpenseForm({ group, members, currentUserId, onAdded, onClose }) {
+export default function AddExpenseForm({ group, members, currentUserId, editingExpense, duplicateFrom, onAdded, onClose }) {
   const defaultSplit = group.default_split ?? null
   const memberIds = members.map((m) => m.user_id)
+  // Duplicating pre-fills the same starting fields as editing, but always
+  // creates a new expense (editingExpense stays null) — see handleSubmit,
+  // which branches on editingExpense alone. Date is deliberately NOT
+  // seeded from this — a duplicated expense defaults to today, same as a
+  // fresh add, since "log this again" usually means a new occurrence, not
+  // a correction to when the original happened.
+  const seed = editingExpense ?? duplicateFrom
 
-  const [description, setDescription] = useState('')
-  const [category, setCategory] = useState('Misc')
-  const [amount, setAmount] = useState('')
-  const [currency, setCurrency] = useState(group.home_currency)
-  const [paidBy, setPaidBy] = useState(currentUserId)
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
-  const [note, setNote] = useState('')
+  const [description, setDescription] = useState(seed?.description ?? '')
+  const [category, setCategory] = useState(seed?.category ?? 'Misc')
+  const [amount, setAmount] = useState(seed ? String(seed.amount) : '')
+  const [currency, setCurrency] = useState(seed?.currency ?? group.home_currency)
+  const [paidBy, setPaidBy] = useState(seed?.paid_by ?? currentUserId)
+  const [date, setDate] = useState(editingExpense?.expense_date ?? (() => new Date().toISOString().slice(0, 10)))
+  const [note, setNote] = useState(editingExpense?.note ?? '')
   const [participantIds, setParticipantIds] = useState(() => {
+    if (seed) return seed.expense_splits.map((s) => s.user_id)
     const saved = defaultSplit?.participant_ids?.filter((id) => memberIds.includes(id))
     return saved?.length ? saved : memberIds
   })
-  const [splitMode, setSplitMode] = useState(() => defaultSplit?.split_mode ?? 'equal')
-  const [exactShares, setExactShares] = useState({}) // user_id -> string
+  const [splitMode, setSplitMode] = useState(() => seed?.split_type ?? defaultSplit?.split_mode ?? 'equal')
+  const [exactShares, setExactShares] = useState(() => {
+    if (seed?.split_type === 'exact') {
+      return Object.fromEntries(seed.expense_splits.map((s) => [s.user_id, String(s.share_amount)]))
+    }
+    return {}
+  }) // user_id -> string
   const [percentageShares, setPercentageShares] = useState(() => {
+    if (seed?.split_type === 'percentage') {
+      return Object.fromEntries(seed.expense_splits.map((s) => [s.user_id, String(s.percentage)]))
+    }
     if (defaultSplit?.split_mode === 'percentage' && defaultSplit.percentages) {
       return Object.fromEntries(Object.entries(defaultSplit.percentages).map(([k, v]) => [k, String(v)]))
     }
     return {}
   })
   const [saveAsDefault, setSaveAsDefault] = useState(false)
-  const [items, setItems] = useState([]) // { id, description, amount: string, participantIds: string[] }
-  const [tax, setTax] = useState('') // split proportionally by item subtotal
-  const [tip, setTip] = useState('') // split proportionally by item subtotal
+  const [items, setItems] = useState(() => {
+    if (seed?.split_type === 'itemized' && Array.isArray(seed.items)) {
+      return seed.items.map((it) => ({
+        id: crypto.randomUUID(),
+        description: it.description ?? '',
+        amount: String(it.amount),
+        participantIds: it.participant_ids ?? [],
+      }))
+    }
+    return []
+  }) // { id, description, amount: string, participantIds: string[] }
+  const [tax, setTax] = useState(seed?.tax ? String(seed.tax) : '') // split proportionally by item subtotal
+  const [tip, setTip] = useState(seed?.tip ? String(seed.tip) : '') // split proportionally by item subtotal
+  // True right after switching to Itemized seeds one item with the whole
+  // prior total (see handleSplitModeChange) — explains that lump sum
+  // rather than letting someone add Tax/Tip on top of it unknowingly.
+  const [showSeedHint, setShowSeedHint] = useState(false)
 
   const [receiptFile, setReceiptFile] = useState(null)
   const [scanning, setScanning] = useState(false)
   const [scanError, setScanError] = useState('')
   const fileInputRef = useRef(null)
 
+  // Plain attach (no OCR) while editing — separate from the scan flow
+  // above, which stays hidden in edit mode so re-scanning can't overwrite
+  // fields being fixed by hand. Tracked locally since `editingExpense` is
+  // just a prop snapshot and won't reflect a successful upload on its own.
+  const [editReceiptPath, setEditReceiptPath] = useState(editingExpense?.receipt_path ?? null)
+  const [attachingReceipt, setAttachingReceipt] = useState(false)
+  const [attachReceiptError, setAttachReceiptError] = useState('')
+  const editAttachInputRef = useRef(null)
+
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
   const { rate, loading: rateLoading, error: rateError } = useLiveRate(currency, group.home_currency)
+  const isOffline = !useOnlineStatus()
 
   const taxNum = parseFloat(tax) || 0
   const tipNum = parseFloat(tip) || 0
@@ -104,15 +146,40 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
     setParticipantIds((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]))
   }
 
+  // Itemized mode computes its total from line items rather than the
+  // plain amount field — switching to it with no items yet otherwise
+  // silently drops whatever total was already entered (or, when editing,
+  // already saved). Seeding one starting item with that amount means
+  // exploring split modes never loses the number you started with.
+  function handleSplitModeChange(modeId) {
+    if (modeId === 'itemized' && splitMode !== 'itemized' && items.length === 0) {
+      const priorTotal = parseFloat(amount) || 0
+      if (priorTotal > 0) {
+        setItems([
+          {
+            id: crypto.randomUUID(),
+            description: description.trim() || 'Item',
+            amount: priorTotal.toFixed(2),
+            participantIds: [...participantIds],
+          },
+        ])
+        setShowSeedHint(true)
+      }
+    }
+    setSplitMode(modeId)
+  }
+
   function addItem() {
     setItems((prev) => [
       ...prev,
       { id: crypto.randomUUID(), description: '', amount: '', participantIds: [...participantIds] },
     ])
+    setShowSeedHint(false)
   }
 
   function removeItem(id) {
     setItems((prev) => prev.filter((it) => it.id !== id))
+    setShowSeedHint(false)
   }
 
   function updateItem(id, patch) {
@@ -196,6 +263,31 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  async function handleAttachReceiptInEdit(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAttachingReceipt(true)
+    setAttachReceiptError('')
+    const ext = file.name.split('.').pop() || 'jpg'
+    const path = `${group.id}/${editingExpense.id}.${ext}`
+    const { error: uploadError } = await supabase.storage.from('receipts').upload(path, file, { upsert: true })
+    if (uploadError) {
+      setAttachingReceipt(false)
+      setAttachReceiptError(uploadError.message)
+      return
+    }
+    const { error: updateError } = await supabase
+      .from('expenses')
+      .update({ receipt_path: path })
+      .eq('id', editingExpense.id)
+    setAttachingReceipt(false)
+    if (updateError) {
+      setAttachReceiptError(updateError.message)
+      return
+    }
+    setEditReceiptPath(path)
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
@@ -212,13 +304,9 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
     }
     if (parsedAmount <= 0) return setError('Enter an amount greater than zero.')
     if (participantIds.length === 0) return setError('Pick at least one person to split with.')
-    if (!rate) return setError('Still fetching the exchange rate — try again in a moment.')
     if (exactMismatch) return setError(`Exact shares add up to ${exactTotal.toFixed(2)}, not ${parsedAmount.toFixed(2)}.`)
     if (percentageMismatch) return setError(`Percentages add up to ${percentageTotal.toFixed(1)}%, not 100%.`)
 
-    setSaving(true)
-
-    const amountInHome = Math.round(parsedAmount * rate * 100) / 100
     const shareSourceOriginal =
       splitMode === 'equal'
         ? equalShares
@@ -228,34 +316,99 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
             ? itemizedShares
             : Object.fromEntries(participantIds.map((id) => [id, parseFloat(exactShares[id]) || 0]))
 
-    const { data: expense, error: expenseError } = await supabase
-      .from('expenses')
-      .insert({
-        group_id: group.id,
+    const itemsPayload =
+      splitMode === 'itemized'
+        ? items.map((it) => ({
+            description: it.description.trim(),
+            amount: Math.round((parseFloat(it.amount) || 0) * 100) / 100,
+            participant_ids: it.participantIds.filter((id) => participantIds.includes(id)),
+          }))
+        : null
+
+    const splitsPayload = participantIds.map((userId) => ({
+      user_id: userId,
+      share_amount: shareSourceOriginal[userId] ?? 0,
+      percentage: splitMode === 'percentage' ? parseFloat(percentageShares[userId]) || 0 : null,
+    }))
+
+    // Offline: the whole insert/update round trip needs a network call it
+    // doesn't have, not just the exchange rate — so this branches before
+    // ever touching Supabase, queuing the write instead. The rate itself
+    // is deliberately left unresolved here (see offlineQueue.js) and
+    // computed for real once the sync engine actually runs, online.
+    if (isOffline) {
+      setSaving(true)
+      const entityId = editingExpense?.id ?? crypto.randomUUID()
+      const payload = {
         description: description.trim(),
         paid_by: paidBy,
         currency,
         amount: parsedAmount,
-        exchange_rate: rate,
-        amount_in_home: amountInHome,
         expense_date: date,
         split_type: splitMode,
         category,
         note: note.trim() || null,
-        items:
-          splitMode === 'itemized'
-            ? items.map((it) => ({
-                description: it.description.trim(),
-                amount: Math.round((parseFloat(it.amount) || 0) * 100) / 100,
-                participant_ids: it.participantIds.filter((id) => participantIds.includes(id)),
-              }))
-            : null,
+        items: itemsPayload,
         tax: splitMode === 'itemized' ? taxNum : null,
         tip: splitMode === 'itemized' ? tipNum : null,
         created_by: currentUserId,
-      })
-      .select()
-      .single()
+        homeCurrency: group.home_currency,
+        splits: splitsPayload,
+      }
+      enqueue(
+        editingExpense
+          ? {
+              type: 'expense.update',
+              entityId,
+              groupId: group.id,
+              expectedUpdatedAt: editingExpense.updated_at ?? null,
+              payload,
+            }
+          : { type: 'expense.create', entityId, groupId: group.id, payload }
+      )
+      setSaving(false)
+      onAdded()
+      return
+    }
+
+    // Only the amount and currency actually determine whether a fresh
+    // exchange rate is needed — fixing a typo in the description or
+    // reassigning the split shouldn't silently shift amount_in_home just
+    // because today's rate happens to differ from the day this was
+    // entered. That's the same "locked-in historical rate" principle the
+    // add flow already relies on, just also honored on the way back out.
+    const rateChanged =
+      !editingExpense || currency !== editingExpense.currency || Math.abs(parsedAmount - editingExpense.amount) > 0.005
+    if (rateChanged && !rate) return setError('Still fetching the exchange rate — try again in a moment.')
+
+    setSaving(true)
+
+    const finalRate = rateChanged ? rate : editingExpense.exchange_rate
+    const amountInHome = rateChanged ? Math.round(parsedAmount * finalRate * 100) / 100 : editingExpense.amount_in_home
+
+    const expensePayload = {
+      description: description.trim(),
+      paid_by: paidBy,
+      currency,
+      amount: parsedAmount,
+      exchange_rate: finalRate,
+      amount_in_home: amountInHome,
+      expense_date: date,
+      split_type: splitMode,
+      category,
+      note: note.trim() || null,
+      items: itemsPayload,
+      tax: splitMode === 'itemized' ? taxNum : null,
+      tip: splitMode === 'itemized' ? tipNum : null,
+    }
+
+    const { data: expense, error: expenseError } = editingExpense
+      ? await supabase.from('expenses').update(expensePayload).eq('id', editingExpense.id).select().single()
+      : await supabase
+          .from('expenses')
+          .insert({ ...expensePayload, group_id: group.id, created_by: currentUserId })
+          .select()
+          .single()
 
     if (expenseError) {
       setError(expenseError.message)
@@ -263,16 +416,25 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
       return
     }
 
-    const splitRows = participantIds.map((userId) => {
-      const shareOriginal = shareSourceOriginal[userId] ?? 0
-      return {
-        expense_id: expense.id,
-        user_id: userId,
-        share_amount: shareOriginal,
-        share_in_home: Math.round(shareOriginal * rate * 100) / 100,
-        percentage: splitMode === 'percentage' ? parseFloat(percentageShares[userId]) || 0 : null,
+    // Editing replaces the whole split rather than diffing row by row —
+    // simpler, and correct here since a fresh set is always computed from
+    // the current form state anyway (same as a new expense would be).
+    if (editingExpense) {
+      const { error: deleteError } = await supabase.from('expense_splits').delete().eq('expense_id', expense.id)
+      if (deleteError) {
+        setSaving(false)
+        setError(deleteError.message)
+        return
       }
-    })
+    }
+
+    const splitRows = splitsPayload.map((s) => ({
+      expense_id: expense.id,
+      user_id: s.user_id,
+      share_amount: s.share_amount,
+      share_in_home: Math.round(s.share_amount * finalRate * 100) / 100,
+      percentage: s.percentage,
+    }))
 
     const { error: splitError } = await supabase.from('expense_splits').insert(splitRows)
     if (splitError) {
@@ -319,55 +481,98 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
         className="w-full sm:max-w-lg bg-paper-raised rounded-t-3xl sm:rounded-2xl border border-line shadow-raised max-h-[92dvh] overflow-y-auto"
       >
         <div className="px-5 sm:px-6 pt-5 pb-2 flex items-center justify-between sticky top-0 bg-paper-raised">
-          <h2 className="font-display text-xl text-ink">Add an expense</h2>
+          <h2 className="font-display text-xl text-ink">
+            {editingExpense ? 'Edit expense' : duplicateFrom ? 'Duplicate expense' : 'Add an expense'}
+          </h2>
           <button type="button" onClick={onClose} className="text-ink-soft hover:text-ink text-sm">
             Close
           </button>
         </div>
 
         <div className="px-5 sm:px-6 pb-6 space-y-5">
-          <div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={handleReceiptSelected}
-            />
-            {!receiptFile ? (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-line py-3 text-sm text-ink-soft hover:text-ink hover:border-primary transition-colors"
-              >
-                <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
-                  <path
-                    d="M4 7.5h2.5L8 5h4l1.5 2.5H16a1 1 0 0 1 1 1V15a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8.5a1 1 0 0 1 1-1Z"
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                    strokeLinejoin="round"
-                  />
-                  <circle cx="10" cy="11.5" r="2.25" stroke="currentColor" strokeWidth="1.4" />
-                </svg>
-                Scan a receipt to fill this in
-              </button>
-            ) : (
-              <div className="flex items-center justify-between rounded-xl border border-line bg-paper px-3.5 py-2.5">
-                <span className="text-sm text-ink-soft truncate">
-                  {scanning ? 'Reading receipt…' : `📎 ${receiptFile.name}`}
-                </span>
+          {!editingExpense && isOffline && (
+            <div className="flex items-center gap-2 rounded-xl border border-owe/40 bg-owe-tint px-3.5 py-3 text-sm text-owe">
+              <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
+                <path d="M10 3.3 17.3 16H2.7L10 3.3Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+                <path d="M10 8.3v3.3M10 14h.01" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+              </svg>
+              Receipts need a connection — add this expense now and attach a photo later by editing it.
+            </div>
+          )}
+
+          {!editingExpense && !isOffline && (
+            <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={handleReceiptSelected}
+              />
+              {!receiptFile ? (
                 <button
                   type="button"
-                  onClick={removeReceipt}
-                  className="text-xs text-owe hover:underline shrink-0 ml-2"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-line py-3 text-sm text-ink-soft hover:text-ink hover:border-primary transition-colors"
                 >
-                  Remove
+                  <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
+                    <path
+                      d="M4 7.5h2.5L8 5h4l1.5 2.5H16a1 1 0 0 1 1 1V15a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8.5a1 1 0 0 1 1-1Z"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      strokeLinejoin="round"
+                    />
+                    <circle cx="10" cy="11.5" r="2.25" stroke="currentColor" strokeWidth="1.4" />
+                  </svg>
+                  Scan a receipt to fill this in
                 </button>
-              </div>
-            )}
-            {scanError && <p className="mt-1.5 text-xs text-owe">{scanError}</p>}
-          </div>
+              ) : (
+                <div className="flex items-center justify-between rounded-xl border border-line bg-paper px-3.5 py-2.5">
+                  <span className="text-sm text-ink-soft truncate">
+                    {scanning ? 'Reading receipt…' : `📎 ${receiptFile.name}`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={removeReceipt}
+                    className="text-xs text-owe hover:underline shrink-0 ml-2"
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+              {scanError && <p className="mt-1.5 text-xs text-owe">{scanError}</p>}
+            </div>
+          )}
+
+          {editingExpense && editingExpense._pendingSync && !editReceiptPath && (
+            <p className="text-xs text-ink-soft italic">Attach a receipt once this syncs.</p>
+          )}
+
+          {editingExpense && !editingExpense._pendingSync && (
+            <div>
+              <input
+                ref={editAttachInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAttachReceiptInEdit}
+              />
+              {editReceiptPath ? (
+                <p className="text-sm text-ink-soft">📎 Receipt attached</p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => editAttachInputRef.current?.click()}
+                  disabled={attachingReceipt}
+                  className="text-sm font-medium text-accent hover:underline disabled:opacity-50"
+                >
+                  {attachingReceipt ? 'Attaching…' : '+ Attach a receipt'}
+                </button>
+              )}
+              {attachReceiptError && <p className="mt-1.5 text-xs text-owe">{attachReceiptError}</p>}
+            </div>
+          )}
 
           <div>
             <label className="block text-sm text-ink-soft mb-1.5">What was it for?</label>
@@ -434,7 +639,9 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
                 </p>
               </div>
               <p className="text-xs text-ink-soft text-right">
-                {rateError ? (
+                {isOffline && !rate ? (
+                  "We'll fetch today's rate once you're back online"
+                ) : rateError ? (
                   <span className="text-owe">Rate unavailable</span>
                 ) : rate ? (
                   <>
@@ -483,7 +690,7 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
                   <button
                     key={mode.id}
                     type="button"
-                    onClick={() => setSplitMode(mode.id)}
+                    onClick={() => handleSplitModeChange(mode.id)}
                     className={`px-3 py-1 rounded-full transition-colors whitespace-nowrap ${
                       splitMode === mode.id ? 'bg-primary text-on-primary' : 'text-ink-soft'
                     }`}
@@ -612,6 +819,13 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
                   ))}
                 </ul>
 
+                {showSeedHint && (
+                  <p className="text-xs text-accent">
+                    Includes the full original amount — split it into real items and add Tax/Tip below if you want a
+                    detailed breakdown.
+                  </p>
+                )}
+
                 <button
                   type="button"
                   onClick={addItem}
@@ -663,7 +877,7 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
               </div>
             )}
 
-            {splitMode !== 'exact' && splitMode !== 'itemized' && (
+            {!editingExpense && splitMode !== 'exact' && splitMode !== 'itemized' && (
               <label className="mt-2.5 flex items-center gap-2 text-xs text-ink-soft cursor-pointer">
                 <input
                   type="checkbox"
@@ -690,10 +904,10 @@ export default function AddExpenseForm({ group, members, currentUserId, onAdded,
 
           <button
             type="submit"
-            disabled={saving || rateLoading}
+            disabled={saving || (rateLoading && !isOffline)}
             className="w-full rounded-full bg-primary text-on-primary font-medium py-2.5 hover:bg-primary-dark transition-colors disabled:opacity-60"
           >
-            {saving ? 'Saving…' : 'Save expense'}
+            {saving ? 'Saving…' : editingExpense ? 'Save changes' : 'Save expense'}
           </button>
         </div>
       </form>

@@ -43,7 +43,7 @@ query any time, not locked in a vendor's export button.
 | Debt simplification | Strong | Strong | Strong | Absent |
 | Category reports/charts | Strong | Absent | Strong | Absent |
 | Recurring expenses | **Absent** | Strong | Strong | Adequate (recurring *payments*, not shared splits) |
-| Receipt scanning (OCR) | **Absent** | Absent | Strong | Absent |
+| Receipt scanning (OCR) | Strong (itemized, too) | Absent | Strong | Absent |
 | Itemized bill splitting | Strong | Weak | Strong | Absent |
 | Search/filter expenses | **Absent** | Weak | Strong | Adequate |
 | Default/saved split settings | **Absent** | Absent | Strong | Absent |
@@ -51,7 +51,7 @@ query any time, not locked in a vendor's export button.
 | Settle-up payment deep link | **Absent** | Adequate | Adequate | N/A (it *is* the payment) |
 | Actually moves money | Not applicable | Absent | Absent | Strong |
 | Offline mode | **Absent** | Strong | Strong | Absent |
-| Push notifications / activity feed | **Absent** | Adequate | Adequate | Strong |
+| Push notifications / activity feed | Adequate (settle-up reminders only, no general activity feed) | Adequate | Adequate | Strong |
 | Comments/notes on an expense | **Absent** | Weak | Weak | Strong (its whole social layer) |
 | Multi-group platform admin | Strong | Absent | Absent | Absent |
 | No daily limits, no ads | Strong | **Absent** | Strong | Strong |
@@ -64,37 +64,189 @@ query any time, not locked in a vendor's export button.
   amount, gated on the recipient adding their handle), search/filter on
   the Ledger, a saveable default split per group, CSV export, and notes
   on an expense. See the README for how each works.
-- **A lightweight recurring-expense helper.** Not full automation yet —
-  just a "duplicate this expense" action that pre-fills last month's rent
-  or utility bill so it's a 10-second re-entry instead of a fresh form.
-  Still open.
+- ✅ **Shipped** — a lightweight recurring-expense helper. Not full
+  automation — a "Duplicate" action on any existing expense (Ledger, next
+  to Edit) that opens the add-expense form pre-filled with the same
+  description, category, amount, currency, payer, and full split
+  (including itemized items and tax/tip), so re-logging last month's rent
+  or a recurring utility bill is a 10-second edit-and-save instead of a
+  fresh form. Deliberately defaults the date to *today*, not the
+  original's, and always fetches a fresh exchange rate on save — a
+  duplicate is a new occurrence, not a correction, so it gets today's
+  rate exactly like a brand-new expense would. Available to any group
+  member, not gated to whoever entered/paid for the original — unlike
+  Edit/Delete, duplicating doesn't touch the source expense at all, so
+  there's no ownership boundary to protect. No schema changes needed —
+  purely `AddExpenseForm`/`ExpenseRow`.
+- ✅ **Shipped** — duplicate a group, without its expenses. User feedback:
+  same people often do a next trip together, and re-inviting everyone
+  from scratch is unnecessary friction. A new `duplicate_group(source_id,
+  new_name)` RPC (migration 018) copies every member's row — including
+  manager roles — plus the home currency into a new group with its own
+  fresh invite code; expenses, settlements, and trip dates deliberately
+  stay behind, since it's a new trip, not a continuation. The person who
+  duplicates becomes the new group's owner regardless of their role on
+  the source (even a manager, not just the creator, can do this — same
+  permission bar as renaming or archiving), and their own copied row is
+  forced to non-manager so ownership is the only thing granting them
+  power in the new group; everyone else's role carries over exactly.
+  Reachable from Group settings → "Duplicate this group," with an
+  editable name field defaulting to "<name> (copy)". Considered and
+  deliberately not doing: a literal "Group → Trip" rename. The
+  create-group placeholder itself ("Goa trip, Flat 4B, Family fund…")
+  and this app's own stated positioning ("built to work for any group,"
+  not just trips) are in real tension with narrowing the word
+  everywhere — a flat-share's expenses or an ongoing family fund isn't a
+  trip, and the rename would touch schema comments, RLS policy names,
+  every doc, and the UI for a label change alone. Trip-specific
+  *language* already shows up contextually where it fits (e.g. "Trip
+  dates," not "Group dates") without renaming the underlying concept.
+- ✅ **Shipped** — admin can add a user to a group directly. Real gap
+  found in practice: creating an account and joining a group are two
+  separate steps (self-service `join_group_by_code` only) — someone who
+  signs up and never gets/uses an invite code sits with zero groups
+  indefinitely, and no admin action could place them into one. Fix: a
+  super-admin-only `admin_add_user_to_group(target_user_id,
+  target_group_id)` RPC (migration 018) plus a small addition to Admin →
+  Users — a "Manage groups" control on each user's row, visible only to
+  a super admin, that picks any active group and adds them, bypassing
+  the invite code entirely. Called directly as a Postgres RPC rather than
+  routed through the `admin-users` Edge Function — the function's own
+  `is_super_admin()` check inside the `SECURITY DEFINER` body is exactly
+  as trustworthy as the Edge Function's service-role check, without
+  needing a redeploy.
+  - ✅ **Shipped, same day** — the removal counterpart. Real feedback
+    from actually using the feature: a super admin can just as easily
+    pick the wrong group by mistake, and the group owner/manager removal
+    path doesn't help when the super admin isn't that group's
+    owner/manager. `admin_remove_user_from_group(target_user_id,
+    target_group_id)` (migration 019) plus "Manage groups" now also
+    lists everyone the picked user is currently in, each with its own
+    Remove — same panel, not a separate screen. Deliberately skips the
+    balance check the self-service owner/manager removal enforces
+    (`computeNetBalances` is a client-side computation, not something
+    this function can check) — this is an explicit admin correction
+    tool, not a control surfaced to everyone, so the trust bar is
+    different.
+  - ✅ **Shipped, same day** — Admin → Groups now shows "Created &lt;date&gt;
+    by &lt;name&gt;" under every group (active and archived), for platform-wide
+    traceability. Prompted directly by using the two RPCs above in
+    practice — no schema change needed, `groups.created_by`/`created_at`
+    have existed since the original schema; this just surfaces them in
+    the one place (Admin) where "who made this and when" actually
+    matters across every group, not just your own.
+  - ✅ **Shipped, same day** — that surfacing exposed a real PostgREST
+    ambiguity bug: `groups` and `profiles` are connected two ways once a
+    bridge table exists (`groups.created_by` directly, and
+    `groups → group_members → profiles`), so the naive embed failed with
+    "more than one relationship was found." Fixed with an explicit FK
+    hint (`profiles!groups_created_by_fkey(...)`) — worth remembering for
+    any future embed between two tables that also share a join table.
+  - ✅ **Shipped, same day** — every Overview stat tile is now clickable,
+    jumping straight to the tab that explains the number (Groups/Users/
+    Active users/Expenses logged → their existing tabs). Settlements
+    recorded needed a genuinely new destination — a **Settlements** tab
+    listing every settlement platform-wide (from → to, group, date,
+    amount, home-currency equivalent) — since no global settlements view
+    existed anywhere before. Read-only, no admin actions on it (nothing
+    here needs an undo/restore the way Trash does).
 
 ### Next — real features, real effort, still clearly worth it
 
-- **Edit an existing expense.** Right now the only way to fix a mistake
-  (wrong item, wrong split, wrong amount) is to delete the whole expense
-  and re-add it from scratch — there's no edit path for any split type,
-  itemized or otherwise. Real effort because it's not just a form
-  re-open: changing amount/currency/split touches exchange_rate,
-  amount_in_home, and every row in expense_splits, all of which need to
-  stay consistent with Balances afterward. Worth building once the
-  add-expense form itself (equal/percentage/exact/itemized) has settled
-  down, so there's one stable shape to build "edit" around rather than
-  chasing a moving target. Still open.
-- **Visual polish pass.** Functionally solid, visually still fairly
-  plain. Concrete, roughly effort-ordered: category icons instead of
-  plain colored dots on expense rows; loading skeletons instead of
-  "Loading…" text; a more visual Balances tab (avatar stacks, a simple
-  colored bar per person's net position, rather than a plain list); a
-  touch more warmth on empty states. None of these change behavior, all
-  of them change how the app feels to hand to family who aren't going to
-  read a README first. Still open.
+- ✅ **Shipped** — edit an existing expense. User feedback: real friction
+  in practice, not hypothetical — the only way to fix a mistake used to
+  be deleting the whole expense and re-adding it from scratch, for any
+  split type. `AddExpenseForm` now does double duty (an `editingExpense`
+  prop switches it into edit mode) rather than a separate form, so every
+  split type it already knows how to build, it already knows how to
+  rebuild from an existing expense's data — verified directly for both
+  itemized and percentage splits (every field, including per-item
+  assignments and tax/tip, round-trips exactly). Editing replaces the
+  whole `expense_splits` set rather than diffing row by row, same as a
+  fresh add computes shares from scratch. One deliberate refinement on
+  the "changes shouldn't shift history" principle: `exchange_rate` and
+  `amount_in_home` are only recomputed (against today's live rate) if
+  the amount or currency actually changed — fixing a typo in the
+  description, or just reassigning the split, leaves the original
+  locked-in conversion untouched. Receipt attachment isn't editable
+  (re-scanning would overwrite fields you're specifically trying to
+  fix) — edit an expense's own fields by hand instead. Reachable from an
+  "Edit" link next to "Delete this expense" on the Ledger, gated
+  identically to delete.
+  - ✅ **Fixed** — the permission gap this feedback actually surfaced,
+    ahead of the edit feature itself. `ExpenseRow.jsx` only ever *showed*
+    the delete button to whoever entered or paid for an expense, but the
+    server-side RLS policy backing it (`expenses: members can edit`,
+    the UPDATE policy the deleted_at soft-delete trick uses) was still
+    `is_group_member(group_id)` — any member, full stop — left over from
+    before migration 014 narrowed delete's own policy. Since Postgres
+    OR's multiple policies for the same command, that meant any group
+    member could already update or soft-delete *any* expense in the
+    group, UI restriction notwithstanding. Migration 017 tightened it to
+    `created_by = auth.uid() or paid_by = auth.uid()`, matching the UI —
+    the exact rule the edit feature above now also builds against.
+- ✅ **Shipped** — the visual polish pass: hand-drawn category icons
+  (`CategoryIcon`) instead of plain colored dots on expense rows; loading
+  skeletons (`Skeleton`/`SkeletonRows`/`SkeletonStatGrid`/`SkeletonChart`)
+  shaped like the content they stand in for, instead of "Loading…" text,
+  across the Dashboard, Ledger, Rates page, and every Admin tab; a more
+  visual Balances tab (avatars plus a colored bar per person, sized to
+  their share of the group's largest balance); and warmer empty states
+  (a small icon in a tinted circle — `EmptyState`) for "no groups yet,"
+  "no expenses yet," and "nothing to report yet." None of it changes
+  behavior — all of it changes how the app feels to hand to family who
+  aren't going to read a README first.
 
+- ✅ **Shipped** — PWA groundwork: a manifest, app icon (favicon +
+  180/192/512px), and a minimal service worker (app-shell caching only,
+  installable to the home screen on iOS/Android). Deliberately stops
+  short of true offline data entry — see the next item, which is the
+  bigger, separate piece this sets up but doesn't attempt.
 - **Push notifications / activity feed.** "Someone added an expense" or
   "you were asked to settle up" is what makes an ongoing group actually
   stay current instead of going stale between trips. Needs a service
-  worker, Web Push subscriptions, and a Supabase Edge Function trigger —
-  a proper feature, not an afternoon. Still open.
+  worker (now in place from the PWA groundwork above), Web Push
+  subscriptions, and a Supabase Edge Function trigger — a proper
+  feature, not an afternoon. Still open.
+- ✅ **Shipped** — trip dates + a settle-up nudge, phase 1 (user feedback,
+  with Splitwise screenshots for reference). Optional start/end dates on
+  a group (Members → Group settings); once the end date passes, anyone
+  who still owes money gets a reminder, repeating every 3 days until
+  settled; a manual "Remind" button also sits on the Balances tab's
+  suggested settle-up list, for nudging on demand rather than waiting.
+  Delivery is email (via Resend) and/or Web Push, whichever you
+  configure — see the README's "Set up settle-up reminders." The
+  automatic sweep is a `pg_cron`-scheduled Edge Function
+  (`trip-reminders-cron`, confirmed scheduled and active); the manual
+  nudge is its own (`remind`), both sharing one `_shared/notify.ts` for
+  the actual sending. Both channels confirmed working end to end in
+  production 2026-09-04: a real reminder email was received (Resend,
+  correct subject/body/amount), and a real push notification was
+  delivered and rendered on an iOS device with the correct content.
+  **Known issue, not yet root-caused:** on that iOS device the push
+  notification then disappeared — not even in Notification Center
+  afterward — despite every relevant setting (Immediate Delivery, all
+  three alert types, Persistent banner style) already correct. Ruled
+  out: duplicate/stale push subscriptions (only one, legitimate,
+  existed), and app-side notification-settings misconfiguration. Likely
+  a genuine iOS/WebKit quirk in PWA web push persistence specifically,
+  not a bug in this app's code, but unconfirmed — temporary diagnostic
+  logging was added to `public/sw.js`'s `push`/`notificationclose`
+  handlers and then left in place (harmless, and useful if this comes up
+  again) rather than removed before root cause was found. Remote
+  debugging (Mac Safari's Develop menu → device → the live PWA's Web
+  Inspector) is set up and working if this gets picked up again — needs
+  the iPhone connected via USB with Web Inspector enabled
+  (Settings → Apps → Safari → Advanced) and "Trust This Computer"
+  accepted. Phase 2, later, and specifically tied to if/when this app is
+  ever monetized: WhatsApp (Business Platform — per-message cost once
+  outside a 24h reply window, plus Meta business verification and
+  message-template approval), Telegram (free, no approval process, just
+  a one-time "start the bot" click per person — cheaper to add than
+  WhatsApp if it's ever wanted), and/or SMS (real per-message cost,
+  phone verification). None of these are worth the setup cost for a
+  free family app; revisit only alongside an actual monetization
+  decision.
 - ✅ **Shipped** — receipt photo capture + AI extraction, via the optional
   `receipt-scan` Edge Function (Supabase Storage for the photo, Gemini
   3.6 Flash as the free primary provider with Qwen2.5-VL-72B as an
@@ -105,12 +257,103 @@ query any time, not locked in a vendor's export button.
   separate figures) each split proportionally by what each person
   actually ordered — the restaurant-split case the original idea was
   missing.
-- **True offline mode.** Add an expense with no signal, sync when
-  connectivity returns. Requires a service worker, local write queue,
-  and conflict handling for concurrent edits — a genuine architecture
-  change, not a toggle. Worth it if this app is regularly used somewhere
-  with patchy connectivity (which, given the pilgrimage-trip use case,
-  is plausible) — otherwise lower priority than it looks. Still open.
+- ✅ **Shipped** — attach a receipt to a manually-entered expense. Real gap:
+  skip "Scan a receipt" and fill an expense in by hand, and there was no way
+  to attach the photo afterward — not a technical limit, just missing UI.
+  The existing "no receipt option while editing" rule was specifically about
+  *re-scanning* (AI auto-fill silently overwriting fields you'd manually
+  fixed) — a plain attach (upload only, no OCR, no field changes) doesn't
+  have that problem. Lives right on the Ledger row (`ExpenseRow.jsx`, next to
+  "View receipt"), not behind the edit flow — reuses the exact Storage
+  upload path `AddExpenseForm.jsx` already had, gated to the same
+  created-by-or-paid-by rule as Edit/Delete. No schema change.
+- **Log an expense by typing a sentence — new idea, from 2026
+  competitive research.** HippoSplit (the newest entrant in this space)
+  is built chat-first: type "lunch 24.50 split with Anna and Ben" and it
+  parses that straight into a logged, categorized, split expense — no
+  form at all. This app already has the exact infrastructure this needs
+  — `receipt-scan`'s Gemini integration already turns unstructured input
+  (a photo) into the same structured expense shape (description, amount,
+  currency, category, items); parsing a typed sentence instead of a
+  photo is a smaller version of a problem already solved here, not a new
+  one. Concretely: a text input alongside "Scan a receipt" on the
+  add-expense form, one more (cheap, text-only) Gemini call, same schema
+  the receipt path already produces, same review-before-save step already
+  in place for anything AI-filled. Worth real thought on where it earns
+  its keep versus the existing full form (quick single-payer entries?
+  voice-to-text on mobile?) before committing to it — flagged here as a
+  validated idea, not a decided plan. Still open.
+- ✅ **Shipped — true offline mode.** Priority raised per 2026 competitive
+  research (Tricount, Settle Up, and Splid all treat offline capture as
+  baseline, not a nice-to-have — directly relevant to the pilgrimage-trip
+  use case this app was built for). A page-JS write queue
+  (`src/lib/offlineQueue.js`), not the Background Sync API or
+  service-worker fetch interception — Background Sync has no iOS Safari
+  support, which is this app's real usage. Client-generated ids
+  (`crypto.randomUUID()`, already the pattern for itemized-split item ids)
+  mean the optimistic local row and the eventual server row share one id
+  from creation — no id-remapping problem. Enqueue-time collapsing (an
+  edit/delete on an unsynced create merges into or cancels it) keeps
+  strict FIFO sync safe without a dependency graph. Exchange rates are
+  deliberately *not* resolved at entry time when offline — the sync
+  engine calls the real rate once it actually runs, online, same
+  "locked-in historical rate" principle just applied at sync time instead
+  of entry time. Conflict policy is last-write-wins with a surfaced
+  warning, not a merge — a new `expenses.updated_at` column + trigger
+  (migration 020) is the only schema change needed to detect "this
+  changed on the server while I was offline." A read-cache
+  (`src/lib/offlineCache.js`) mirrors the last successful load of the
+  Dashboard and each group in `localStorage`, so a reload with no signal
+  renders from cache instead of hanging — this also surfaced and fixed a
+  real pre-existing bug: neither `Dashboard.jsx`'s `loadGroups()` nor
+  `GroupView.jsx`'s `load()` had a `try/catch`, so an offline fetch
+  rejected unhandled and the skeleton spun forever, offline mode or not.
+  Same pass fixed a second, unrelated offline hang: `AdminRoute` waited on
+  `profile` indefinitely with no fallback when that fetch failed.
+  Deliberately excluded from v1 (stated, not silent): creating or joining
+  a group, all admin-panel and `admin-users`/`remind` Edge Function
+  actions, push subscribe/unsubscribe, and receipt scanning/attaching
+  (which needs a live Gemini call to mean anything, and — per the
+  now-shipped "attach a receipt to a manually-entered expense" feature
+  right above — can be added once reconnected instead). No IndexedDB:
+  every queued payload is small JSON, matching `fx.js`'s existing
+  `localStorage` rate-cache scale.
+  - ✅ **Shipped, same day — fixes and polish from actually testing it.**
+    Real offline testing (two accounts, real airplane-mode conditions,
+    Safari) surfaced several gaps the design alone didn't catch:
+    - A synced expense didn't appear until a manual page refresh — the
+      queue entry disappearing on success doesn't put the real row into
+      `GroupView`'s own state on its own. Fixed by watching the
+      syncing→idle transition and reloading automatically the moment a
+      sync run finishes.
+    - On Safari specifically, a genuine network failure resolves as a
+      query *error* ("TypeError: Load failed") rather than a rejected
+      request — the opposite of what the offline-cache fallback assumed,
+      so a real offline reload was showing that raw error instead of
+      falling back to cache. Fixed by checking `navigator.onLine`
+      alongside any query error before deciding which path to take.
+    - The sync status banner's text was easy to miss (uniform small
+      size, no color distinction) and had no visual sense of motion.
+      Now: larger text, a small hand-drawn icon per state (wifi-off,
+      spinning refresh, clock, warning triangle — matching the app's
+      existing icon style rather than a library), offline in red,
+      syncing in green.
+    - "Receipts need a connection" was a plain dashed-border note easy to
+      skim past — now a red warning box with an icon, matching how the
+      app already surfaces real errors elsewhere.
+    - Switching split mode to Itemized on an expense that already had a
+      total silently dropped it to 0.00 (itemized computes its total
+      from line items, not the plain amount field) — this predates
+      offline mode but was caught while testing it. Now seeds one
+      starting item with the prior total plus a hint explaining it's the
+      whole original amount, not a real per-item breakdown yet.
+    - "Attach a receipt" was only reachable from the collapsed Ledger
+      row, not from "Edit" itself — confusing, since Edit is where
+      someone would expect to fix everything about an expense. Now also
+      available inside the Edit modal (same plain-upload logic, still no
+      re-scanning), and both surfaces use the same gold/accent color
+      rather than the same green as Edit/Duplicate, so it reads as
+      "worth noticing."
 - **CSV bulk-import.** The real intent: someone's already tracking a
   group's expenses in a spreadsheet and wants to bring the backlog in at
   once instead of re-entering every row by hand — not a general-purpose
@@ -138,12 +381,28 @@ query any time, not locked in a vendor's export button.
   handling. This is a multi-million-dollar regulatory undertaking for a
   company, not a feature for a personal project. The settle-up deep link
   above gets ~90% of the user-facing benefit with none of the liability.
-- **Bank/card transaction auto-import.** Splitwise Pro's version of this
-  uses Plaid-style bank integrations (US-only even for them) — expensive
-  third-party contracts and real compliance surface, for a benefit
-  (auto-detecting expenses) that matters more to someone tracking solo
-  spending than to a small trusted group entering shared costs
-  deliberately.
+  Reconfirmed 2026-09-05 after specifically checking whether a payment
+  gateway API (UPI, PayPal, Venmo, Google Pay) could get around this for
+  free: none can. Every one of them requires the *sender* to authenticate
+  inside that provider's own interface for a real transfer — none offer
+  silent third-party-initiated P2P payment, for the same fraud/AML
+  reasons this was excluded in the first place. This isn't a pricing
+  problem to solve later; it's structural. Decision: keep "Record
+  payment" exactly as it works today — pay by whatever method actually
+  works (UPI/Venmo/PayPal deep link, cash, bank transfer, anything),
+  then mark it settled here for a clean ledger. That's the whole feature;
+  nothing further to build.
+- **Bank/card transaction auto-import (Plaid or similar).** Splitwise
+  Pro's version of this uses Plaid-style bank integrations, for a
+  benefit (auto-detecting expenses) that matters more to someone
+  tracking solo spending than to a small trusted group entering shared
+  costs deliberately. Specifically checked 2026-09-05: Plaid's real bank
+  coverage is the US, Canada, UK, and EU — no India, no UPI-linked banks.
+  Its free tier is also better than expected (a real Trial plan, up to
+  10 production connections, no cost) — but coverage is the actual
+  blocker here, not price: this app's real usage (UPI, INR, the
+  Varanasi/Rameswaram trip) is squarely outside where Plaid works at
+  all, so this stays excluded regardless of budget.
 - **A public/social activity feed.** Venmo's default-public payment feed
   is one of its most consistently criticized design choices — people
   regularly get surprised their transactions were visible to strangers.

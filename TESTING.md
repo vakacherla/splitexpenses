@@ -49,6 +49,18 @@ own project, safe to make test data.
       for them)
 - [ ] **P1** — A regular (non-manager) member sees no Group settings
       section at all
+- [ ] **P0** — Owner or manager duplicates a group (Group settings →
+      "Duplicate this group") → a new group appears on their Dashboard
+      with the entered name (or "<name> (copy)" if left blank), the same
+      home currency, a *different* invite code, and every source-group
+      member present with their manager roles intact — except the person
+      who did the duplicating, who is the new group's owner regardless of
+      their role in the source
+- [ ] **P0** — The duplicated group has zero expenses, zero settlements,
+      and no trip dates carried over — it's a blank ledger
+- [ ] **P1** — A regular (non-manager) member sees no "Duplicate this
+      group" option in Group settings (the section shouldn't even be
+      reachable — they have no settings gear at all)
 
 ## Expenses
 
@@ -72,6 +84,24 @@ own project, safe to make test data.
       breakdown
 - [ ] **P0** — Deleting an expense removes it from the ledger *and*
       correctly updates Balances afterward
+- [ ] **P0** — "Edit" only appears for an expense you entered or paid
+      for, never someone else's — same as "Delete this expense" already
+      works
+- [ ] **P0** — Edit an expense's split (e.g. switch equal → exact, or
+      reassign who's included) without touching amount/currency → saves
+      correctly, Balances reflects the new split, and the original
+      exchange_rate/amount_in_home are unchanged (check via the group's
+      home-currency figure not shifting for an expense in a foreign
+      currency)
+- [x] **P0** — Edit an expense's amount or currency → a fresh exchange
+      rate is fetched and amount_in_home updates correctly. Verified in
+      prod 2026-09-04: edited an equal-split expense's amount to 12.90 —
+      recalculated correctly to 6.45/6.45 between two people.
+- [ ] **P1** — Edit each split type once (equal, percentage, exact,
+      itemized) → every field pre-fills exactly as it was saved,
+      including itemized's per-item assignments and tax/tip
+- [ ] **P1** — Edit an itemized expense's items/tax/tip → the live
+      per-person totals shown while editing match what actually saves
 - [ ] **P1** — Scan a receipt (needs `GEMINI_API_KEY` and/or
       `OPENROUTER_API_KEY` set) → description, amount, currency, date, and
       category pre-fill correctly; a clearly unreadable photo fails with a
@@ -91,6 +121,35 @@ own project, safe to make test data.
 - [ ] **P1** — Expanding an itemized expense's row shows the per-item
       breakdown (who it was assigned to) alongside the final per-person
       totals
+- [ ] **P0** — "Duplicate" on an expense (any group member, not just
+      whoever entered/paid for it) opens the add-expense form pre-filled
+      with the same description, category, amount, currency, payer,
+      split type, and participants/shares — but today's date, not the
+      original's, and no receipt attached
+- [ ] **P1** — Saving a duplicated expense creates a brand-new row (the
+      original is untouched) with its own fresh exchange rate for today,
+      not the original's locked-in rate
+- [ ] **P1** — Duplicating an itemized expense carries over every item,
+      its assignments, and tax/tip correctly
+- [x] **P0** — "Attach receipt" appears on an expense you created/paid for
+      that has no receipt; picking a photo uploads it and shows "View
+      receipt" immediately, no page reload needed. Verified 2026-09-04 —
+      shown in gold/accent (not the same green as Edit/Duplicate) so it
+      stands out as worth noticing.
+- [ ] **P1** — "Attach receipt" doesn't appear for an expense someone else
+      entered/paid for, nor for one that already has a receipt
+- [x] **P0** — "+ Attach a receipt" also appears inside the Edit modal
+      itself (same plain upload, no re-scanning), for anyone who clicks
+      "Edit" expecting to find it there rather than on the collapsed row.
+      Verified 2026-09-04. Shows "📎 Receipt attached" once done; shows
+      "Attach a receipt once this syncs" instead, with no button, for a
+      still-pending offline expense.
+- [ ] **P1** — Switching split mode to Itemized on an expense that already
+      has a total (a fresh entry, or editing one saved as equal/percentage/
+      exact) seeds one starting item with that amount and the expense's
+      description, plus a hint explaining it's the full original amount —
+      rather than silently dropping the total to 0.00. Adding a second
+      item, or removing the seeded one, clears the hint.
 
 ## Balances & settling up
 
@@ -105,6 +164,20 @@ own project, safe to make test data.
 - [ ] **P1** — Undoing a settlement reverts the balance exactly back
 - [ ] **P2** — A fully-settled group shows "nothing to settle," not an
       empty or confusing state
+- [ ] **P1** — Set a trip's end date in the past (Members → Group
+      settings) → within a day, everyone who still owes money there gets
+      a reminder (email and/or push, whichever's configured); a fully
+      settled group with a past end date gets no reminder
+- [ ] **P1** — The manual "Remind" button on a suggested settle-up row
+      only shows for whoever's owed money on that row, and actually
+      delivers (check both the recipient's email and their device, if
+      push is set up)
+- [ ] **P2** — Two reminders in a row for the same overdue trip, less
+      than 3 days apart → the second one doesn't fire (cooldown)
+- [ ] **P1** — Profile → Notifications → Enable → browser's own
+      permission prompt appears; once granted, the button flips to
+      "Disable on this device"; disabling removes that device's
+      subscription (a reminder afterward shouldn't reach it)
 
 ## Reports
 
@@ -139,11 +212,42 @@ own project, safe to make test data.
 - [ ] **P1** — The very first super admin (oldest admin account) shows
       the "SU" badge; anyone promoted after shows "admin" until also
       made super admin
+- [ ] **P0** — Only a super admin sees "Add to group" on a user's row; a
+      regular admin doesn't see it at all
+- [ ] **P0** — Super admin picks a user with zero groups and a target
+      group, clicks Add → that user now has that group on their own
+      Dashboard next time they load it, with no invite code ever
+      exchanged
+- [ ] **P1** — Picking a user already in the target group and adding
+      them again is a harmless no-op (no duplicate row, no error)
+- [ ] **P1** — A non-super-admin calling `admin_add_user_to_group`
+      directly (e.g. via the Network tab / SQL, replaying the RPC) gets
+      rejected with "Only a super admin can add a user to a group
+      directly," not actual data
+- [ ] **P0** — "Manage groups" on a user's row lists every group they're
+      currently in with its own Remove button; clicking Remove takes
+      them out of that group immediately (check their own Dashboard next
+      load) without touching any other membership
+- [ ] **P1** — Removing a user from a group they have expense history in
+      leaves those expenses in the ledger untouched — only their roster
+      membership disappears
+- [ ] **P1** — A non-super-admin calling `admin_remove_user_from_group`
+      directly gets rejected the same way as the add RPC
 
 ## Admin — Groups
 
 - [ ] **P0** — Admin → Groups lists every group platform-wide with
       accurate member counts
+- [ ] **P1** — Each group (active and archived) shows an accurate
+      "Created &lt;date&gt; by &lt;name&gt;" line matching who actually created it
+      and when
+- [ ] **P0** — Every Overview stat tile is clickable and lands on the
+      right tab (Groups/Users/Active users/Expenses logged/Settlements
+      recorded)
+- [ ] **P0** — Admin → Settlements lists every settlement platform-wide
+      with correct from/to names, group, date, and amount (including the
+      home-currency equivalent when the settlement currency differs from
+      the group's)
 - [ ] **P1** — Renaming a group updates immediately, and the new name
       shows correctly on that group's own page too
 - [ ] **P0** — Deleting a group archives it (check the Supabase table
@@ -209,6 +313,74 @@ own project, safe to make test data.
 - [ ] **P1** — Spot-check Login, Dashboard, a group's Ledger/Balances/
       Reports, and Admin in dark mode — everything should stay readable,
       not just "not broken"
+
+## Offline mode
+
+- [x] **P0** — Load a group online once, go offline (airplane mode or
+      devtools "Offline"), reload the page → the group renders fully from
+      cache with a "Showing saved data from…" note, not a spinner.
+      Verified 2026-09-04.
+- [x] **P0** — While offline, add a same-currency expense → appears
+      instantly in the ledger tagged "Pending sync," the Save button isn't
+      stuck disabled, no error shown. Verified 2026-09-04 in production
+      testing (two real accounts, real airplane-mode conditions).
+- [x] **P0** — Reconnecting after an offline add syncs automatically and
+      the ledger updates on its own — no manual page refresh needed.
+      Fixed 2026-09-04 after initial testing found the synced row wasn't
+      appearing until a hard refresh: `GroupView` now reloads the moment a
+      sync run finishes (watches the syncing→idle transition), since the
+      queue entry disappearing on success doesn't by itself put the real
+      row into the page's own state.
+- [ ] **P0** — While offline, add a foreign-currency expense with no
+      cached rate for that pair at all → still saves (queued), shows an
+      estimate clearly marked pending rather than blocking on "still
+      fetching the exchange rate." Reconnect → sync fills in the real
+      exchange rate and home-currency amount, not a guess
+- [ ] **P0** — Simulated conflicting edit: edit an expense's description
+      on one session while online (succeeds), then edit its amount on a
+      second, offline session, then reconnect the second → the offline
+      edit applies (last-write-wins) and a conflict warning names what
+      was overwritten; reloading the first session confirms the new
+      amount, not a silently reverted one. Needs migration 020
+      (`expenses.updated_at` + trigger) applied before this is meaningful
+      to test — without it, the sync engine's conflict-detection query
+      fails and the edit lands in the failed-ops list instead.
+- [x] **P1** — Delete an expense while offline that was itself added
+      while offline and never synced → both the create and delete vanish
+      from the queue, nothing ever reaches the server. Covered by the
+      `offlineQueue.test.js` unit tests; not separately hand-verified in
+      the browser yet.
+- [ ] **P1** — Edit an expense that was deleted by someone else while you
+      were offline → the edit is discarded on sync with a clear message,
+      not silently applied to a soft-deleted row
+- [ ] **P0** — Recording a settlement while offline → same queued/pending
+      treatment as an expense, appears immediately, syncs on reconnect
+- [ ] **P0** — `/admin` as a non-admin, offline, direct URL → shows a
+      clear connection-error/retry state, never hangs forever on
+      "Checking access…"
+- [ ] **P1** — First-ever offline visit to a group never opened on this
+      device (or the Dashboard on a fresh device with no cache) → a clear
+      "reconnect to load this the first time" message, not an infinite
+      skeleton
+- [x] **P0** — A genuine network failure that resolves as a query *error*
+      rather than a rejected request (confirmed on Safari/WebKit, message
+      text "TypeError: Load failed") is still treated as offline, not
+      shown as a raw error — `GroupView.load()` checks `navigator.onLine`
+      alongside any query error before deciding whether to fall back to
+      cache. Fixed 2026-09-04 after real Safari testing surfaced the raw
+      error message on an offline reload.
+- [x] **P2** — Scanning a receipt while offline shows a clear red warning
+      ("Receipts need a connection…") instead of the scan button, and
+      attaching one to a still-pending expense shows "Attach a receipt
+      once this syncs" rather than silently doing nothing. Verified
+      2026-09-04.
+- [x] **P1** — The sync banner at the top of the app reflects reality at
+      each stage, each with its own icon: offline (red, wifi-off icon),
+      syncing (green, spinning refresh icon), waiting to sync (neutral,
+      clock icon, with a manual "Retry now"), and a failed op after
+      repeated retries (red, warning icon) showing Retry/Discard rather
+      than disappearing on its own. Verified 2026-09-04, including a
+      round of feedback on font size and color contrast.
 
 ## Resilience
 

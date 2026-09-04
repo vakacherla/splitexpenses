@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { computeNetBalances, simplifyDebts } from '../lib/balances'
 import { formatMoney } from '../lib/fx'
 import SettlementHistory from './SettlementHistory'
+import Avatar from './Avatar'
 
 export default function BalancesPanel({
   members,
@@ -10,7 +12,24 @@ export default function BalancesPanel({
   homeCurrency,
   onSettle,
   onUndoSettlement,
+  onRemind,
 }) {
+  const [reminding, setReminding] = useState(null) // debtor user_id currently in flight
+  const [reminded, setReminded] = useState({}) // debtor user_id -> true, once sent
+  const [remindError, setRemindError] = useState('')
+
+  async function handleRemind(debtorUserId) {
+    setReminding(debtorUserId)
+    setRemindError('')
+    try {
+      await onRemind(debtorUserId)
+      setReminded((prev) => ({ ...prev, [debtorUserId]: true }))
+    } catch (err) {
+      setRemindError(err.message || 'Could not send that reminder.')
+    }
+    setReminding(null)
+  }
+
   const net = computeNetBalances(
     members,
     expenses,
@@ -18,6 +37,7 @@ export default function BalancesPanel({
   )
   const transactions = simplifyDebts(net)
   const membersMap = Object.fromEntries(members.map((m) => [m.user_id, m]))
+  const maxAbsBalance = Math.max(0.01, ...members.map((m) => Math.abs(net.get(m.user_id) ?? 0)))
 
   return (
     <div className="space-y-8">
@@ -28,20 +48,34 @@ export default function BalancesPanel({
             const amount = net.get(m.user_id) ?? 0
             const isYou = m.user_id === currentUserId
             const settled = Math.abs(amount) < 0.01
+            const barWidthPct = settled ? 0 : Math.max(6, (Math.abs(amount) / maxAbsBalance) * 100)
             return (
-              <li key={m.user_id} className="flex items-center justify-between py-3">
-                <span className="text-ink">{isYou ? 'You' : m.display_name}</span>
-                <span
-                  className={`num text-sm font-medium ${
-                    settled ? 'text-ink-soft' : amount > 0 ? 'text-owed' : 'text-owe'
-                  }`}
-                >
-                  {settled
-                    ? 'settled up'
-                    : amount > 0
-                      ? `is owed ${formatMoney(amount, homeCurrency)}`
-                      : `owes ${formatMoney(-amount, homeCurrency)}`}
-                </span>
+              <li key={m.user_id} className="flex items-center gap-3 py-3">
+                <Avatar avatarPath={m.avatar_path} name={m.display_name} size="sm" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-ink truncate">{isYou ? 'You' : m.display_name}</span>
+                    <span
+                      className={`num text-sm font-medium shrink-0 ${
+                        settled ? 'text-ink-soft' : amount > 0 ? 'text-owed' : 'text-owe'
+                      }`}
+                    >
+                      {settled
+                        ? 'settled up'
+                        : amount > 0
+                          ? `is owed ${formatMoney(amount, homeCurrency)}`
+                          : `owes ${formatMoney(-amount, homeCurrency)}`}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 h-1.5 rounded-full bg-line/50 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-[width] ${
+                        settled ? 'bg-line' : amount > 0 ? 'bg-owed' : 'bg-owe'
+                      }`}
+                      style={{ width: `${barWidthPct}%` }}
+                    />
+                  </div>
+                </div>
               </li>
             )
           })}
@@ -50,6 +84,7 @@ export default function BalancesPanel({
 
       <div>
         <h3 className="font-display text-lg text-ink mb-3">Suggested settle-up</h3>
+        {remindError && <p className="text-sm text-owe mb-2">{remindError}</p>}
         {transactions.length === 0 ? (
           <p className="text-sm text-ink-soft">Everyone's square — nothing to settle.</p>
         ) : (
@@ -67,6 +102,18 @@ export default function BalancesPanel({
                   </p>
                   <div className="flex items-center gap-3">
                     <span className="num text-sm text-ink">{formatMoney(t.amount, homeCurrency)}</span>
+                    {t.to === currentUserId &&
+                      (reminded[t.from] ? (
+                        <span className="text-xs text-ink-soft">Reminded</span>
+                      ) : (
+                        <button
+                          onClick={() => handleRemind(t.from)}
+                          disabled={reminding === t.from}
+                          className="text-xs font-medium text-ink-soft hover:text-primary hover:underline disabled:opacity-50"
+                        >
+                          {reminding === t.from ? 'Sending…' : 'Remind'}
+                        </button>
+                      ))}
                     {(t.from === currentUserId || t.to === currentUserId) && (
                       <button
                         onClick={() => onSettle(t)}

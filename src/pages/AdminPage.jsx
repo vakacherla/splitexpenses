@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import { formatMoney } from '../lib/fx'
+import { SkeletonRows, SkeletonStatGrid, SkeletonChart } from '../components/Skeleton'
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'users', label: 'Users' },
   { id: 'groups', label: 'Groups' },
   { id: 'reports', label: 'Reports' },
+  { id: 'settlements', label: 'Settlements' },
   { id: 'trash', label: 'Trash' },
   { id: 'feedback', label: 'Feedback' },
 ]
@@ -49,10 +51,16 @@ export default function AdminPage() {
   const [users, setUsers] = useState(null)
   const [groups, setGroups] = useState(null)
   const [requests, setRequests] = useState(null)
+  const [settlementsList, setSettlementsList] = useState(null)
   const [error, setError] = useState('')
   const [busyId, setBusyId] = useState(null)
   const [editingGroupId, setEditingGroupId] = useState(null)
   const [nameDraft, setNameDraft] = useState('')
+  const [groupOptions, setGroupOptions] = useState(null)
+  const [manageGroupsUserId, setManageGroupsUserId] = useState(null)
+  const [userGroups, setUserGroups] = useState(null)
+  const [selectedGroupId, setSelectedGroupId] = useState('')
+  const [addToGroupMessage, setAddToGroupMessage] = useState('')
 
   async function loadUsers() {
     setError('')
@@ -68,13 +76,30 @@ export default function AdminPage() {
     setError('')
     const { data, error } = await supabase
       .from('groups')
-      .select('id, name, home_currency, invite_code, created_at, archived_at, group_members(user_id)')
+      .select(
+        'id, name, home_currency, invite_code, created_at, archived_at, created_by, profiles!groups_created_by_fkey(display_name, email), group_members(user_id)'
+      )
       .order('created_at', { ascending: false })
     if (error) {
       setError(error.message)
       return
     }
     setGroups(data)
+  }
+
+  async function loadSettlementsList() {
+    setError('')
+    const { data, error } = await supabase
+      .from('settlements')
+      .select(
+        'id, currency, amount, amount_in_home, note, created_at, groups(name, home_currency), from_profile:profiles!settlements_from_user_fkey(display_name, email), to_profile:profiles!settlements_to_user_fkey(display_name, email)'
+      )
+      .order('created_at', { ascending: false })
+    if (error) {
+      setError(error.message)
+      return
+    }
+    setSettlementsList(data)
   }
 
   async function loadRequests() {
@@ -169,6 +194,7 @@ export default function AdminPage() {
     if (tab === 'users' && users === null) loadUsers()
     if (tab === 'groups' && groups === null) loadGroups()
     if (tab === 'reports' && reports === null) loadReports()
+    if (tab === 'settlements' && settlementsList === null) loadSettlementsList()
     if (tab === 'trash' && trash === null) loadTrash()
     if (tab === 'feedback' && requests === null) loadRequests()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -359,6 +385,75 @@ export default function AdminPage() {
     await loadRequests()
   }
 
+  async function loadGroupOptions() {
+    if (groupOptions !== null) return
+    const { data, error } = await supabase
+      .from('groups')
+      .select('id, name')
+      .is('archived_at', null)
+      .order('name')
+    if (error) {
+      setError(error.message)
+      return
+    }
+    setGroupOptions(data)
+  }
+
+  async function loadUserGroups(u) {
+    setUserGroups(null)
+    const { data, error } = await supabase
+      .from('group_members')
+      .select('group_id, groups(name)')
+      .eq('user_id', u.id)
+    if (error) {
+      setAddToGroupMessage(error.message)
+      setUserGroups([])
+      return
+    }
+    setUserGroups(data.map((row) => ({ id: row.group_id, name: row.groups?.name ?? 'Unknown group' })))
+  }
+
+  async function openManageGroups(u) {
+    setAddToGroupMessage('')
+    setSelectedGroupId('')
+    setManageGroupsUserId(u.id)
+    await Promise.all([loadGroupOptions(), loadUserGroups(u)])
+  }
+
+  async function handleAddToGroup(u) {
+    if (!selectedGroupId) return
+    setBusyId(u.id)
+    setAddToGroupMessage('')
+    const { error } = await supabase.rpc('admin_add_user_to_group', {
+      target_user_id: u.id,
+      target_group_id: selectedGroupId,
+    })
+    setBusyId(null)
+    if (error) {
+      setAddToGroupMessage(error.message)
+      return
+    }
+    setSelectedGroupId('')
+    await loadUserGroups(u)
+  }
+
+  async function handleRemoveFromGroup(u, groupId, groupName) {
+    if (!confirm(`Remove ${u.display_name ?? u.email} from ${groupName}? Their past expenses there (if any) stay in the ledger, but they'd need a new invite — or another "Add to group" — to rejoin.`))
+      return
+    setBusyId(u.id)
+    setAddToGroupMessage('')
+    const { error } = await supabase.rpc('admin_remove_user_from_group', {
+      target_user_id: u.id,
+      target_group_id: groupId,
+    })
+    setBusyId(null)
+    if (error) {
+      setAddToGroupMessage(error.message)
+      return
+    }
+    await loadUserGroups(u)
+  }
+
   async function handleAdminStatusChange(u, action) {
     setBusyId(u.id)
     setError('')
@@ -399,32 +494,37 @@ export default function AdminPage() {
 
       {tab === 'overview' &&
         (overview === null ? (
-          <p className="text-sm text-ink-soft">Loading…</p>
+          <SkeletonStatGrid count={4} />
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
-              { label: 'Groups', value: overview.groups },
-              { label: 'Users', value: overview.users },
-              { label: 'Active users', value: overview.activeUsers },
-              { label: 'Expenses logged', value: overview.expenses },
-              { label: 'Settlements recorded', value: overview.settlements },
+              { label: 'Groups', value: overview.groups, tab: 'groups' },
+              { label: 'Users', value: overview.users, tab: 'users' },
+              { label: 'Active users', value: overview.activeUsers, tab: 'users' },
+              { label: 'Expenses logged', value: overview.expenses, tab: 'reports' },
+              { label: 'Settlements recorded', value: overview.settlements, tab: 'settlements' },
             ].map((stat) => (
-              <div key={stat.label} className="rounded-xl border border-line bg-paper-raised px-4 py-4">
+              <button
+                key={stat.label}
+                onClick={() => setTab(stat.tab)}
+                className="text-left rounded-xl border border-line bg-paper-raised px-4 py-4 hover:border-primary transition-colors"
+              >
                 <p className="num font-display text-3xl text-ink">{stat.value}</p>
                 <p className="text-xs text-ink-soft mt-1">{stat.label}</p>
-              </div>
+              </button>
             ))}
           </div>
         ))}
 
       {tab === 'users' &&
         (users === null ? (
-          <p className="text-sm text-ink-soft">Loading…</p>
+          <SkeletonRows count={5} />
         ) : (
           <ul className="divide-y divide-line border-y border-line">
             {users.map((u) => (
-              <li key={u.id} className="flex items-center justify-between gap-3 py-3">
-                <div className="min-w-0">
+              <li key={u.id} className="py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
                   <p className="text-ink truncate">
                     {u.display_name ?? u.email}
                     {u.is_admin && (
@@ -438,10 +538,21 @@ export default function AdminPage() {
                       </span>
                     )}
                   </p>
-                  <p className="text-xs text-ink-soft mt-0.5 truncate">{u.email}</p>
-                </div>
-                {u.id !== user.id && (
+                    <p className="text-xs text-ink-soft mt-0.5 truncate">{u.email}</p>
+                  </div>
+                  {u.id !== user.id && (
                   <div className="flex items-center gap-3 shrink-0 flex-wrap justify-end">
+                    {profile?.is_super_admin && (
+                      <button
+                        onClick={() =>
+                          manageGroupsUserId === u.id ? setManageGroupsUserId(null) : openManageGroups(u)
+                        }
+                        disabled={busyId === u.id}
+                        className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+                      >
+                        Manage groups
+                      </button>
+                    )}
                     {profile?.is_super_admin && (
                       <>
                         {u.is_super_admin ? (
@@ -496,6 +607,68 @@ export default function AdminPage() {
                     </button>
                   </div>
                 )}
+                </div>
+                {manageGroupsUserId === u.id && (
+                  <div className="mt-2 rounded-lg border border-line bg-paper px-3 py-2.5 space-y-2">
+                    <div>
+                      <p className="text-xs text-ink-soft mb-1">Currently in</p>
+                      {userGroups === null ? (
+                        <p className="text-xs text-ink-soft">Loading…</p>
+                      ) : userGroups.length === 0 ? (
+                        <p className="text-xs text-ink-soft">No groups.</p>
+                      ) : (
+                        <ul className="space-y-1">
+                          {userGroups.map((g) => (
+                            <li key={g.id} className="flex items-center justify-between gap-2 text-xs">
+                              <span className="text-ink truncate">{g.name}</span>
+                              <button
+                                onClick={() => handleRemoveFromGroup(u, g.id, g.name)}
+                                disabled={busyId === u.id}
+                                className="font-medium text-owe hover:underline disabled:opacity-50 shrink-0"
+                              >
+                                Remove
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-line">
+                      {groupOptions === null ? (
+                        <p className="text-xs text-ink-soft">Loading groups…</p>
+                      ) : (
+                        <>
+                          <select
+                            value={selectedGroupId}
+                            onChange={(e) => setSelectedGroupId(e.target.value)}
+                            className="text-xs rounded-full border border-line bg-paper-raised px-2.5 py-1 text-ink focus:border-primary outline-none"
+                          >
+                            <option value="">Add to a group…</option>
+                            {groupOptions.map((g) => (
+                              <option key={g.id} value={g.id}>
+                                {g.name}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => handleAddToGroup(u)}
+                            disabled={!selectedGroupId || busyId === u.id}
+                            className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+                          >
+                            Add
+                          </button>
+                          <button
+                            onClick={() => setManageGroupsUserId(null)}
+                            className="text-xs text-ink-soft hover:text-ink"
+                          >
+                            Close
+                          </button>
+                        </>
+                      )}
+                    </div>
+                    {addToGroupMessage && <p className="text-xs text-owe">{addToGroupMessage}</p>}
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -503,7 +676,7 @@ export default function AdminPage() {
 
       {tab === 'groups' &&
         (groups === null ? (
-          <p className="text-sm text-ink-soft">Loading…</p>
+          <SkeletonRows count={5} />
         ) : (
           (() => {
             const activeGroups = groups.filter((g) => !g.archived_at)
@@ -547,6 +720,14 @@ export default function AdminPage() {
                           <p className="text-xs text-ink-soft mt-0.5">
                             {g.group_members.length} member{g.group_members.length === 1 ? '' : 's'} ·{' '}
                             {g.home_currency} · code {g.invite_code}
+                          </p>
+                          <p className="text-xs text-ink-soft/70 mt-0.5">
+                            Created {new Date(g.created_at).toLocaleDateString(undefined, {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                            })}{' '}
+                            by {g.profiles?.display_name ?? g.profiles?.email ?? 'Unknown'}
                           </p>
                         </div>
                         {editingGroupId !== g.id && (
@@ -597,6 +778,14 @@ export default function AdminPage() {
                                 Archived {days} day{days === 1 ? '' : 's'} ago
                                 {eligible ? ' · eligible for permanent deletion' : ` · ${ARCHIVE_DAYS - days} days left to restore`}
                               </p>
+                              <p className="text-xs text-ink-soft/70 mt-0.5">
+                                Created {new Date(g.created_at).toLocaleDateString(undefined, {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                })}{' '}
+                                by {g.profiles?.display_name ?? g.profiles?.email ?? 'Unknown'}
+                              </p>
                             </div>
                             <div className="flex items-center gap-3 shrink-0">
                               <button
@@ -627,7 +816,7 @@ export default function AdminPage() {
 
       {tab === 'reports' &&
         (reports === null ? (
-          <p className="text-sm text-ink-soft">Loading…</p>
+          <SkeletonChart />
         ) : (
           <div className="space-y-8">
             <div>
@@ -677,9 +866,48 @@ export default function AdminPage() {
           </div>
         ))}
 
+      {tab === 'settlements' &&
+        (settlementsList === null ? (
+          <SkeletonRows count={4} />
+        ) : settlementsList.length === 0 ? (
+          <p className="text-sm text-ink-soft">No settlements recorded yet.</p>
+        ) : (
+          <ul className="divide-y divide-line border-y border-line">
+            {settlementsList.map((s) => (
+              <li key={s.id} className="py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-ink truncate">
+                      {s.from_profile?.display_name ?? s.from_profile?.email ?? 'Unknown'} →{' '}
+                      {s.to_profile?.display_name ?? s.to_profile?.email ?? 'Unknown'}
+                    </p>
+                    <p className="text-xs text-ink-soft mt-0.5 truncate">
+                      {s.groups?.name ?? 'Unknown group'} ·{' '}
+                      {new Date(s.created_at).toLocaleDateString(undefined, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                      {s.note ? ` · ${s.note}` : ''}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="num text-ink">{formatMoney(s.amount, s.currency)}</p>
+                    {s.currency !== s.groups?.home_currency && (
+                      <p className="num text-xs text-ink-soft">
+                        {formatMoney(s.amount_in_home, s.groups?.home_currency)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ))}
+
       {tab === 'trash' &&
         (trash === null ? (
-          <p className="text-sm text-ink-soft">Loading…</p>
+          <SkeletonRows count={4} />
         ) : trash.length === 0 ? (
           <p className="text-sm text-ink-soft">Nothing in the trash.</p>
         ) : (
@@ -740,7 +968,7 @@ export default function AdminPage() {
 
       {tab === 'feedback' &&
         (requests === null ? (
-          <p className="text-sm text-ink-soft">Loading…</p>
+          <SkeletonRows count={4} />
         ) : requests.length === 0 ? (
           <p className="text-sm text-ink-soft">No feedback submitted yet.</p>
         ) : (

@@ -3,12 +3,17 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import CurrencySelect from '../components/CurrencySelect'
+import { SkeletonRows } from '../components/Skeleton'
+import EmptyState from '../components/EmptyState'
+import { runSync } from '../lib/offlineQueue'
+import { getCachedDashboard, setCachedDashboard } from '../lib/offlineCache'
 
 export default function Dashboard() {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
   const [groups, setGroups] = useState(null)
   const [error, setError] = useState('')
+  const [stale, setStale] = useState(null)
 
   const [showCreate, setShowCreate] = useState(false)
   const [newName, setNewName] = useState('')
@@ -20,31 +25,46 @@ export default function Dashboard() {
   const [joining, setJoining] = useState(false)
 
   async function loadGroups() {
-    // Deliberately NOT `.from('groups').select(...)` — that would rely on
-    // RLS alone to decide what comes back, and for an admin account RLS
-    // is permissive by design (it needs to see every group for the Admin
-    // panel). Scoping through this user's own group_members rows instead
-    // keeps "my dashboard" meaning "groups I'm actually in," regardless
-    // of admin status — and explicitly excluding archived ones means an
-    // admin's own archived groups disappear from their personal view
-    // too, not just everyone else's.
-    const { data, error } = await supabase
-      .from('group_members')
-      .select('groups(id, name, home_currency, invite_code, created_at, archived_at, group_members(user_id))')
-      .eq('user_id', user.id)
-    if (error) {
-      setError(error.message)
-      return
+    try {
+      // Deliberately NOT `.from('groups').select(...)` — that would rely on
+      // RLS alone to decide what comes back, and for an admin account RLS
+      // is permissive by design (it needs to see every group for the Admin
+      // panel). Scoping through this user's own group_members rows instead
+      // keeps "my dashboard" meaning "groups I'm actually in," regardless
+      // of admin status — and explicitly excluding archived ones means an
+      // admin's own archived groups disappear from their personal view
+      // too, not just everyone else's.
+      const { data, error } = await supabase
+        .from('group_members')
+        .select('groups(id, name, home_currency, invite_code, created_at, archived_at, group_members(user_id))')
+        .eq('user_id', user.id)
+      if (error) throw error
+      const myGroups = (data ?? [])
+        .map((row) => row.groups)
+        .filter((g) => g && !g.archived_at)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      setGroups(myGroups)
+      setStale(null)
+      setError('')
+      setCachedDashboard(myGroups)
+    } catch (err) {
+      // A thrown Supabase query error (bad RLS, etc.) and a genuine
+      // network failure (offline) land here the same way — either way,
+      // falling back to the last-known list beats an indefinite skeleton.
+      const cached = getCachedDashboard()
+      if (cached) {
+        setGroups(cached.groups)
+        setStale(cached.cachedAt)
+        setError('')
+      } else {
+        setError(err.message || "Couldn't load your groups — check your connection.")
+      }
     }
-    const myGroups = (data ?? [])
-      .map((row) => row.groups)
-      .filter((g) => g && !g.archived_at)
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    setGroups(myGroups)
   }
 
   useEffect(() => {
     loadGroups()
+    runSync()
   }, [])
 
   async function handleCreate(e) {
@@ -99,6 +119,13 @@ export default function Dashboard() {
             {profile ? `Hey, ${profile.display_name.split(' ')[0]}` : 'Your groups'}
           </h1>
           <p className="text-sm text-ink-soft mt-1">Every ledger you're part of, in one place.</p>
+          {stale && (
+            <p className="text-xs text-ink-soft mt-1">
+              Showing saved data from{' '}
+              {new Date(stale).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}{' '}
+              — reconnect to refresh.
+            </p>
+          )}
         </div>
       </div>
 
@@ -181,13 +208,28 @@ export default function Dashboard() {
         </form>
       )}
 
-      {groups === null ? (
-        <p className="text-sm text-ink-soft">Loading…</p>
-      ) : groups.length === 0 ? (
-        <div className="text-center border border-dashed border-line rounded-2xl py-16 px-6">
-          <p className="font-display text-lg text-ink mb-1">No groups yet</p>
-          <p className="text-sm text-ink-soft">Start one, or join a friend's with their invite code.</p>
+      {groups === null && error ? (
+        <div className="text-center py-10">
+          <p className="text-sm text-ink-soft mb-3">You're offline and this device has never loaded your groups before.</p>
+          <button onClick={loadGroups} className="text-primary hover:underline text-sm">
+            Retry
+          </button>
         </div>
+      ) : groups === null ? (
+        <SkeletonRows count={3} />
+      ) : groups.length === 0 ? (
+        <EmptyState
+          icon={
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4">
+              <circle cx="7" cy="7" r="2.3" />
+              <path d="M2.5 16c0-3 2-4.5 4.5-4.5s4.5 1.5 4.5 4.5" strokeLinecap="round" />
+              <circle cx="13" cy="7" r="2.3" />
+              <path d="M9 12.2c.7-1 1.9-1.7 4-1.7 2.5 0 4.5 1.5 4.5 4.5" strokeLinecap="round" />
+            </svg>
+          }
+          title="No groups yet"
+          subtitle="Start one, or join a friend's with their invite code."
+        />
       ) : (
         <ul className="divide-y divide-line border-y border-line">
           {groups.map((g) => (

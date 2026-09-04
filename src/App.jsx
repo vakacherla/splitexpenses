@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import AdminRoute from './components/AdminRoute'
 import LoadingScreen from './components/LoadingScreen'
 import Navbar from './components/Navbar'
+import SyncStatusBanner from './components/SyncStatusBanner'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
@@ -21,6 +22,7 @@ function AppShell({ children }) {
   return (
     <div className="min-h-dvh bg-paper">
       {user && <Navbar />}
+      {user && <SyncStatusBanner />}
       {children}
     </div>
   )

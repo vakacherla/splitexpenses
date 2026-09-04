@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { formatMoney } from '../lib/fx'
 import { useLiveRate } from '../lib/useLiveRate'
+import { useOnlineStatus } from '../lib/useOnlineStatus'
+import { enqueue } from '../lib/offlineQueue'
 import { buildPaymentLink, paymentProviderLabel } from '../lib/paymentLinks'
 import CurrencySelect from './CurrencySelect'
 
@@ -12,8 +14,10 @@ export default function SettleUpModal({ group, suggestion, membersMap, currentUs
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   const { rate, loading: rateLoading, error: rateError } = useLiveRate(currency, group.home_currency)
+  const isOffline = !useOnlineStatus()
 
   // Until the person edits the amount by hand, keep it in sync with the
   // suggested debt converted into whatever currency they've picked.
@@ -36,13 +40,51 @@ export default function SettleUpModal({ group, suggestion, membersMap, currentUs
       ? buildPaymentLink(recipient.payment_provider, recipient.payment_handle, parsedAmount, currency, note || group.name)
       : null
 
+  async function copyHandle() {
+    try {
+      await navigator.clipboard.writeText(recipient.payment_handle)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // clipboard unavailable — the ID is still visible to copy by hand
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     if (!parsedAmount || parsedAmount <= 0) return setError('Enter an amount greater than zero.')
-    if (!rate) return setError('Still fetching the exchange rate — try again in a moment.')
 
-    setSaving(true)
     setError('')
+    setSaving(true)
+
+    // Offline: queue it rather than attempting a network call that can't
+    // succeed — same reasoning as AddExpenseForm, and the rate itself is
+    // resolved for real once the sync engine actually runs, online.
+    if (isOffline) {
+      enqueue({
+        type: 'settlement.create',
+        entityId: crypto.randomUUID(),
+        groupId: group.id,
+        payload: {
+          from_user: suggestion.from,
+          to_user: suggestion.to,
+          currency,
+          amount: parsedAmount,
+          note: note.trim() || null,
+          created_by: currentUserId,
+          homeCurrency: group.home_currency,
+        },
+      })
+      setSaving(false)
+      onDone()
+      return
+    }
+
+    if (!rate) {
+      setSaving(false)
+      return setError('Still fetching the exchange rate — try again in a moment.')
+    }
+
     const { error } = await supabase.from('settlements').insert({
       group_id: group.id,
       from_user: suggestion.from,
@@ -118,12 +160,35 @@ export default function SettleUpModal({ group, suggestion, membersMap, currentUs
         )}
 
         {paymentLink && (
-          <a
-            href={paymentLink}
-            className="flex items-center justify-center gap-2 rounded-full border border-primary text-primary text-sm font-medium py-2.5 hover:bg-primary-tint transition-colors"
-          >
-            Pay {formatMoney(parsedAmount, currency)} via {paymentProviderLabel(recipient.payment_provider)}
-          </a>
+          <div className="space-y-2">
+            <a
+              href={paymentLink}
+              className="flex items-center justify-center gap-2 rounded-full border border-primary text-primary text-sm font-medium py-2.5 hover:bg-primary-tint transition-colors"
+            >
+              Pay {formatMoney(parsedAmount, currency)} via {paymentProviderLabel(recipient.payment_provider)}
+            </a>
+            {/* Not every payment app registers itself to catch this kind of
+                link — bank apps especially, and there's no way to detect
+                whether one actually opened. This is the fallback: read or
+                copy the ID and pay manually in whatever app you actually
+                use. */}
+            <div className="flex items-center justify-between rounded-lg border border-line bg-paper px-3 py-2">
+              <span className="text-xs text-ink-soft truncate">
+                {paymentProviderLabel(recipient.payment_provider)}:{' '}
+                <span className="text-ink">{recipient.payment_handle}</span>
+              </span>
+              <button
+                type="button"
+                onClick={copyHandle}
+                className="text-xs font-medium text-primary hover:underline shrink-0 ml-2"
+              >
+                {copied ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+            <p className="text-xs text-ink-soft">
+              If the button above doesn't open your payment app, copy the ID and pay manually instead.
+            </p>
+          </div>
         )}
         {isPayer && !recipient?.payment_handle && (
           <p className="text-xs text-ink-soft">
@@ -146,7 +211,7 @@ export default function SettleUpModal({ group, suggestion, membersMap, currentUs
 
         <button
           type="submit"
-          disabled={saving || rateLoading}
+          disabled={saving || (rateLoading && !isOffline)}
           className="w-full rounded-full bg-primary text-on-primary font-medium py-2.5 hover:bg-primary-dark transition-colors disabled:opacity-60"
         >
           {saving ? 'Saving…' : 'Confirm payment'}
