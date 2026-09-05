@@ -88,6 +88,22 @@ own project, safe to make test data.
 - [ ] **P1** — A regular (non-manager) member sees no "Duplicate this
       group" option in Group settings (the section shouldn't even be
       reachable — they have no settings gear at all)
+- [ ] **P1** — Owner or manager uploads a cover photo (Group settings →
+      "Add a cover photo") → appears full-bleed on the Dashboard card and
+      the group page banner; a regular member sees no upload control at
+      all
+- [ ] **P2** — Uploading a square or portrait photo → it's center-cropped
+      to fit the wide banner strip, not stretched or tiled
+- [x] **P0** — Group settings → Trip dates: setting an end date before
+      the start date is blocked — Save disables and an inline error
+      shows; the date pickers' own min/max also prevent picking an
+      invalid combination via the calendar widget. Verified in prod
+      2026-09-05 after being caught live with no validation at all.
+- [x] **P1** — Trip dates: typing an out-of-range year directly into a
+      date field (e.g. `0005` or `9999`) is rejected the same way as a
+      bad ordering, both fields independently. Verified in prod
+      2026-09-05 — caught live as `0005-05-05` / `0644-04-04` on a real
+      group.
 
 ## Expenses
 

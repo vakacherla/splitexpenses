@@ -313,7 +313,15 @@ and #3 are now shipped (below); #4 remains, blocked on family review.
   WhatsApp if it's ever wanted), and/or SMS (real per-message cost,
   phone verification). None of these are worth the setup cost for a
   free family app; revisit only alongside an actual monetization
-  decision.
+  decision. **Real bug caught in production testing, fixed 2026-09-05:**
+  the trip-dates fields had no validation at all — an end date before
+  the start date saved without complaint, and separately, a typed year
+  like `0005` or `9999` was accepted outright (a native date input
+  checks format, not plausibility). Fixed with `validateTripDates()`
+  (`src/lib/tripDates.js`, 26 unit tests) wired into Group settings, plus
+  matching database check constraints (migrations 027, 028) since this
+  table is only ever touched via a plain `.update()` with no RPC in
+  front of it.
 - ✅ **Shipped** — receipt photo capture + AI extraction, via the optional
   `receipt-scan` Edge Function (Supabase Storage for the photo, Gemini
   3.6 Flash as the free primary provider with Qwen2.5-VL-72B as an

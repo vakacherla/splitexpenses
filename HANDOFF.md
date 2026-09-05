@@ -152,22 +152,64 @@ paragraph covering rename/trip-dates/duplicate/cover-photo together
 
 ## Current state
 
-- **25 migrations** (`002` through `026`), all applied to the live
+- **27 migrations** (`002` through `028`), all applied to the live
   database as of this session ending
 - **6 Edge Functions**: `admin-users`, `receipt-scan`,
   `parse-expense-text` (new), `remind`, `trip-reminders-cron`,
   `notify-group` (new) — all deployed live
-- **66 automated unit tests** (`npm test`) — 18 new this session
-  (`src/lib/csvImport.test.js`: parsing, per-field validation,
-  all-or-nothing behavior, the 500-row cap). Everything else new this
-  session (the Edge Functions, the activity feed, the banner upload) is
-  manual-checklist-verified against the live dev server and the real
-  Supabase project, same as this app's established pattern for
-  AI-integration and Storage-RLS paths
-- **Git**: `origin/main` up to date through `b24be3e` — every commit
+- **92 automated unit tests** (`npm test`) — 26 new this session
+  (`src/lib/tripDates.test.js`: exact boundaries, off-by-one, leap days,
+  whitespace/garbage strings, missing arguments, combined failures) on
+  top of the earlier 18 (`src/lib/csvImport.test.js`). Everything else
+  new this session (the Edge Functions, the activity feed, the banner
+  upload/redesign) is manual-checklist-verified against the live dev
+  server and the real Supabase project, same as this app's established
+  pattern for AI-integration and Storage-RLS paths
+- **Git**: `origin/main` up to date through `78827cf` — every commit
   this session pushed individually, in the order the features shipped
 - **New Storage buckets**: `group-banners` (public read, owner/manager
   write via `can_manage_group()`) — `avatars` and `receipts` unchanged
+
+## Follow-up work, same session, after the above was written
+
+**Cover-photo upload control, redesigned.** The upload affordance went
+through several rounds of live design feedback after first shipping: a
+plain text link → an accent-colored pill badge (read as too washed
+out/too loud in different combinations) → landed on reusing the dashed
+dropzone pattern `AddExpenseForm`'s receipt scanner already established,
+so it reads as native to the app rather than a one-off treatment. The
+hint copy was simplified from "Best as a wide photo, about 3:1 (e.g.
+1200×400px)" to "Landscape photos work best — square or portrait shots
+will get cropped to fit." — dropping the pixel/ratio jargon. **Lesson:**
+when a small UI detail goes through repeated "still doesn't look right"
+feedback, the fix usually isn't another color/weight tweak — check
+whether the app already has an established pattern for this exact kind
+of control before inventing a new one.
+
+**Real bug caught in production testing: trip end date could be set
+before the start date, with zero validation anywhere** (client or
+database) — and separately, a native `<input type="date">` accepts a
+typed year like `0005` or `0644` with no complaint, which the
+ordering-only fix didn't catch (a start/end pair with two absurd years
+can still be validly "ordered"). Fixed in two passes:
+
+1. `src/lib/tripDates.js` (`validateTripDates`) — ordering check, wired
+   into `GroupSettingsModal` (Save disables + inline error) with
+   matching `min`/`max` on the date inputs. Migration 027 adds the same
+   check as a DB constraint, correcting the one already-bad row found in
+   the wild by swapping start/end (a sensible correction for an ordering
+   mistake).
+2. Caught via manual production testing that the year-range case wasn't
+   covered — `validateTripDates` extended to bound each date to
+   2000–2100 independently of ordering. Migration 028 adds the matching
+   DB constraint, first nulling out the one row with a typo'd year
+   (`0005`/`0644` has no sensible "corrected" value, unlike an ordering
+   swap, so it's cleared rather than guessed).
+
+Both migrations applied directly via `supabase db push` (CLI already
+linked to the project) rather than the manual SQL-Editor-paste path
+described in `README.md` — worth knowing that path exists and is faster
+when the CLI is already authenticated.
 
 ## Operational lessons worth carrying forward
 
@@ -203,6 +245,15 @@ paragraph covering rename/trip-dates/duplicate/cover-photo together
    `PRODUCT-ROADMAP.md` entirely — nothing keeps them in sync
    automatically, so a new user-facing feature needs its own explicit
    Help update, checked for, not assumed.
+5. **A native `<input type="date">` validates *format*, not
+   *plausibility*.** It'll refuse "13/45/2026" but happily accepts a
+   typed year like "0005" — so "add a date field" quietly needs its own
+   sane-range check (and, for a start/end pair, its own ordering check)
+   every time; neither is a given from the input type alone. Both need
+   checking at the database layer too, not just in the component, for
+   any table only ever touched via a plain `.update()` with no RPC in
+   front of it — nothing else stops a future caller from skipping
+   whatever the client-side check does.
 
 (Earlier sessions' lessons — `color-mix()` percentage clamping, the
 PostgREST embed ambiguity fix, Safari's query-error-vs-rejection
@@ -220,6 +271,9 @@ priority item) got a family verdict — it's the only thing left in that
 ranked list, blocked on that, not on effort. The stray `splitexpenses`
 Vercel project cleanup (`vercel remove splitexpenses --yes`) is still
 outstanding from before this session — untouched, still worth doing.
-Whether the Dashboard/GroupView visual language (now including cover
-photos) should extend further — Admin and Login haven't had a visual
-pass yet.
+Whether the Dashboard/GroupView visual language (cover photos now
+settled, dropzone-style upload) should extend further — Admin and Login
+haven't had a visual pass yet. Worth a quick pass over other date/number
+inputs in the app (expense date, amounts) for the same class of
+"format-valid but implausible" gap trip dates just had — none reported
+yet, but none had been checked for it either before this session.
