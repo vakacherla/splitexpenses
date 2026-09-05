@@ -75,6 +75,12 @@ export default function HelpPage() {
             in whatever currency they actually paid in). Share the invite code shown on the group's Members tab
             with anyone you want to add.
           </p>
+          <p>
+            <strong className="text-ink">Group settings</strong> (the gear icon next to a group's name, visible
+            to its owner and any manager) is where you rename the group, set optional trip dates, add a cover
+            photo — a real trip photo shows up on your dashboard card and the group page itself instead of the
+            plain colored default — and duplicate the group (same people, fresh invite code) for a next trip.
+          </p>
         </Section>
 
         <Section title="Adding an expense">
@@ -104,6 +110,14 @@ export default function HelpPage() {
             default"</strong> — it'll be pre-selected next time anyone adds an expense.
           </p>
           <p>
+            <strong className="text-ink">In a hurry? Just describe it.</strong> Type something like "lunch
+            24.50 split with Anna and Ben" into the box above the form instead of filling in every field by
+            hand, and tap "Parse" — the description, amount, currency, category, payer, and who to split with
+            all fill in from that one sentence (defaulting sensibly — payer to you, split to everyone — for
+            anything it can't confidently work out). Same as receipt scanning below, it's a starting point:
+            review what filled in before saving.
+          </p>
+          <p>
             <strong className="text-ink">Scanning a receipt</strong> (if your group has this turned on): tap
             "Scan a receipt" and take a photo — the description, amount, date, and category fill in
             automatically. If the photo shows individual items, it can even split the bill "Itemized" —
@@ -119,6 +133,27 @@ export default function HelpPage() {
             <strong className="text-ink">Recurring expense, like rent?</strong> Expand it and tap{' '}
             <strong className="text-ink">"Duplicate"</strong> — it pre-fills a new expense with the same
             details (today's date, no receipt), so re-logging it is a few seconds instead of a fresh form.
+          </p>
+        </Section>
+
+        <Section title="Search, export, and bulk import">
+          <p>
+            The Ledger has a <strong className="text-ink">search box and a category filter</strong> once a
+            group has more than a few expenses — search matches the description or who paid.
+          </p>
+          <p>
+            <strong className="text-ink">Export CSV</strong> downloads every expense in the group as a
+            spreadsheet file, one row per expense, splits included.
+          </p>
+          <p>
+            <strong className="text-ink">Import CSV</strong> is the reverse: bringing in a backlog you've
+            already been tracking elsewhere. Tap "Download template" first — the file it gives you has the
+            exact columns expected (people are matched by email, not name, so there's no ambiguity about who's
+            who), fill in your rows, then upload it back. You'll see every row validated before anything is
+            created — if even one row has a problem, nothing is imported until it's fixed, so you're never
+            left guessing which rows actually went in. Files are capped at 500 rows; split a bigger backlog
+            into a few smaller files. Made a mistake? Every import is undoable in one click, either right after
+            it finishes or later from Group settings.
           </p>
         </Section>
 
@@ -177,12 +212,31 @@ export default function HelpPage() {
           </p>
         </Section>
 
+        <Section title="Activity feed & notifications">
+          <p>
+            The <strong className="text-ink">Activity</strong> tab is a running history of everything that's
+            happened in the group — expenses added, edited, or deleted, payments recorded or undone, people
+            joining or leaving, and CSV imports (as one entry per import, not one per row). It's there to catch
+            up on what happened while you were away, not just react in the moment.
+          </p>
+          <p>
+            Turn on <strong className="text-ink">notifications</strong> (see "Your profile" below) to also get
+            a push alert on this device when someone adds an expense, records a payment to you, or when a
+            settle-up reminder comes due — tapping one takes you straight to that group.
+          </p>
+        </Section>
+
         <Section title="Your profile">
           <p>
             Tap your name (top right) to open your profile. From there you can add a photo, change how your
             name displays, add your payment handle (UPI ID, Venmo username, or PayPal.me link) so other
             members get a one-tap pay button when they owe you, and add up to two phone numbers — a home
             number and a separate travel number, useful if you're on a local SIM for part of a trip.
+          </p>
+          <p>
+            <strong className="text-ink">Notifications</strong> also live here — turn them on for this device
+            to get a push alert for group activity and settle-up reminders. If your browser doesn't support
+            push, reminders still arrive by email.
           </p>
           <p>
             <strong className="text-ink">Going by a different name in one group?</strong> Your profile also

@@ -31,8 +31,10 @@ Splitwise Pro ($59.99/year). This app already has percentage/exact
 splits, live multi-currency conversion, and a category reporting
 dashboard with charts — free, no cap, no ads, because there's no business
 model forcing a paywall. Data portability is also a genuine
-differentiator: it's your own Postgres database, exportable with a SQL
-query any time, not locked in a vendor's export button.
+differentiator: one-click CSV export/import for any group (round-trips
+with the app's own template), backed by full raw access any time — it's
+your own Postgres database, exportable with a SQL query — not locked in
+a vendor's export button.
 
 ## Feature comparison
 
@@ -42,17 +44,20 @@ query any time, not locked in a vendor's export button.
 | Multi-currency, live rates | Strong | Weak (Pro-only conversion) | Strong | Absent |
 | Debt simplification | Strong | Strong | Strong | Absent |
 | Category reports/charts | Strong | Absent | Strong | Absent |
-| Recurring expenses | **Absent** | Strong | Strong | Adequate (recurring *payments*, not shared splits) |
+| Recurring expenses | Adequate (Duplicate action, not full automation) | Strong | Strong | Adequate (recurring *payments*, not shared splits) |
 | Receipt scanning (OCR) | Strong (itemized, too) | Absent | Strong | Absent |
 | Itemized bill splitting | Strong | Weak | Strong | Absent |
-| Search/filter expenses | **Absent** | Weak | Strong | Adequate |
-| Default/saved split settings | **Absent** | Absent | Strong | Absent |
-| Data export | **Absent** (manual SQL) | Weak | Strong | Absent |
-| Settle-up payment deep link | **Absent** | Adequate | Adequate | N/A (it *is* the payment) |
+| Search/filter expenses | Strong | Weak | Strong | Adequate |
+| Default/saved split settings | Strong | Absent | Strong | Absent |
+| Data export | Strong (CSV, own format) | Weak | Strong | Absent |
+| CSV bulk-import | Strong | Absent | Adequate | Absent |
+| Log an expense by typing a sentence | Strong | Absent | Absent | Absent |
+| Custom group cover photo | Strong | Absent | Absent | Absent |
+| Settle-up payment deep link | Strong | Adequate | Adequate | N/A (it *is* the payment) |
 | Actually moves money | Not applicable | Absent | Absent | Strong |
-| Offline mode | **Absent** | Strong | Strong | Absent |
+| Offline mode | Strong | Strong | Strong | Absent |
 | Push notifications / activity feed | Strong | Adequate | Adequate | Strong |
-| Comments/notes on an expense | **Absent** | Weak | Weak | Strong (its whole social layer) |
+| Comments/notes on an expense | Adequate (a note field, not a comment thread) | Weak | Weak | Strong (its whole social layer) |
 | Multi-group platform admin | Strong | Absent | Absent | Absent |
 | No daily limits, no ads | Strong | **Absent** | Strong | Strong |
 
@@ -630,7 +635,12 @@ and #3 are now shipped (below); #4 remains, blocked on family review.
 
 ## If you want to pick a starting point
 
-The "Now" list is roughly a day or two of work total and doesn't touch
-infrastructure. The settle-up deep link is the best single next thing to
-build — it's the most visible "this feels like a real app now" moment for
-the least amount of code.
+Everything in "Now" is shipped, and three of the four items in "Next"'s
+priority order are too (CSV bulk-import, sentence-parsing, push
+notifications + activity feed — custom group banner also shipped,
+started as a smaller "Next" idea and grew in scope mid-build). The one
+item left in that ranked list is **Shared Fund mode** — but it's blocked
+on a family verdict on its BRD, not on effort, so check on that before
+starting it. Absent a verdict, the best next move is picking something
+from "Deliberately not doing" to re-litigate, or a fresh pass at
+competitive research to find what's changed since 2026-09-05.
