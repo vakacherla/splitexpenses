@@ -37,6 +37,15 @@ export function groupIconIndex(id) {
   return hashString(id) % ICONS.length
 }
 
+// Purely decorative per-group accent — no "color" field exists or is being
+// added, this just picks one deterministically from the group's own id so
+// it stays the same on every visit rather than reshuffling. Shared between
+// Dashboard's cards and GroupBanner's fallback treatment.
+const ACCENTS = ['#2f5233', '#b8901f', '#a04338', '#4a6a8a', '#6b4a8a', '#3a7d7d']
+export function accentFor(id) {
+  return ACCENTS[hashString(id) % ACCENTS.length]
+}
+
 export default function GroupIcon({ id, className = 'h-[18px] w-[18px]' }) {
   return (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" className={className} aria-hidden="true">

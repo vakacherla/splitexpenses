@@ -9,6 +9,8 @@ import AddExpenseForm from '../components/AddExpenseForm'
 import SettleUpModal from '../components/SettleUpModal'
 import GroupSettingsModal from '../components/GroupSettingsModal'
 import ImportCsvModal from '../components/ImportCsvModal'
+import GroupBanner from '../components/GroupBanner'
+import { accentFor } from '../components/GroupIcon'
 import LoadingScreen from '../components/LoadingScreen'
 import { SkeletonChart } from '../components/Skeleton'
 import EmptyState from '../components/EmptyState'
@@ -364,6 +366,12 @@ export default function GroupView() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8 pb-28">
+      <GroupBanner
+        name={group.name}
+        bannerPath={group.banner_path}
+        accent={accentFor(group.id)}
+        className="rounded-2xl mb-5 h-36 sm:h-44"
+      />
       <div className="mb-6">
         <Link to="/dashboard" className="text-sm text-ink-soft hover:text-ink">
           ← Your groups
@@ -545,12 +553,14 @@ export default function GroupView() {
         <GroupSettingsModal
           group={group}
           currentUserId={user.id}
+          canManage={canManage}
           onRename={handleRenameGroup}
           onUpdateTripDates={handleUpdateTripDates}
           onDeleteGroup={handleDeleteGroup}
           onDuplicate={handleDuplicateGroup}
           duplicating={duplicatingGroup}
           onImportUndone={load}
+          onBannerChanged={load}
           onClose={() => setShowSettings(false)}
         />
       )}

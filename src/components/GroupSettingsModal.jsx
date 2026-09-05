@@ -1,19 +1,27 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import { accentFor } from './GroupIcon'
+import GroupBanner from './GroupBanner'
 
 export default function GroupSettingsModal({
   group,
   currentUserId,
+  canManage,
   onRename,
   onUpdateTripDates,
   onDeleteGroup,
   onDuplicate,
   duplicating,
   onImportUndone,
+  onBannerChanged,
   onClose,
 }) {
   const [renaming, setRenaming] = useState(false)
   const [nameDraft, setNameDraft] = useState(group.name)
+  const [bannerPath, setBannerPath] = useState(group.banner_path ?? null)
+  const [uploadingBanner, setUploadingBanner] = useState(false)
+  const [bannerError, setBannerError] = useState('')
+  const bannerInputRef = useRef(null)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [startDateDraft, setStartDateDraft] = useState(group.start_date ?? '')
@@ -76,6 +84,29 @@ export default function GroupSettingsModal({
     setRenaming(false)
   }
 
+  async function handleBannerChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingBanner(true)
+    setBannerError('')
+    const ext = file.name.split('.').pop() || 'jpg'
+    const path = `${group.id}/banner.${ext}`
+    const { error: uploadError } = await supabase.storage.from('group-banners').upload(path, file, { upsert: true })
+    if (uploadError) {
+      setUploadingBanner(false)
+      setBannerError(uploadError.message)
+      return
+    }
+    const { error: updateError } = await supabase.from('groups').update({ banner_path: path }).eq('id', group.id)
+    setUploadingBanner(false)
+    if (updateError) {
+      setBannerError(updateError.message)
+      return
+    }
+    setBannerPath(path)
+    onBannerChanged?.()
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink/40 px-0 sm:px-4">
       <div className="w-full sm:max-w-sm bg-paper-raised rounded-t-3xl sm:rounded-2xl border border-line shadow-raised p-5 sm:p-6 space-y-4 max-h-[92dvh] overflow-y-auto">
@@ -84,6 +115,35 @@ export default function GroupSettingsModal({
           <button type="button" onClick={onClose} className="text-ink-soft hover:text-ink text-sm">
             Close
           </button>
+        </div>
+
+        <div>
+          <GroupBanner
+            name={group.name}
+            bannerPath={bannerPath}
+            accent={accentFor(group.id)}
+            className="-mx-5 sm:-mx-6 h-28"
+          />
+          {canManage && (
+            <div className="mt-2 flex items-center gap-3">
+              <input
+                ref={bannerInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleBannerChange}
+              />
+              <button
+                type="button"
+                onClick={() => bannerInputRef.current?.click()}
+                disabled={uploadingBanner}
+                className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+              >
+                {uploadingBanner ? 'Uploading…' : bannerPath ? 'Change cover photo' : 'Add a cover photo'}
+              </button>
+            </div>
+          )}
+          {bannerError && <p className="mt-1 text-xs text-owe">{bannerError}</p>}
         </div>
 
         <div>

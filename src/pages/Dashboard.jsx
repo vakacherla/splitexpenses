@@ -6,18 +6,11 @@ import CurrencySelect from '../components/CurrencySelect'
 import { SkeletonRows } from '../components/Skeleton'
 import EmptyState from '../components/EmptyState'
 import Avatar from '../components/Avatar'
-import GroupIcon, { hashString } from '../components/GroupIcon'
+import GroupBanner from '../components/GroupBanner'
+import { accentFor } from '../components/GroupIcon'
 import { runSync } from '../lib/offlineQueue'
 import { getCachedDashboard, setCachedDashboard } from '../lib/offlineCache'
 import { pickGreetingTemplate } from '../lib/greetings'
-
-// Purely decorative per-group accent — no "color" field exists or is being
-// added, this just picks one deterministically from the group's own id so
-// it stays the same on every visit rather than reshuffling.
-const ACCENTS = ['#2f5233', '#b8901f', '#a04338', '#4a6a8a', '#6b4a8a', '#3a7d7d']
-function accentFor(id) {
-  return ACCENTS[hashString(id) % ACCENTS.length]
-}
 
 export default function Dashboard() {
   const { user, profile } = useAuth()
@@ -51,7 +44,7 @@ export default function Dashboard() {
       const { data, error } = await supabase
         .from('group_members')
         .select(
-          'groups(id, name, home_currency, invite_code, created_at, archived_at, group_members(user_id, nickname, profiles(display_name, avatar_path)))'
+          'groups(id, name, home_currency, invite_code, created_at, archived_at, banner_path, group_members(user_id, nickname, profiles(display_name, avatar_path)))'
         )
         .eq('user_id', user.id)
       if (error) throw error
@@ -281,18 +274,7 @@ export default function Dashboard() {
                 className="group/card animate-rise-in relative block overflow-hidden rounded-[20px] border border-line bg-paper-raised p-6 shadow-[0_1px_2px_rgba(22,36,29,0.04)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_28px_44px_-20px_rgba(22,36,29,0.3)]"
                 style={{ animationDelay: `${idx * 0.07}s` }}
               >
-                <span
-                  aria-hidden="true"
-                  className="absolute inset-x-0 top-0 h-1"
-                  style={{ backgroundImage: `linear-gradient(90deg, ${accent}, ${accent}66)` }}
-                />
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -right-1.5 -top-3.5 select-none font-display text-[84px] font-bold leading-none opacity-[0.06]"
-                  style={{ color: accent }}
-                >
-                  {g.name[0]?.toUpperCase()}
-                </span>
+                <GroupBanner name={g.name} bannerPath={g.banner_path} accent={accent} className="-mx-6 -mt-6 mb-4 h-28 sm:h-32" />
 
                 <div className="mb-4 flex items-start justify-between">
                   <div className="flex -space-x-2.5">
@@ -322,16 +304,8 @@ export default function Dashboard() {
                   </span>
                 </div>
 
-                <p className="mb-1 flex items-center gap-2.5 font-display text-xl font-semibold leading-tight text-ink">
-                  <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
-                    style={{ backgroundColor: `${accent}24`, color: accent }}
-                  >
-                    <GroupIcon id={g.id} />
-                  </span>
-                  {g.name}
-                </p>
-                <p className="mb-4 pl-[46px] text-sm text-ink-soft">
+                <p className="mb-1 font-display text-xl font-semibold leading-tight text-ink">{g.name}</p>
+                <p className="mb-4 text-sm text-ink-soft">
                   {g.group_members.length} member{g.group_members.length === 1 ? '' : 's'}
                 </p>
 

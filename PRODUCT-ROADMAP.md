@@ -384,15 +384,48 @@ are now shipped (below); #3 and #4 are still in that order.
       re-scanning), and both surfaces use the same gold/accent color
       rather than the same green as Edit/Duplicate, so it reads as
       "worth noticing."
-- **Custom group icon.** Came up while reviewing the visual-polish pass
-  (2026-09-04): a decorative per-group icon badge got added to the
-  Dashboard mockup, auto-assigned for visual variety — the natural next
-  ask is letting the group's owner/manager upload their own image
-  instead. A real feature, not a UI tweak: a `groups.icon_path` column, a
-  Storage bucket + policy (same shape as the existing `avatars` bucket —
-  public, owner/manager-only write), and an upload control in group
-  creation and Group settings, falling back to the auto-assigned
-  decorative icon when unset. Still open — not scoped further yet.
+- ✅ **Shipped — custom group cover photo.** Came up while reviewing the
+  visual-polish pass (2026-09-04): a decorative per-group icon badge got
+  added to the Dashboard mockup, auto-assigned for visual variety — the
+  natural next ask was letting the group's owner/manager upload their
+  own image instead. Reconsidered mid-build from "a small icon" to a
+  **wide cover-photo banner**: the actual use case is a real trip photo
+  (a Varanasi/Rameswaram group shot), which a tiny square crop would do
+  little justice to. A `groups.banner_path` column plus a new
+  `group-banners` Storage bucket (same public-read shape as the existing
+  `avatars` bucket), with write access scoped to the group's owner or
+  any manager. Both the Dashboard card and the group page itself got a
+  full-bleed banner strip at the top — a real photo when uploaded,
+  otherwise the same accent-gradient + first-letter watermark treatment
+  the card always used, just promoted from a small corner flourish into
+  the actual banner area (so every existing group keeps its current
+  identity, nothing looks broken or half-finished for groups that never
+  set one). Upload lives in Group settings, right above the group name,
+  with a live preview using the same component the card renders — what
+  you see while choosing is exactly what ships.
+
+  **Real bug caught live, not in review:** the first version of the
+  Storage RLS policy did a raw join against `group_members`/`groups`
+  from inside the policy check — but those tables are themselves
+  RLS-protected, and a plain (non-`SECURITY DEFINER`) query against them
+  from within another table's RLS evaluation is still subject to their
+  own policies, which don't resolve the same way in that nested context.
+  Uploading failed with "new row violates row-level security policy"
+  even as the group's actual owner. The existing `receipts` bucket
+  policy already avoided exactly this by calling `is_group_member()`, a
+  `SECURITY DEFINER` function that bypasses RLS entirely — fixed by
+  adding the equivalent `can_manage_group()` function and using it
+  instead of the inline join (migration 025, following 024). Worth
+  remembering alongside the existing PostgREST-embed lesson: any RLS
+  policy that needs to check *other* tables should go through a
+  `SECURITY DEFINER` helper, not a direct join, or it can fail in ways
+  that only show up when actually exercised, not from reading the SQL.
+
+  Verified end-to-end against the live database: upload succeeds as the
+  group's owner, replaces (not duplicates) the file on re-upload, shows
+  correctly on both the Dashboard card and the group page immediately
+  after upload (no manual refresh needed), and every group without a
+  custom banner still renders the gradient+letter fallback cleanly.
 - ✅ **Shipped — CSV bulk-import.** The real intent: someone's already
   tracking a group's expenses in a spreadsheet and wants to bring the
   backlog in at once instead of re-entering every row by hand — not a
