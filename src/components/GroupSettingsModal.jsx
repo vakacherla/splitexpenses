@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { accentFor } from './GroupIcon'
 import GroupBanner from './GroupBanner'
-import { validateTripDates } from '../lib/tripDates'
+import { validateTripDates, MIN_TRIP_DATE, MAX_TRIP_DATE } from '../lib/tripDates'
 
 export default function GroupSettingsModal({
   group,
@@ -228,7 +228,8 @@ export default function GroupSettingsModal({
               <input
                 type="date"
                 value={startDateDraft}
-                max={endDateDraft || undefined}
+                min={MIN_TRIP_DATE}
+                max={endDateDraft || MAX_TRIP_DATE}
                 onChange={(e) => setStartDateDraft(e.target.value)}
                 className="rounded-lg border border-line bg-paper px-3 py-1.5 text-sm text-ink focus:border-primary outline-none"
               />
@@ -238,7 +239,8 @@ export default function GroupSettingsModal({
               <input
                 type="date"
                 value={endDateDraft}
-                min={startDateDraft || undefined}
+                min={startDateDraft || MIN_TRIP_DATE}
+                max={MAX_TRIP_DATE}
                 onChange={(e) => setEndDateDraft(e.target.value)}
                 className="rounded-lg border border-line bg-paper px-3 py-1.5 text-sm text-ink focus:border-primary outline-none"
               />
