@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { accentFor } from './GroupIcon'
 import GroupBanner from './GroupBanner'
+import { validateTripDates } from '../lib/tripDates'
 
 export default function GroupSettingsModal({
   group,
@@ -28,6 +29,7 @@ export default function GroupSettingsModal({
   const [endDateDraft, setEndDateDraft] = useState(group.end_date ?? '')
   const [savingDates, setSavingDates] = useState(false)
   const datesChanged = startDateDraft !== (group.start_date ?? '') || endDateDraft !== (group.end_date ?? '')
+  const tripDatesCheck = validateTripDates(startDateDraft, endDateDraft)
   const [showDuplicate, setShowDuplicate] = useState(false)
   const [duplicateName, setDuplicateName] = useState(`${group.name} (copy)`)
   const [importBatches, setImportBatches] = useState(null)
@@ -73,6 +75,7 @@ export default function GroupSettingsModal({
   }
 
   async function saveTripDates() {
+    if (!validateTripDates(startDateDraft, endDateDraft).valid) return
     setSavingDates(true)
     await onUpdateTripDates(startDateDraft || null, endDateDraft || null)
     setSavingDates(false)
@@ -225,6 +228,7 @@ export default function GroupSettingsModal({
               <input
                 type="date"
                 value={startDateDraft}
+                max={endDateDraft || undefined}
                 onChange={(e) => setStartDateDraft(e.target.value)}
                 className="rounded-lg border border-line bg-paper px-3 py-1.5 text-sm text-ink focus:border-primary outline-none"
               />
@@ -234,6 +238,7 @@ export default function GroupSettingsModal({
               <input
                 type="date"
                 value={endDateDraft}
+                min={startDateDraft || undefined}
                 onChange={(e) => setEndDateDraft(e.target.value)}
                 className="rounded-lg border border-line bg-paper px-3 py-1.5 text-sm text-ink focus:border-primary outline-none"
               />
@@ -241,13 +246,16 @@ export default function GroupSettingsModal({
             {datesChanged && (
               <button
                 onClick={saveTripDates}
-                disabled={savingDates}
+                disabled={savingDates || !tripDatesCheck.valid}
                 className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
               >
                 {savingDates ? 'Saving…' : 'Save'}
               </button>
             )}
           </div>
+          {!tripDatesCheck.valid && (
+            <p className="mt-1.5 text-xs text-owe">{tripDatesCheck.error}</p>
+          )}
           <p className="mt-1.5 text-xs text-ink-soft">
             Once the end date passes, anyone who still owes money gets an automatic reminder.
           </p>
