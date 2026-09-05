@@ -143,7 +143,7 @@ export default function GroupSettingsModal({
                   {uploadingBanner ? 'Uploading…' : bannerPath ? 'Change cover photo' : 'Add a cover photo'}
                 </button>
               </div>
-              <p className="mt-1.5 text-[11px] font-medium text-accent border border-accent/30 bg-accent-tint rounded-full inline-block px-3 py-1">
+              <p className="mt-1.5 text-[11px] font-medium text-accent border border-accent/30 bg-accent-tint rounded-lg px-3 py-2">
                 Best as a wide photo, about 3:1 (e.g. 1200×400px) — square or tall photos get cropped to fit.
               </p>
             </div>
