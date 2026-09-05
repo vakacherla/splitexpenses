@@ -156,8 +156,8 @@ query any time, not locked in a vendor's export button.
 **Priority order set 2026-09-04**, for the four items open in this
 section at the time: **1. CSV bulk-import, 2. Log an expense by typing a
 sentence, 3. Push notifications / activity feed, 4. Shared Fund mode**
-(tracked separately — see its own BRD, out for family review). #1 is now
-shipped (below); the rest are still in that order.
+(tracked separately — see its own BRD, out for family review). #1 and #2
+are now shipped (below); #3 and #4 are still in that order.
 
 - ✅ **Shipped** — edit an existing expense. User feedback: real friction
   in practice, not hypothetical — the only way to fix a mistake used to
@@ -273,22 +273,46 @@ shipped (below); the rest are still in that order.
   "View receipt"), not behind the edit flow — reuses the exact Storage
   upload path `AddExpenseForm.jsx` already had, gated to the same
   created-by-or-paid-by rule as Edit/Delete. No schema change.
-- **Log an expense by typing a sentence — new idea, from 2026
-  competitive research.** HippoSplit (the newest entrant in this space)
-  is built chat-first: type "lunch 24.50 split with Anna and Ben" and it
-  parses that straight into a logged, categorized, split expense — no
-  form at all. This app already has the exact infrastructure this needs
-  — `receipt-scan`'s Gemini integration already turns unstructured input
-  (a photo) into the same structured expense shape (description, amount,
-  currency, category, items); parsing a typed sentence instead of a
-  photo is a smaller version of a problem already solved here, not a new
-  one. Concretely: a text input alongside "Scan a receipt" on the
-  add-expense form, one more (cheap, text-only) Gemini call, same schema
-  the receipt path already produces, same review-before-save step already
-  in place for anything AI-filled. Worth real thought on where it earns
-  its keep versus the existing full form (quick single-payer entries?
-  voice-to-text on mobile?) before committing to it — flagged here as a
-  validated idea, not a decided plan. Still open.
+- ✅ **Shipped — log an expense by typing a sentence.** Originally an
+  idea from 2026 competitive research: HippoSplit (the newest entrant in
+  this space) is chat-first — type "lunch 24.50 split with Anna and Ben"
+  and it parses that straight into a logged, categorized, split expense,
+  no form at all. Built as a genuinely smaller version of a problem
+  already solved here: a new `parse-expense-text` Edge Function is a
+  structural copy of `receipt-scan` (same Gemini-first/Qwen-fallback
+  provider order, same CORS/auth boilerplate, same `verify_jwt = false`
+  reasoning, no new secrets needed), just swapping the image input for
+  text. A text input sits right above "Scan a receipt" on the add-expense
+  form, pre-fills the exact same form state the receipt path already
+  fills (`AddExpenseForm`'s existing setters), and the normal Save button
+  is the actual commit step — nothing is written by the parse call
+  itself, same review-before-save handoff every other AI-filled path in
+  this app already uses. Scope is deliberately equal-splits-only (no
+  itemization, no parsing stated per-person amounts from prose) — the
+  quick single-payer/small-group case this is actually aimed at, not a
+  general natural-language interface.
+
+  The one real design problem a receipt never had: resolving names to
+  actual people. Rather than hand-roll fuzzy matching, the group's
+  member list (id + display name, with a flag marking the caller) is
+  sent to the model, and the response schema constrains `payer_id` /
+  `participant_ids` to an **enum of the real member ids** — Gemini's
+  native structured-output enforcement means the model can match
+  "Anna," a nickname, or "I"/"me" to the right person, but can never
+  hallucinate an id that doesn't exist in the group. Whatever it can't
+  confidently resolve is simply omitted, and the client defaults exactly
+  like a fresh manual add already does (payer → the caller, participants
+  → everyone) — verified live: naming someone not actually in the group
+  correctly fell through to "everyone," not a wrong guess.
+
+  Also correctly resolves relative dates ("yesterday," verified live
+  against a real Gemini call resolving to the actual prior day) and
+  currency symbols ("$53.77" → USD, live-converted at the same rate the
+  rest of the app uses), and needs a live connection for the same reason
+  receipt scanning does — gated by the same `!editingExpense && !isOffline`
+  condition, verified live to disappear (with a shared, now dual-purpose
+  offline notice) when simulating offline and reappear the instant
+  connectivity returns.
 - ✅ **Shipped — true offline mode.** Priority raised per 2026 competitive
   research (Tricount, Settle Up, and Splid all treat offline capture as
   baseline, not a nice-to-have — directly relevant to the pilgrimage-trip

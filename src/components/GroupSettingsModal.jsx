@@ -227,7 +227,13 @@ export default function GroupSettingsModal({
         )}
 
         <div className="pt-4 border-t border-line">
-          <p className="text-xs text-owe mb-2">Danger zone</p>
+          <p className="flex items-center gap-1.5 text-xs text-owe mb-2">
+            <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5 shrink-0" aria-hidden="true">
+              <path d="M10 3.3 17.3 16H2.7L10 3.3Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+              <path d="M10 8.3v3.3M10 14h.01" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            Danger zone
+          </p>
           {!confirmingDelete ? (
             <button onClick={() => setConfirmingDelete(true)} className="text-sm text-owe hover:underline">
               Delete this group

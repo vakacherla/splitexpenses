@@ -87,6 +87,10 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
   const [scanError, setScanError] = useState('')
   const fileInputRef = useRef(null)
 
+  const [sentenceText, setSentenceText] = useState('')
+  const [parsingText, setParsingText] = useState(false)
+  const [parseError, setParseError] = useState('')
+
   // Plain attach (no OCR) while editing — separate from the scan flow
   // above, which stays hidden in edit mode so re-scanning can't overwrite
   // fields being fixed by hand. Tracked locally since `editingExpense` is
@@ -254,6 +258,50 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
       setScanError(err.message || 'Could not read that receipt — you can still fill this in by hand.')
     } finally {
       setScanning(false)
+    }
+  }
+
+  async function handleParseSentence() {
+    const text = sentenceText.trim()
+    if (!text) return
+    setParsingText(true)
+    setParseError('')
+    try {
+      const { data, error } = await supabase.functions.invoke('parse-expense-text', {
+        body: {
+          text,
+          members: members.map((m) => ({ id: m.user_id, name: m.display_name, isSelf: m.user_id === currentUserId })),
+          homeCurrency: group.home_currency,
+          today: new Date().toISOString().slice(0, 10),
+        },
+      })
+      if (error) {
+        let message = error.message
+        try {
+          const body = await error.context?.json?.()
+          if (body?.error) message = body.error
+        } catch {
+          // no JSON body — fall back to error.message
+        }
+        throw new Error(message)
+      }
+      if (data?.error) throw new Error(data.error)
+
+      if (data?.description) setDescription(data.description)
+      if (typeof data?.amount === 'number' && data.amount > 0) setAmount(String(data.amount))
+      if (data?.currency) setCurrency(data.currency)
+      if (data?.date) setDate(data.date)
+      if (data?.category && CATEGORIES.includes(data.category)) setCategory(data.category)
+      setSplitMode('equal')
+      setPaidBy(memberIds.includes(data?.payer_id) ? data.payer_id : currentUserId)
+      const parsedParticipants = Array.isArray(data?.participant_ids)
+        ? data.participant_ids.filter((id) => memberIds.includes(id))
+        : []
+      setParticipantIds(parsedParticipants.length > 0 ? parsedParticipants : memberIds)
+    } catch (err) {
+      setParseError(err.message || "Couldn't parse that — you can still fill this in by hand.")
+    } finally {
+      setParsingText(false)
     }
   }
 
@@ -496,7 +544,45 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
                 <path d="M10 3.3 17.3 16H2.7L10 3.3Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
                 <path d="M10 8.3v3.3M10 14h.01" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
               </svg>
-              Receipts need a connection — add this expense now and attach a photo later by editing it.
+              Scanning a receipt or parsing a sentence needs a connection — fill this in by hand for now, and
+              attach a photo later by editing it.
+            </div>
+          )}
+
+          {!editingExpense && !isOffline && (
+            <div>
+              <div className="flex items-center gap-2 rounded-xl border border-dashed border-line px-3 py-2.5">
+                <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-ink-soft" aria-hidden="true">
+                  <path
+                    d="M3 5.5A1.5 1.5 0 0 1 4.5 4h11A1.5 1.5 0 0 1 17 5.5v6A1.5 1.5 0 0 1 15.5 13H9l-3 2.5V13H4.5A1.5 1.5 0 0 1 3 11.5v-6Z"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <input
+                  value={sentenceText}
+                  onChange={(e) => setSentenceText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      handleParseSentence()
+                    }
+                  }}
+                  placeholder="Or describe it: “lunch 24.50 split with Anna and Ben”"
+                  disabled={parsingText}
+                  className="flex-1 min-w-0 bg-transparent text-sm text-ink placeholder:text-ink-soft outline-none disabled:opacity-60"
+                />
+                <button
+                  type="button"
+                  onClick={handleParseSentence}
+                  disabled={parsingText || !sentenceText.trim()}
+                  className="text-xs font-medium text-primary hover:underline shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {parsingText ? 'Parsing…' : 'Parse'}
+                </button>
+              </div>
+              {parseError && <p className="mt-1.5 text-xs text-owe">{parseError}</p>}
             </div>
           )}
 
