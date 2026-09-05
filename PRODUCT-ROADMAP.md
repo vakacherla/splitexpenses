@@ -410,11 +410,56 @@ shipped (below); the rest are still in that order.
   Reachable from "Import CSV" next to "Export CSV" on the Ledger —
   unlike Export, always visible (not gated on the group already having
   expenses), since an empty new group is the main backfill case this
-  exists for. Verified end-to-end against the live database: a
-  two-row/two-person import, balances recomputing correctly afterward,
+  exists for.
+
+  **Needs a connection to actually import — deliberately, not an
+  oversight.** Unlike a single expense add, a bulk import can't be
+  handed to the offline write queue: that queue replays operations
+  independently, one at a time, with no concept of "this batch of N
+  either all lands or none does" (deliberately, so it never needs a
+  dependency graph). The whole point of the mandatory preview is
+  exactly that all-or-nothing guarantee, so rather than weaken it for
+  the offline case, import requires a live connection outright — same
+  as receipt scanning already does elsewhere in this app — while
+  parsing and previewing a file works fully offline (useful on its own:
+  prep the CSV on a flight, import once landed). The modal reacts live
+  to connectivity changes (same `useOnlineStatus` hook as the rest of
+  the app) with a clear warning box, not a silent failure. And if the
+  connection genuinely drops mid-import — a real risk over many
+  sequential row-by-row round trips even when it started online — the
+  rows that run already created are automatically rolled back before
+  the error is shown, so a dropped connection can never leave a silent
+  partial import sitting in the ledger.
+
+  That rollback surfaced a real bug worth recording: the first version
+  tried to hard-*delete* the `import_batches` row on rollback, but
+  `expenses.import_batch_id` still points at it even after those
+  expenses are soft-deleted (the rows still exist, just hidden), so the
+  delete violated that foreign key — and because supabase-js resolves a
+  query error rather than throwing one, the failure was silent. Caught
+  live: a rolled-back import's batch row was left behind, showing up in
+  Group settings as a normal, still-undoable import instead of
+  disappearing. Fixed by marking the batch `undone_at` (the same
+  mechanism a real undo already uses, with `row_count` corrected to how
+  many rows actually landed before the failure) instead of deleting it
+  — which needs no delete policy at all, so the one migration 022 added
+  was reverted in migration 023. The broader lesson, consistent with
+  `HANDOFF.md`'s Safari lesson about swallowed errors: a Supabase call
+  that isn't explicitly checked for `.error` can fail completely
+  silently, which matters most exactly in cleanup/rollback code, where
+  nothing else will surface a failure.
+
+  Verified end-to-end against the live database with realistic
+  decimal amounts across four different currencies (USD, EUR, GBP, and
+  INR itself) in one file: correct live FX conversion and rounding on
+  each row, balances netting out correctly across the mixed currencies,
   the all-or-nothing rejection path (mixed valid/invalid rows correctly
-  blocking the whole file), and undo actually restoring the ledger to
-  empty and marking the batch "Undone."
+  blocking the whole file), a simulated offline state blocking the
+  Import button while still allowing preview (and re-enabling live the
+  moment connectivity returns), a simulated mid-import network failure
+  correctly triggering the auto-rollback with zero rows left behind,
+  and undo restoring the ledger to empty and marking the batch
+  "Undone."
 
 ### Deliberately not doing — and why
 

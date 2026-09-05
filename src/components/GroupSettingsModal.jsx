@@ -24,6 +24,7 @@ export default function GroupSettingsModal({
   const [duplicateName, setDuplicateName] = useState(`${group.name} (copy)`)
   const [importBatches, setImportBatches] = useState(null)
   const [undoingBatchId, setUndoingBatchId] = useState(null)
+  const [undoError, setUndoError] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -43,15 +44,23 @@ export default function GroupSettingsModal({
   async function handleUndoImport(batchId) {
     if (!confirm('Undo this import? Every expense it created will be removed from the ledger.')) return
     setUndoingBatchId(batchId)
-    await supabase.from('expenses').update({ deleted_at: new Date().toISOString() }).eq('import_batch_id', batchId)
-    const { data } = await supabase
+    setUndoError('')
+    const { error: expenseError } = await supabase
+      .from('expenses')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('import_batch_id', batchId)
+    const { data, error: batchError } = await supabase
       .from('import_batches')
       .update({ undone_at: new Date().toISOString() })
       .eq('id', batchId)
       .select()
       .single()
-    setImportBatches((prev) => prev.map((b) => (b.id === batchId ? { ...b, undone_at: data?.undone_at ?? new Date().toISOString() } : b)))
     setUndoingBatchId(null)
+    if (expenseError || batchError) {
+      setUndoError((expenseError ?? batchError).message)
+      return
+    }
+    setImportBatches((prev) => prev.map((b) => (b.id === batchId ? { ...b, undone_at: data?.undone_at ?? new Date().toISOString() } : b)))
     onImportUndone?.()
   }
 
@@ -188,6 +197,7 @@ export default function GroupSettingsModal({
         {importBatches?.length > 0 && (
           <div className="pt-4 border-t border-line">
             <p className="text-xs text-ink-soft mb-1.5">CSV imports</p>
+            {undoError && <p className="text-xs text-owe mb-1.5">{undoError}</p>}
             <ul className="space-y-2">
               {importBatches.map((b) => (
                 <li key={b.id} className="flex items-center justify-between gap-3 text-sm">

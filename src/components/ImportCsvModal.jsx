@@ -4,8 +4,22 @@ import { getRate, fetchSupportedCurrencies, FALLBACK_CURRENCIES } from '../lib/f
 import { CATEGORIES } from '../lib/categories'
 import { downloadCSV } from '../lib/csvExport'
 import { buildImportTemplate, parseCSV, validateImportRows } from '../lib/csvImport'
+import { useOnlineStatus } from '../lib/useOnlineStatus'
+
+function OfflineNotice({ children }) {
+  return (
+    <div className="flex items-center gap-2 rounded-xl border border-owe/40 bg-owe-tint px-3.5 py-3 text-sm text-owe">
+      <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
+        <path d="M10 3.3 17.3 16H2.7L10 3.3Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+        <path d="M10 8.3v3.3M10 14h.01" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      </svg>
+      {children}
+    </div>
+  )
+}
 
 export default function ImportCsvModal({ group, members, currentUserId, onImported, onClose }) {
+  const isOffline = !useOnlineStatus()
   const [file, setFile] = useState(null)
   const [parsed, setParsed] = useState(null) // { rows, hasErrors }
   const [parseError, setParseError] = useState('')
@@ -29,6 +43,9 @@ export default function ImportCsvModal({ group, members, currentUserId, onImport
         setParseError('That file has no rows.')
         return
       }
+      // Falls back to FALLBACK_CURRENCIES automatically when offline —
+      // parsing and previewing a file doesn't need a connection, only
+      // the actual import step below does.
       const currencies = await fetchSupportedCurrencies().catch(() => FALLBACK_CURRENCIES)
       const validated = validateImportRows(rows, {
         members: memberEmails,
@@ -45,20 +62,43 @@ export default function ImportCsvModal({ group, members, currentUserId, onImport
     downloadCSV('split-expenses-import-template.csv', buildImportTemplate())
   }
 
+  // Unlike a single expense add, a bulk import can't be handed to the
+  // offline write queue — that queue replays operations independently,
+  // one at a time, with no concept of "this batch of N either all lands
+  // or none does" (deliberately, so it never needs a dependency graph).
+  // The whole point of the mandatory preview above is exactly that
+  // all-or-nothing guarantee, so rather than weaken it, import requires
+  // a live connection outright, same as receipt scanning does elsewhere
+  // in this app. If the connection drops mid-import anyway (a real risk
+  // over many sequential rows), whatever this run already created is
+  // automatically rolled back rather than left as a silent partial
+  // import — see the catch block below.
   async function handleConfirm() {
+    if (isOffline) {
+      setSubmitError("You're offline — reconnect and try again.")
+      return
+    }
     const validRows = parsed.rows.filter((r) => !r.error)
     setImporting(true)
     setProgress(0)
     setSubmitError('')
+    let batch = null
+    let createdCount = 0
     try {
-      const { data: batch, error: batchError } = await supabase
+      const { data, error: batchError } = await supabase
         .from('import_batches')
         .insert({ group_id: group.id, created_by: currentUserId, filename: file.name, row_count: validRows.length })
         .select()
         .single()
       if (batchError) throw batchError
+      batch = data
 
       for (let i = 0; i < validRows.length; i++) {
+        // navigator.onLine flipping mid-loop is the one case the offline
+        // hook's own subscription can't catch fast enough between renders
+        // — check it directly before each row, not just once up front.
+        if (!navigator.onLine) throw new Error('offline')
+
         const row = validRows[i]
         const rate = await getRate(row.currency, group.home_currency)
         const amountInHome = Math.round(row.amount * rate * 100) / 100
@@ -94,21 +134,67 @@ export default function ImportCsvModal({ group, members, currentUserId, onImport
         const { error: splitError } = await supabase.from('expense_splits').insert(splitRows)
         if (splitError) throw splitError
 
+        createdCount++
         setProgress(i + 1)
       }
 
       setResult({ batchId: batch.id, count: validRows.length })
     } catch (err) {
-      setSubmitError(err.message)
+      // Soft-delete whatever this run managed to create, and mark the
+      // batch itself as undone with the count that's actually true — same
+      // mechanism as a normal undo, not a hard delete: expenses.import_batch_id
+      // still references this batch row even after the soft-delete (the
+      // rows still exist, just hidden), so deleting the batch row here
+      // would violate that foreign key and fail silently, since
+      // supabase-js resolves a query error rather than throwing it.
+      let rolledBack = true
+      if (batch) {
+        const { error: rollbackExpenseError } = await supabase
+          .from('expenses')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('import_batch_id', batch.id)
+        const { error: rollbackBatchError } = await supabase
+          .from('import_batches')
+          .update({ undone_at: new Date().toISOString(), row_count: createdCount })
+          .eq('id', batch.id)
+        rolledBack = !rollbackExpenseError && !rollbackBatchError
+      }
+      if (rolledBack) {
+        setSubmitError(
+          !navigator.onLine
+            ? "Lost connection partway through the import — the rows it already created were rolled back, so nothing was left half-imported. Reconnect and try again."
+            : `Import failed (${err.message}) — rolled back, nothing was left in the ledger. Try again.`
+        )
+      } else {
+        setSubmitError(
+          'Import failed, and the automatic cleanup couldn\'t reach the server either — some expenses from this attempt may still be in the ledger. Once you\'re back online, check "CSV imports" in Group settings and undo it there if so.'
+        )
+      }
+      onImported()
     } finally {
       setImporting(false)
+      setProgress(0)
     }
   }
 
   async function handleUndo() {
     if (!result) return
-    await supabase.from('expenses').update({ deleted_at: new Date().toISOString() }).eq('import_batch_id', result.batchId)
-    await supabase.from('import_batches').update({ undone_at: new Date().toISOString() }).eq('id', result.batchId)
+    if (isOffline) {
+      setSubmitError("You're offline — reconnect to undo this import.")
+      return
+    }
+    const { error: expenseError } = await supabase
+      .from('expenses')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('import_batch_id', result.batchId)
+    const { error: batchError } = await supabase
+      .from('import_batches')
+      .update({ undone_at: new Date().toISOString() })
+      .eq('id', result.batchId)
+    if (expenseError || batchError) {
+      setSubmitError((expenseError ?? batchError).message)
+      return
+    }
     setResult(null)
     onImported()
   }
@@ -135,11 +221,13 @@ export default function ImportCsvModal({ group, members, currentUserId, onImport
             <p className="text-sm text-ink">
               Imported {result.count} expense{result.count === 1 ? '' : 's'} from {file.name}.
             </p>
+            {isOffline && <OfflineNotice>You're offline — undoing this import needs a connection too.</OfflineNotice>}
+            {submitError && <p className="text-sm text-owe">{submitError}</p>}
             <div className="flex items-center gap-4">
               <button onClick={handleDone} className="rounded-full bg-primary text-on-primary text-sm font-medium px-4 py-1.5 hover:bg-primary-dark transition-colors">
                 Done
               </button>
-              <button onClick={handleUndo} className="text-sm text-owe hover:underline">
+              <button onClick={handleUndo} disabled={isOffline} className="text-sm text-owe hover:underline disabled:opacity-40 disabled:cursor-not-allowed disabled:no-underline">
                 Undo this import
               </button>
             </div>
@@ -151,6 +239,13 @@ export default function ImportCsvModal({ group, members, currentUserId, onImport
               accepted — download it, fill it in, then upload it below. Every row is validated before anything is
               created; if any row has a problem, nothing is imported until it's fixed.
             </p>
+
+            {isOffline && (
+              <OfflineNotice>
+                You're offline — importing needs a connection. You can still prepare and preview a file now; the
+                Import button will be enabled again once you're back online.
+              </OfflineNotice>
+            )}
 
             <button onClick={handleDownloadTemplate} className="text-sm text-primary hover:underline">
               Download template
@@ -226,12 +321,14 @@ export default function ImportCsvModal({ group, members, currentUserId, onImport
 
                 <button
                   onClick={handleConfirm}
-                  disabled={parsed.hasErrors || importing}
+                  disabled={parsed.hasErrors || importing || isOffline}
                   className="rounded-full bg-primary text-on-primary text-sm font-medium px-4 py-1.5 hover:bg-primary-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {importing
                     ? `Importing ${progress} of ${parsed.rows.length}…`
-                    : `Import ${parsed.rows.length} expense${parsed.rows.length === 1 ? '' : 's'}`}
+                    : isOffline
+                      ? "Can't import while offline"
+                      : `Import ${parsed.rows.length} expense${parsed.rows.length === 1 ? '' : 's'}`}
                 </button>
               </div>
             )}
