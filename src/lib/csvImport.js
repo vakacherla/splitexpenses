@@ -3,6 +3,14 @@
 // skipped row) is much harder to trust than one bad manual entry, so
 // there's no column-guessing and no partial import — see validateImportRows.
 
+// The import loop inserts one row at a time (an expense, its splits, and
+// an FX-rate lookup — no batching), and the preview table below isn't
+// virtualized, so an unbounded file would get slower and heavier to
+// render the bigger it gets, with no warning until someone actually
+// tried it. Told upfront (the modal's intro text) rather than left open
+// and discovered the hard way.
+export const MAX_IMPORT_ROWS = 500
+
 export const IMPORT_HEADER = [
   'Date',
   'Description',
@@ -106,6 +114,19 @@ export function validateImportRows(rows, { members, categories, currencies }) {
     !header || header.length !== IMPORT_HEADER.length || header.some((h, i) => h.trim() !== IMPORT_HEADER[i])
       ? `Header row doesn't match the template. Expected: ${IMPORT_HEADER.join(', ')}`
       : null
+
+  if (!headerError && dataRows.length > MAX_IMPORT_ROWS) {
+    return {
+      rows: [
+        {
+          rowNumber: 1,
+          raw: header,
+          error: `This file has ${dataRows.length} rows — imports are limited to ${MAX_IMPORT_ROWS} at a time. Split it into smaller files and import each separately.`,
+        },
+      ],
+      hasErrors: true,
+    }
+  }
 
   const emailToMember = new Map(members.map((m) => [m.email.toLowerCase(), m]))
   const currencySet = currencies instanceof Set ? currencies : new Set(Object.keys(currencies))

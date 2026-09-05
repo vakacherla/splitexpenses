@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 import { getRate, fetchSupportedCurrencies, FALLBACK_CURRENCIES } from '../lib/fx'
 import { CATEGORIES } from '../lib/categories'
 import { downloadCSV } from '../lib/csvExport'
-import { buildImportTemplate, parseCSV, validateImportRows } from '../lib/csvImport'
+import { buildImportTemplate, parseCSV, validateImportRows, MAX_IMPORT_ROWS } from '../lib/csvImport'
 import { useOnlineStatus } from '../lib/useOnlineStatus'
 import { logActivity, notifyGroup } from '../lib/activity'
 
@@ -257,7 +257,8 @@ export default function ImportCsvModal({ group, members, currentUserId, onImport
             <p className="text-sm text-ink-soft">
               Bring in a backlog of expenses already tracked in a spreadsheet. Only this app's own template is
               accepted — download it, fill it in, then upload it below. Every row is validated before anything is
-              created; if any row has a problem, nothing is imported until it's fixed.
+              created; if any row has a problem, nothing is imported until it's fixed. Up to {MAX_IMPORT_ROWS} rows
+              per file — split a bigger backlog into a few smaller ones.
             </p>
 
             {isOffline && (

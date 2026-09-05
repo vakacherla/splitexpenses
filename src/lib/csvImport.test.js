@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseCSV, validateImportRows, buildImportTemplate, IMPORT_HEADER } from './csvImport'
+import { parseCSV, validateImportRows, buildImportTemplate, IMPORT_HEADER, MAX_IMPORT_ROWS } from './csvImport'
 
 const MEMBERS = [
   { user_id: 'u1', email: 'a@example.com' },
@@ -159,5 +159,20 @@ describe('validateImportRows', () => {
     expect(hasErrors).toBe(true)
     expect(rows[0].error).toBeNull()
     expect(rows[1].error).toMatch(/Invalid amount/)
+  })
+
+  it('rejects a file over the row limit without validating every row', () => {
+    const tooMany = Array.from({ length: MAX_IMPORT_ROWS + 1 }, () => validRow())
+    const { hasErrors, rows } = validate(tooMany)
+    expect(hasErrors).toBe(true)
+    expect(rows).toHaveLength(1)
+    expect(rows[0].error).toMatch(new RegExp(`limited to ${MAX_IMPORT_ROWS}`))
+  })
+
+  it('accepts a file exactly at the row limit', () => {
+    const exactly = Array.from({ length: MAX_IMPORT_ROWS }, () => validRow())
+    const { hasErrors, rows } = validate(exactly)
+    expect(hasErrors).toBe(false)
+    expect(rows).toHaveLength(MAX_IMPORT_ROWS)
   })
 })

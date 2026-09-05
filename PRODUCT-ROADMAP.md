@@ -500,7 +500,17 @@ and #3 are now shipped (below); #4 remains, blocked on family review.
   don't sum to the row's total), the whole file is rejected with every
   problem listed by row number — no row is ever silently skipped, which
   is exactly the trust gap that made a looser version not worth
-  building. Every successful import is tagged with a new
+  building. **Capped at 500 rows per file** (`MAX_IMPORT_ROWS` in
+  `csvImport.js`), stated up front in the modal's own intro text rather
+  than left open-ended — the import loop inserts one row at a time (an
+  expense, its splits, and an FX-rate lookup, no batching) and the
+  preview table isn't virtualized, so an unbounded file would just get
+  slower and heavier the bigger it got, with no warning until someone
+  actually tried it. A file over the limit is rejected immediately with
+  one clear message (`This file has N rows — imports are limited to 500
+  at a time`) rather than validated row-by-row first, since there's no
+  point doing that work only to reject the whole thing anyway. Every
+  successful import is tagged with a new
   `import_batches` row (migration 021) — its own `id` is stamped onto
   every `expenses.import_batch_id` it creates — so it can be undone in
   one click two ways: an inline "Undo this import" right after a
