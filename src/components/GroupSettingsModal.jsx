@@ -125,22 +125,27 @@ export default function GroupSettingsModal({
             className="-mx-5 sm:-mx-6 h-28"
           />
           {canManage && (
-            <div className="mt-2 flex items-center gap-3">
-              <input
-                ref={bannerInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleBannerChange}
-              />
-              <button
-                type="button"
-                onClick={() => bannerInputRef.current?.click()}
-                disabled={uploadingBanner}
-                className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
-              >
-                {uploadingBanner ? 'Uploading…' : bannerPath ? 'Change cover photo' : 'Add a cover photo'}
-              </button>
+            <div className="mt-2">
+              <div className="flex items-center gap-3">
+                <input
+                  ref={bannerInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleBannerChange}
+                />
+                <button
+                  type="button"
+                  onClick={() => bannerInputRef.current?.click()}
+                  disabled={uploadingBanner}
+                  className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+                >
+                  {uploadingBanner ? 'Uploading…' : bannerPath ? 'Change cover photo' : 'Add a cover photo'}
+                </button>
+              </div>
+              <p className="mt-1 text-[11px] text-ink-soft">
+                Best as a wide photo, about 3:1 (e.g. 1200×400px) — square or tall photos get cropped to fit.
+              </p>
             </div>
           )}
           {bannerError && <p className="mt-1 text-xs text-owe">{bannerError}</p>}

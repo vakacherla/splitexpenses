@@ -10,6 +10,7 @@ import SettleUpModal from '../components/SettleUpModal'
 import GroupSettingsModal from '../components/GroupSettingsModal'
 import ImportCsvModal from '../components/ImportCsvModal'
 import GroupBanner from '../components/GroupBanner'
+import ActivityFeed from '../components/ActivityFeed'
 import { accentFor } from '../components/GroupIcon'
 import LoadingScreen from '../components/LoadingScreen'
 import { SkeletonChart } from '../components/Skeleton'
@@ -17,6 +18,7 @@ import EmptyState from '../components/EmptyState'
 import { CATEGORIES } from '../lib/categories'
 import { expensesToCSV, downloadCSV } from '../lib/csvExport'
 import { computeNetBalances } from '../lib/balances'
+import { logActivity } from '../lib/activity'
 import { useOnlineStatus } from '../lib/useOnlineStatus'
 import { useOfflineQueue, useIsSyncing, enqueue, runSync } from '../lib/offlineQueue'
 import { getCachedGroup, setCachedGroup, mergeQueueIntoExpenses, mergeQueueIntoSettlements } from '../lib/offlineCache'
@@ -27,6 +29,7 @@ const TABS = [
   { id: 'ledger', label: 'Ledger' },
   { id: 'balances', label: 'Balances' },
   { id: 'reports', label: 'Reports' },
+  { id: 'activity', label: 'Activity' },
   { id: 'members', label: 'Members' },
 ]
 
@@ -198,8 +201,11 @@ export default function GroupView() {
 
   async function handleDeleteExpense(id) {
     if (!confirm('Delete this expense for everyone in the group?')) return
+    const exp = expenses.find((e) => e.id === id)
+    const actorName = membersMap[user.id]?.display_name ?? 'Someone'
+    const summary = exp ? `${exp.description} — ${exp.amount} ${exp.currency}` : 'an expense'
     if (isOffline) {
-      enqueue({ type: 'expense.delete', entityId: id, groupId: group.id, payload: {} })
+      enqueue({ type: 'expense.delete', entityId: id, groupId: group.id, payload: { actorName, summary } })
       return
     }
     // Soft-delete — recoverable by the platform admin (Admin → Trash),
@@ -209,13 +215,17 @@ export default function GroupView() {
       setError(error.message)
       return
     }
+    logActivity({ groupId: group.id, actorId: user.id, actorName, eventType: 'expense_deleted', summary, entityId: id })
     load()
   }
 
   async function handleUndoSettlement(id) {
     if (!confirm('Undo this payment? It will go back to counting as owed.')) return
+    const settlement = settlements.find((s) => s.id === id)
+    const actorName = membersMap[user.id]?.display_name ?? 'Someone'
+    const summary = settlement ? `${settlement.amount} ${settlement.currency}` : 'a payment'
     if (isOffline) {
-      enqueue({ type: 'settlement.delete', entityId: id, groupId: group.id, payload: {} })
+      enqueue({ type: 'settlement.delete', entityId: id, groupId: group.id, payload: { actorName, summary } })
       return
     }
     const { error } = await supabase.from('settlements').delete().eq('id', id)
@@ -223,6 +233,7 @@ export default function GroupView() {
       setError(error.message)
       return
     }
+    logActivity({ groupId: group.id, actorId: user.id, actorName, eventType: 'settlement_deleted', summary, entityId: id })
     load()
   }
 
@@ -320,6 +331,14 @@ export default function GroupView() {
       setError(error.message)
       return
     }
+    logActivity({
+      groupId: group.id,
+      actorId: user.id,
+      actorName: membersMap[user.id]?.display_name ?? 'Someone',
+      eventType: 'member_removed',
+      summary: memberName,
+      entityId: memberId,
+    })
     load()
   }
 
@@ -536,6 +555,8 @@ export default function GroupView() {
           />
         </Suspense>
       )}
+
+      {tab === 'activity' && <ActivityFeed groupId={group.id} />}
 
       {tab === 'members' && (
         <MembersPanel

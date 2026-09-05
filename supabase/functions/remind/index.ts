@@ -11,7 +11,7 @@
 // misstate what's owed.
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { computeNetBalances, simplifyDebts, sendReminderEmail, sendReminderPush } from '../_shared/notify.ts'
+import { computeNetBalances, simplifyDebts, sendReminderEmail, sendPush } from '../_shared/notify.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
       }
     }
     try {
-      results.push = await sendReminderPush(serviceClient, debtorUserId, { title: subject, body: text })
+      results.push = await sendPush(serviceClient, debtorUserId, { title: subject, body: text })
     } catch (err) {
       results.push = { error: err instanceof Error ? err.message : 'failed' }
     }

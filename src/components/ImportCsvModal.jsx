@@ -5,6 +5,7 @@ import { CATEGORIES } from '../lib/categories'
 import { downloadCSV } from '../lib/csvExport'
 import { buildImportTemplate, parseCSV, validateImportRows } from '../lib/csvImport'
 import { useOnlineStatus } from '../lib/useOnlineStatus'
+import { logActivity, notifyGroup } from '../lib/activity'
 
 function OfflineNotice({ children }) {
   return (
@@ -137,6 +138,25 @@ export default function ImportCsvModal({ group, members, currentUserId, onImport
         createdCount++
         setProgress(i + 1)
       }
+
+      const actorName = members.find((m) => m.user_id === currentUserId)?.display_name ?? 'Someone'
+      const summary = `${validRows.length} expense${validRows.length === 1 ? '' : 's'} from ${file.name}`
+      logActivity({
+        groupId: group.id,
+        actorId: currentUserId,
+        actorName,
+        eventType: 'csv_import',
+        summary,
+        entityId: batch.id,
+      })
+      const otherMembers = members.map((m) => m.user_id).filter((id) => id !== currentUserId)
+      notifyGroup({
+        groupId: group.id,
+        targetUserIds: otherMembers,
+        title: group.name,
+        body: `${actorName} imported ${summary}`,
+        url: `/groups/${group.id}`,
+      })
 
       setResult({ batchId: batch.id, count: validRows.length })
     } catch (err) {

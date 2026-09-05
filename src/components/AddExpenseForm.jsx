@@ -5,6 +5,7 @@ import { useLiveRate } from '../lib/useLiveRate'
 import { useOnlineStatus } from '../lib/useOnlineStatus'
 import { enqueue } from '../lib/offlineQueue'
 import { splitEvenly, splitByPercentages, splitItemized } from '../lib/split'
+import { logActivity, notifyGroup } from '../lib/activity'
 import { CATEGORIES } from '../lib/categories'
 import CurrencySelect from './CurrencySelect'
 
@@ -402,6 +403,12 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
         created_by: currentUserId,
         homeCurrency: group.home_currency,
         splits: splitsPayload,
+        // Stashed here since offlineQueue.js's sync-time apply has no
+        // access to `members`/`group` — same reasoning homeCurrency is
+        // already stashed for the rate lookup it also can't otherwise do.
+        actorName: members.find((m) => m.user_id === currentUserId)?.display_name ?? 'Someone',
+        groupName: group.name,
+        memberIds,
       }
       enqueue(
         editingExpense
@@ -493,6 +500,36 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
 
     // Best-effort extras — the expense itself is already safely saved, so a
     // failure in either of these shouldn't block closing the form.
+    const actorName = members.find((m) => m.user_id === currentUserId)?.display_name ?? 'Someone'
+    const expenseSummary = `${description.trim()} — ${parsedAmount} ${currency}`
+    if (editingExpense) {
+      logActivity({
+        groupId: group.id,
+        actorId: currentUserId,
+        actorName,
+        eventType: 'expense_edited',
+        summary: expenseSummary,
+        entityId: expense.id,
+      })
+    } else {
+      logActivity({
+        groupId: group.id,
+        actorId: currentUserId,
+        actorName,
+        eventType: 'expense_added',
+        summary: expenseSummary,
+        entityId: expense.id,
+      })
+      const otherMembers = memberIds.filter((id) => id !== currentUserId)
+      notifyGroup({
+        groupId: group.id,
+        targetUserIds: otherMembers,
+        title: group.name,
+        body: `${actorName} added an expense: ${expenseSummary}`,
+        url: `/groups/${group.id}`,
+      })
+    }
+
     if (saveAsDefault && splitMode !== 'exact' && splitMode !== 'itemized') {
       await supabase.rpc('update_default_split', {
         gid: group.id,

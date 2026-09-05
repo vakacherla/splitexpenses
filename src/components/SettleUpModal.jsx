@@ -5,6 +5,7 @@ import { useLiveRate } from '../lib/useLiveRate'
 import { useOnlineStatus } from '../lib/useOnlineStatus'
 import { enqueue } from '../lib/offlineQueue'
 import { buildPaymentLink, paymentProviderLabel } from '../lib/paymentLinks'
+import { logActivity, notifyGroup } from '../lib/activity'
 import CurrencySelect from './CurrencySelect'
 
 export default function SettleUpModal({ group, suggestion, membersMap, currentUserId, onDone, onClose }) {
@@ -73,6 +74,10 @@ export default function SettleUpModal({ group, suggestion, membersMap, currentUs
           note: note.trim() || null,
           created_by: currentUserId,
           homeCurrency: group.home_currency,
+          // Stashed for the same reason AddExpenseForm stashes these —
+          // offlineQueue.js's sync-time apply has no access to membersMap/group.
+          actorName: membersMap[currentUserId]?.display_name ?? 'Someone',
+          groupName: group.name,
         },
       })
       setSaving(false)
@@ -85,22 +90,46 @@ export default function SettleUpModal({ group, suggestion, membersMap, currentUs
       return setError('Still fetching the exchange rate — try again in a moment.')
     }
 
-    const { error } = await supabase.from('settlements').insert({
-      group_id: group.id,
-      from_user: suggestion.from,
-      to_user: suggestion.to,
-      currency,
-      amount: parsedAmount,
-      exchange_rate: rate,
-      amount_in_home: Math.round(parsedAmount * rate * 100) / 100,
-      note: note.trim() || null,
-      created_by: currentUserId,
-    })
+    const { data: settlement, error } = await supabase
+      .from('settlements')
+      .insert({
+        group_id: group.id,
+        from_user: suggestion.from,
+        to_user: suggestion.to,
+        currency,
+        amount: parsedAmount,
+        exchange_rate: rate,
+        amount_in_home: Math.round(parsedAmount * rate * 100) / 100,
+        note: note.trim() || null,
+        created_by: currentUserId,
+      })
+      .select()
+      .single()
     setSaving(false)
     if (error) {
       setError(error.message)
       return
     }
+
+    const actorName = membersMap[currentUserId]?.display_name ?? 'Someone'
+    const amountText = `${parsedAmount} ${currency}`
+    logActivity({
+      groupId: group.id,
+      actorId: currentUserId,
+      actorName,
+      eventType: 'settlement_added',
+      summary: amountText,
+      entityId: settlement.id,
+    })
+    const otherParty = suggestion.from === currentUserId ? suggestion.to : suggestion.from
+    notifyGroup({
+      groupId: group.id,
+      targetUserIds: [otherParty],
+      title: group.name,
+      body: `${actorName} recorded a payment: ${amountText}`,
+      url: `/groups/${group.id}`,
+    })
+
     onDone()
   }
 

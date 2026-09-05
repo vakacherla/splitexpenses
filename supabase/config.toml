@@ -21,3 +21,9 @@ verify_jwt = false
 # Same CORS-preflight reasoning as receipt-scan above — same signed-in-only
 # check, just for typed text instead of a photo.
 verify_jwt = false
+
+[functions.notify-group]
+# Same CORS-preflight reasoning as receipt-scan above. This function does
+# its own signed-in check plus a real group-membership check before
+# sending anything, so turning off the platform gate doesn't weaken it.
+verify_jwt = false

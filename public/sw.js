@@ -36,12 +36,16 @@ self.addEventListener('fetch', (event) => {
   )
 })
 
-// Settle-up reminders (manual or the automatic trip-end sweep) arrive
-// here as a push event even when no tab is open — this is what actually
-// shows the OS-level notification.
+// Settle-up reminders (manual or the automatic trip-end sweep) and
+// general activity notifications (an expense was added, a payment was
+// recorded) both arrive here as a push event even when no tab is open —
+// this is what actually shows the OS-level notification. An optional
+// `url` in the payload is what notificationclick below uses to deep-link
+// back to the group that triggered it, instead of always landing on the
+// dashboard.
 self.addEventListener('push', (event) => {
   console.log('[sw] push event received', { hasData: Boolean(event.data) })
-  let data = { title: 'Split Expenses', body: 'You have a new reminder.' }
+  let data = { title: 'Split Expenses', body: 'You have a new update.' }
   try {
     if (event.data) data = { ...data, ...event.data.json() }
   } catch (err) {
@@ -55,6 +59,7 @@ self.addEventListener('push', (event) => {
         body: data.body,
         icon: '/icons/icon-192.png',
         badge: '/icons/icon-192.png',
+        data: { url: data.url ?? '/dashboard' },
       })
       .then(() => console.log('[sw] showNotification resolved OK'))
       .catch((err) => console.log('[sw] showNotification FAILED', String(err)))
@@ -71,11 +76,12 @@ self.addEventListener('notificationclose', (event) => {
 self.addEventListener('notificationclick', (event) => {
   console.log('[sw] notificationclick', event.notification.title)
   event.notification.close()
+  const url = event.notification.data?.url ?? '/dashboard'
   event.waitUntil(
     self.clients.matchAll({ type: 'window' }).then((clients) => {
       const existing = clients.find((c) => c.url.includes(location.origin))
-      if (existing) return existing.focus()
-      return self.clients.openWindow('/dashboard')
+      if (existing) return existing.navigate(url).then((c) => c.focus())
+      return self.clients.openWindow(url)
     })
   )
 })

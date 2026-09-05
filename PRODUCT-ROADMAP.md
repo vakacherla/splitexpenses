@@ -51,7 +51,7 @@ query any time, not locked in a vendor's export button.
 | Settle-up payment deep link | **Absent** | Adequate | Adequate | N/A (it *is* the payment) |
 | Actually moves money | Not applicable | Absent | Absent | Strong |
 | Offline mode | **Absent** | Strong | Strong | Absent |
-| Push notifications / activity feed | Adequate (settle-up reminders only, no general activity feed) | Adequate | Adequate | Strong |
+| Push notifications / activity feed | Strong | Adequate | Adequate | Strong |
 | Comments/notes on an expense | **Absent** | Weak | Weak | Strong (its whole social layer) |
 | Multi-group platform admin | Strong | Absent | Absent | Absent |
 | No daily limits, no ads | Strong | **Absent** | Strong | Strong |
@@ -156,8 +156,8 @@ query any time, not locked in a vendor's export button.
 **Priority order set 2026-09-04**, for the four items open in this
 section at the time: **1. CSV bulk-import, 2. Log an expense by typing a
 sentence, 3. Push notifications / activity feed, 4. Shared Fund mode**
-(tracked separately — see its own BRD, out for family review). #1 and #2
-are now shipped (below); #3 and #4 are still in that order.
+(tracked separately — see its own BRD, out for family review). #1, #2,
+and #3 are now shipped (below); #4 remains, blocked on family review.
 
 - ✅ **Shipped** — edit an existing expense. User feedback: real friction
   in practice, not hypothetical — the only way to fix a mistake used to
@@ -208,12 +208,68 @@ are now shipped (below); #3 and #4 are still in that order.
   installable to the home screen on iOS/Android). Deliberately stops
   short of true offline data entry — see the next item, which is the
   bigger, separate piece this sets up but doesn't attempt.
-- **Push notifications / activity feed.** "Someone added an expense" or
-  "you were asked to settle up" is what makes an ongoing group actually
-  stay current instead of going stale between trips. Needs a service
-  worker (now in place from the PWA groundwork above), Web Push
-  subscriptions, and a Supabase Edge Function trigger — a proper
-  feature, not an afternoon. Still open.
+- ✅ **Shipped — push notifications + activity feed.** "Someone added an
+  expense" or "you were asked to settle up" is what makes an ongoing
+  group actually stay current instead of going stale between trips.
+  Built the fuller of two possible scopes: push notifications *and* a
+  persistent, browsable "Activity" tab (new, alongside Ledger/Balances/
+  Reports/Members) — not just a phone buzz that's easy to miss, but
+  something to actually scroll back through. Nearly all the push
+  plumbing already existed from the settle-up reminder work
+  (`push_subscriptions`, VAPID keys, `src/lib/push.js`, the service
+  worker's already-generic `push` handler) — what's new is an
+  append-only `activity_events` table (migration 026), since the
+  existing schema can't reconstruct a removed member or an edit's
+  history, only a live snapshot.
+
+  **Logged**: expense added/edited/deleted, settlement recorded/undone,
+  member joined/removed, one consolidated row per CSV import — verified
+  live that a multi-row import produces exactly one feed entry, never
+  one per imported row, which would otherwise drown out everything
+  else. **Push-notified** (the two examples the roadmap actually names,
+  plus CSV import since it's a single consolidated action): expense
+  added, settlement recorded (targeted at just the other party in the
+  settlement, not the whole group), CSV import. Edits, deletes, and
+  member changes are feed-only — lower-signal events that would make
+  push noisy without adding much. Deliberately not logged this pass:
+  group rename, trip dates, duplication, banner uploads — not part of
+  the roadmap's motivating examples. Deliberately not built: a
+  cross-group notification center (navbar bell/badge aggregating unread
+  counts across every group) — this is a per-group feed, same scope
+  boundary as Ledger/Balances/Members today; a global center would be a
+  materially different, bigger feature.
+
+  New `notify-group` Edge Function (structural sibling of `remind`) —
+  never trusts the client's target list blindly, since that's exactly
+  the kind of endpoint that could otherwise spam arbitrary users: looks
+  up the group's real membership with the service-role client, confirms
+  the caller is actually in it, and intersects the requested targets
+  against it (verified live — a fake/non-member id passed as a target
+  came back `targeted: 0`, correctly dropped). `_shared/notify.ts`'s
+  `sendReminderPush` renamed to `sendPush`, since `notify-group` proved
+  it was already fully generic — nothing about the implementation was
+  settle-up-specific, just the name. The service worker's
+  `notificationclick` now deep-links to the group that triggered it
+  (`event.notification.data.url`) instead of always opening `/dashboard`,
+  the one piece that needed to change to make tapping a notification
+  actually useful.
+
+  Membership events are logged from inside the existing `SECURITY
+  DEFINER` RPCs that make them (`join_group_by_code`,
+  `admin_add_user_to_group`, `admin_remove_user_from_group`) rather than
+  from client code, so it works identically regardless of who triggers
+  it — verified live for both the self-service join path and the
+  admin-add path (re-added a removed test member via
+  `admin_add_user_to_group` and confirmed "Shaurin joined the group"
+  logged correctly). Every trigger point that can happen offline
+  (expense/settlement create/edit/delete) logs its event at **sync
+  time** inside `offlineQueue.js`'s apply functions, not at enqueue
+  time — same reasoning the exchange-rate lookup already uses, since
+  both genuinely need a live connection. The actor's display name and
+  the group's name are stashed directly in the offline payload at
+  enqueue time (mirroring how `homeCurrency` is already stashed there)
+  since the sync-time code has no access to `members`/`group` state to
+  look them up otherwise.
 - ✅ **Shipped** — trip dates + a settle-up nudge, phase 1 (user feedback,
   with Splitwise screenshots for reference). Optional start/end dates on
   a group (Members → Group settings); once the end date passes, anyone

@@ -21,6 +21,7 @@
 import { useSyncExternalStore } from 'react'
 import { supabase } from './supabaseClient'
 import { getRate } from './fx'
+import { logActivity, notifyGroup } from './activity'
 
 const QUEUE_KEY = 'ledger_write_queue_v1'
 const MAX_ATTEMPTS = 5
@@ -179,6 +180,24 @@ async function applyExpenseCreate(op) {
   }))
   const { error: splitError } = await supabase.from('expense_splits').insert(splitRows)
   if (splitError) throw splitError
+
+  const summary = `${payload.description} — ${payload.amount} ${payload.currency}`
+  logActivity({
+    groupId: op.groupId,
+    actorId: payload.created_by,
+    actorName: payload.actorName ?? 'Someone',
+    eventType: 'expense_added',
+    summary,
+    entityId: op.entityId,
+  })
+  const otherMembers = (payload.memberIds ?? []).filter((id) => id !== payload.created_by)
+  notifyGroup({
+    groupId: op.groupId,
+    targetUserIds: otherMembers,
+    title: payload.groupName ?? 'Split Expenses',
+    body: `${payload.actorName ?? 'Someone'} added an expense: ${summary}`,
+    url: `/groups/${op.groupId}`,
+  })
 }
 
 async function applyExpenseUpdate(op) {
@@ -236,6 +255,15 @@ async function applyExpenseUpdate(op) {
   const { error: splitError } = await supabase.from('expense_splits').insert(splitRows)
   if (splitError) throw splitError
 
+  logActivity({
+    groupId: op.groupId,
+    actorId: payload.created_by,
+    actorName: payload.actorName ?? 'Someone',
+    eventType: 'expense_edited',
+    summary: `${payload.description} — ${payload.amount} ${payload.currency}`,
+    entityId: op.entityId,
+  })
+
   const conflictedElsewhere = op.expectedUpdatedAt && current.updated_at !== op.expectedUpdatedAt
   return conflictedElsewhere
     ? { conflict: `Someone else changed "${payload.description}" while you were offline — your edit overwrote theirs.` }
@@ -243,11 +271,24 @@ async function applyExpenseUpdate(op) {
 }
 
 async function applyExpenseDelete(op) {
+  const { payload } = op
   const { error } = await supabase
     .from('expenses')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', op.entityId)
   if (error) throw error
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  logActivity({
+    groupId: op.groupId,
+    actorId: user?.id,
+    actorName: payload.actorName ?? 'Someone',
+    eventType: 'expense_deleted',
+    summary: payload.summary ?? 'an expense',
+    entityId: op.entityId,
+  })
 }
 
 async function applySettlementCreate(op) {
@@ -266,11 +307,43 @@ async function applySettlementCreate(op) {
     created_by: payload.created_by,
   })
   if (error) throw error
+
+  const actorName = payload.actorName ?? 'Someone'
+  const summary = `${payload.amount} ${payload.currency}`
+  logActivity({
+    groupId: op.groupId,
+    actorId: payload.created_by,
+    actorName,
+    eventType: 'settlement_added',
+    summary,
+    entityId: op.entityId,
+  })
+  const otherParty = payload.created_by === payload.from_user ? payload.to_user : payload.from_user
+  notifyGroup({
+    groupId: op.groupId,
+    targetUserIds: [otherParty],
+    title: payload.groupName ?? 'Split Expenses',
+    body: `${actorName} recorded a payment: ${summary}`,
+    url: `/groups/${op.groupId}`,
+  })
 }
 
 async function applySettlementDelete(op) {
+  const { payload } = op
   const { error } = await supabase.from('settlements').delete().eq('id', op.entityId)
   if (error) throw error
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  logActivity({
+    groupId: op.groupId,
+    actorId: user?.id,
+    actorName: payload.actorName ?? 'Someone',
+    eventType: 'settlement_deleted',
+    summary: payload.summary ?? 'a payment',
+    entityId: op.entityId,
+  })
 }
 
 const APPLIERS = {

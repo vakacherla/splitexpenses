@@ -14,7 +14,7 @@
 // work.
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { computeNetBalances, simplifyDebts, sendReminderEmail, sendReminderPush } from '../_shared/notify.ts'
+import { computeNetBalances, simplifyDebts, sendReminderEmail, sendPush } from '../_shared/notify.ts'
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
@@ -81,7 +81,7 @@ Deno.serve(async (_req) => {
           }
         }
         try {
-          await sendReminderPush(supabase, t.from, { title: subject, body: text })
+          await sendPush(supabase, t.from, { title: subject, body: text })
         } catch {
           // Same reasoning — push is independent of email.
         }

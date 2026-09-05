@@ -40,8 +40,8 @@ export default function NotificationSettings({ userId }) {
     <div>
       <h2 className="font-display text-lg text-ink mb-1">Notifications</h2>
       <p className="text-sm text-ink-soft mb-3">
-        Get a nudge on this device for settle-up reminders — either from someone directly, or automatically
-        once a trip's end date passes.
+        Get a nudge on this device when something happens in your groups — a new expense, a payment recorded,
+        or a settle-up reminder (from someone directly, or automatically once a trip's end date passes).
       </p>
       {!pushSupported() ? (
         <p className="text-sm text-ink-soft italic">

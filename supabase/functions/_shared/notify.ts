@@ -29,10 +29,15 @@ export async function sendReminderEmail(to: string, subject: string, text: strin
 // `supabase` must be a service-role client — reading someone else's push
 // subscriptions (not the caller's own) only works past that table's
 // "own rows only" RLS policy with the service-role key.
-export async function sendReminderPush(
+//
+// Fully generic despite the settle-up-era name history — `notify-group`
+// (activity notifications) uses this exact function too, just with a
+// different payload and an optional `url` for deep-linking a tap back to
+// the group that triggered it.
+export async function sendPush(
   supabase: SupabaseClient,
   userId: string,
-  payload: { title: string; body: string }
+  payload: { title: string; body: string; url?: string }
 ) {
   const vapidPublic = Deno.env.get('VAPID_PUBLIC_KEY')
   const vapidPrivate = Deno.env.get('VAPID_PRIVATE_KEY')
