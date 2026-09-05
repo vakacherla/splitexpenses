@@ -3,7 +3,10 @@
 Written to travel — paste this into a fresh Claude Code session, or just
 keep it as the "what happened and why" record. The four docs it points to
 (`README.md`, `ARCHITECTURE.md`, `PRODUCT-ROADMAP.md`, `TESTING.md`) hold
-the actual detail; this is the map, not the territory.
+the actual detail; this is the map, not the territory. This file
+describes the session that just ended — for what happened before that,
+`git log` and `PRODUCT-ROADMAP.md`'s own "Shipped" entries are the
+record, not this file's history.
 
 ## What this is
 
@@ -11,10 +14,7 @@ the actual detail; this is the map, not the territory.
 React + Vite + Tailwind v4 on the frontend, Supabase (Postgres + Auth +
 Storage + Edge Functions) as the entire backend, Vercel for static
 hosting. Live at `https://varanasi-eta.vercel.app`. Built for a real
-family pilgrimage trip, but built to work for any group. Working
-directly in Claude Code on the real project files, in a real git repo —
-the "should we move to git" question a previous handoff raised is
-resolved; this section of history doesn't need repeating.
+family pilgrimage trip, but built to work for any group.
 
 ## System shape
 
@@ -31,231 +31,195 @@ Browser (React SPA)
 Supabase
    ├─ Postgres (RLS)
    ├─ Auth ──sends email via── Resend SMTP (noreply@mail.rajarori.com) ──► user's inbox
-   ├─ Storage — receipt photos
+   ├─ Storage — receipt photos, profile avatars, group cover-photo banners
    └─ Edge Functions — exist only because these need a secret the browser can't hold
         ├─ admin-users          service-role key (admin list/suspend/promote/etc.)
         ├─ receipt-scan         Gemini / OpenRouter key (AI receipt parsing)
+        ├─ parse-expense-text   Gemini / OpenRouter key (typed-sentence parsing — new this session)
         ├─ remind               manual "nudge to settle up" (sends a push)
-        └─ trip-reminders-cron  pg_cron daily sweep (sends a push)
+        ├─ trip-reminders-cron  pg_cron daily sweep (sends a push)
+        └─ notify-group         general activity push (new this session — expense added, payment recorded, CSV import)
 
 Called directly from the browser — no secret involved, so no Edge Function needed
    ├─ Frankfurter API (api.frankfurter.dev) — exchange rates
    └─ Web Push (VITE_VAPID_PUBLIC_KEY)      — push subscription
 ```
 
-This is the map; `ARCHITECTURE.md`'s "The shape, in one paragraph" section
-and its risk log underneath have the actual reasoning and tradeoffs. The
-one thing this diagram adds that wasn't written down anywhere before
-today: Auth's email path used to be Supabase's own shared, rate-limited
-dev mailer — it's now Resend, added this session after that limit broke
-a real signup (see below).
+`ARCHITECTURE.md`'s "The shape, in one paragraph" section and its risk
+log underneath have the actual reasoning and tradeoffs — this diagram
+is just kept current alongside it.
 
-**Tech stack**
+**Tech stack** — unchanged from before this session (no new frontend
+dependencies added): React 19, Vite 8, React Router 7, Tailwind CSS v4,
+Recharts; Supabase (Postgres 17, Auth, Storage, Edge Functions/Deno);
+Vitest, `oxlint`; Vercel + GitHub (`vakacherla/splitexpenses`, public
+repo); Resend, Frankfurter API, Web Push, Google Gemini/OpenRouter (now
+backing two features — receipt scanning and sentence parsing, not one).
 
-- **Frontend**: React 19, Vite 8, React Router 7, Tailwind CSS v4
-  (`@theme` tokens, class-based dark mode), Recharts (Reports charts)
-- **Backend**: Supabase — Postgres 17 (RLS-authorized, no app server),
-  Auth, Storage, Edge Functions (Deno)
-- **Testing/tooling**: Vitest, `oxlint`, `@supabase/supabase-js` v2
-- **Hosting/deploy**: Vercel (static hosting), GitHub
-  (`vakacherla/splitexpenses`, public repo)
-- **Third-party services**: Resend (transactional email, custom SMTP),
-  Frankfurter API (`api.frankfurter.dev`, exchange rates, no key
-  needed), Web Push (native browser API, VAPID keys, no third-party
-  service), Google Gemini / OpenRouter (optional, receipt-scan OCR)
+## Everything built this session, grouped
 
-## Everything built in this session, grouped
+**CSV bulk-import** — the top-ranked open roadmap item. Bring in a
+backlog already tracked in a spreadsheet: a strict template (mirrors the
+existing CSV export's columns, email instead of name for exact person
+matching), a "Download template" link inline in the modal, a mandatory
+preview table, and **all-or-nothing validation** — one bad row rejects
+the whole file with every problem listed, nothing silently skipped.
+Every import is tagged (`import_batches`, migration 021) so it's
+undoable in one click, either right after or later from Group settings.
+**Capped at 500 rows per file**, stated up front in the modal (added
+after this session's own work was reviewed and the cap was flagged as
+missing) — the import loop inserts one row at a time, no batching, so an
+unbounded file would just get slower with no warning.
 
-**Admin, with real gaps closed by using it:** a super admin can add *or
-remove* a user from any group directly, bypassing the invite code
-(`admin_add_user_to_group` / `admin_remove_user_from_group`, migrations
-018-019) — the "Manage groups" control on each user's row in Admin →
-Users. Every group now shows who created it and when. A new **Admin →
-Settlements** tab lists every settlement platform-wide. Every Overview
-stat tile is clickable, jumping to the tab that explains it. Along the
-way, fixed a real PostgREST bug this surfaced: embedding `profiles` on
-`groups` failed with "more than one relationship was found" once a
-bridge table (`group_members`) existed — needs an explicit FK hint
-(`profiles!groups_created_by_fkey(...)`), worth remembering for any
-future embed between two tables that also share a join table.
+Needs a live connection to actually write (parsing/previewing works
+offline, the "Import" button doesn't) — a bulk import can't safely go
+through the offline write queue, since that queue has no all-or-nothing
+concept and this feature's whole value is that guarantee. If the
+connection drops mid-import anyway, whatever it created gets
+automatically rolled back. **Real bug caught live, not in review:** the
+first version of that rollback tried to hard-*delete* the batch row,
+which silently failed (a still-existing soft-deleted expense's foreign
+key blocks it, and supabase-js doesn't throw on query errors) and left a
+"ghost" batch behind — fixed by marking it undone instead (migrations
+022→023 revert the unneeded delete policy).
 
-**Group + expense self-service:** duplicate a whole group (same people,
-fresh invite code, no expenses carried over) or duplicate a single
-expense (recurring bills). Attach a receipt to a manually-entered
-expense after the fact — on the Ledger row *and* inside the Edit modal,
-both in gold/accent color rather than the same green as Edit/Duplicate,
-deliberately so it reads as "worth noticing." Fixed a real pre-existing
-bug while at it: switching an expense's split mode to Itemized silently
-dropped its total to 0.00 — now seeds one starting item with the prior
-amount plus an explanatory hint.
+**Log an expense by typing a sentence** — "lunch 24.50 split with Anna
+and Ben" parsed straight into a categorized, split expense. New
+`parse-expense-text` Edge Function, a structural copy of `receipt-scan`
+(same Gemini/Qwen fallback, same auth pattern) with the image input
+swapped for text. The one new problem a receipt never had — resolving
+names to real people — is solved by constraining the response schema's
+`payer_id`/`participant_ids` to an enum of the group's actual member
+ids, so the model can match "Anna" or "I"/"me" to the right person but
+can never hallucinate one that doesn't exist; whatever it can't resolve
+falls back exactly like a fresh manual add does (payer → the caller,
+participants → everyone).
 
-**True offline mode — the big one.** Add, edit, or delete an expense (or
-record a settlement) with no signal at all: a `localStorage`-backed
-write queue (`src/lib/offlineQueue.js`) with client-generated ids
-(no id-remapping problem — the optimistic row and the eventual server
-row share one id from creation) and enqueue-time collapsing (an
-edit/delete on an unsynced create merges into or cancels it, so strict
-FIFO sync never needs a dependency graph). A read-cache
-(`src/lib/offlineCache.js`) renders the last successful load when
-there's no signal, instead of hanging. Exchange rates resolve for real
-at sync time, not entry time. Conflict policy is last-write-wins with a
-surfaced warning (`expenses.updated_at` + trigger, migration 020).
-Real-world testing (two accounts, actual airplane-mode conditions,
-Safari) caught and fixed several things design alone didn't: a synced
-expense not appearing until a manual refresh (now auto-reloads on
-sync-complete), Safari resolving a genuine network failure as a query
-*error* rather than a rejected request (the opposite of what the
-offline-cache fallback assumed), and `AdminRoute` hanging forever
-offline waiting on a profile fetch with no fallback.
+**Custom group cover-photo banner** — started as a small planned
+"per-group icon upload," reconsidered mid-plan to a wide cover photo
+instead, since the actual use case is a real trip photo, which a tiny
+square crop would do little justice to. New `group-banners` Storage
+bucket + `groups.banner_path`; shows full-bleed on the Dashboard card
+and the group page, falling back to an accent-gradient + first-letter
+treatment (promoted from what used to be a small corner watermark) when
+unset. **Real RLS bug caught live:** the storage policy's first version
+did a raw join against `group_members`/`groups` from inside the policy
+check — those tables are themselves RLS-protected, and a plain query
+against them nested inside another table's RLS evaluation doesn't
+resolve the same way, so uploading failed even as the group's own owner.
+Fixed with a `SECURITY DEFINER` helper (`can_manage_group()`, migration
+025 following 024), the same pattern the existing `receipts` bucket
+policy already used via `is_group_member()` — worth remembering for any
+future Storage policy that needs to check other tables.
 
-**Visual pass on the Dashboard**, done by mocking up three directions
-first (warm/premium, SaaS-dashboard, fintech-table) in a published
-artifact, iterating live with the user, *then* implementing the winner —
-worth repeating as a pattern for the next page. Landed: a gradient-washed
-hero with a session-persistent randomized greeting (9 variants, real
-first name, a background watermark character matching the greeting's
-tone), group cards with a deterministic per-group accent color and
-decorative icon badge (no new "group type" field — just a hash of the
-group's own id), real member avatars (photo when set, initials
-fallback — reused the existing `Avatar` component) with a custom hover
-tooltip, and a staggered entrance animation. Also fixed a real bug found
-in the mockup phase: `color-mix()` with a percentage over 100% silently
-breaks the whole `background` declaration, not just clamps — a button
-had no background and invisible light text on top of it.
+**Push notifications + a persistent activity feed** — the last roadmap
+priority item, built at the fuller of two possible scopes (notifications
+alone vs. notifications + a browsable feed) on request. New append-only
+`activity_events` table (migration 026) — current schema can't
+reconstruct a removed member or an edit's history, only a live snapshot.
+Logs expense add/edit/delete, settlement record/undo, member
+joined/removed, and one consolidated row per CSV import (verified live:
+a multi-row import produces exactly one feed entry). Pushes only for
+expense-added, settlement-recorded (targeted at just the other party),
+and CSV-import — edits/deletes/membership changes are feed-only, to keep
+push from getting noisy. New "Activity" tab on the group page, alongside
+Ledger/Balances/Reports/Members. Reuses essentially all the existing
+push plumbing from the settle-up reminder work (`push_subscriptions`,
+VAPID keys, the service worker's already-generic `push` handler) via a
+new `notify-group` Edge Function that validates every target against
+real group membership rather than trusting the client's list — verified
+live that a fake/non-member id passed as a target comes back
+`targeted: 0`. `_shared/notify.ts`'s `sendReminderPush` renamed to
+`sendPush` since it was already fully generic. The service worker's
+`notificationclick` now deep-links to the group that triggered it
+instead of always opening `/dashboard`.
 
-**Auth email delivery — closed a real defect a live user hit.** A new
-(non-family) signup reported that their confirmation email linked to
-`localhost` instead of production. Root cause was two-layered, not just
-code: `Signup.jsx` now passes `emailRedirectTo`, but Supabase silently
-ignores that unless the target URL is also in the project's own
-Redirect URLs allow-list — and the project's Site URL / allow-list were
-still at their original localhost-era defaults. Fixed both (Site URL →
-`https://varanasi-eta.vercel.app`, a `https://varanasi-eta.vercel.app/**`
-wildcard added to Redirect URLs, alongside the existing
-`localhost:5173/**` one for local dev). While in there, discovered
-`HelpPage.jsx` had been promising a "sign-in screen's password reset"
-that didn't exist — `Login.jsx` had no forgot-password link at all.
-Built the real thing: `/forgot-password` and `/reset-password` pages
-(`ForgotPassword.jsx`, `ResetPassword.jsx`), reached via a new link on
-Login. `ResetPassword.jsx` has to tolerate the async gap between
-landing on the page and Supabase's client-side code-exchange actually
-producing a session — it shows a spinner for up to 4 seconds before
-concluding a link is genuinely invalid/expired, rather than flashing
-that on every legitimate visit.
-
-That surfaced one more thing: Supabase's *default* auth mailer is
-explicitly a low-volume dev-only sender — testing the new reset flow
-(plus the live user's own retries) hit its rate limit almost
-immediately (`email rate limit exceeded`). Fixed for real by setting up
-Resend as custom SMTP: verified `mail.rajarori.com` (a subdomain of a
-domain the user already owned but wasn't hosting anything on — chosen
-over the bare apex specifically so Resend's required MX/bounce record
-doesn't collide with ever putting normal email, e.g. Google Workspace,
-on `rajarori.com` itself), sending as `noreply@mail.rajarori.com`,
-wired into Supabase → Authentication → Emails → SMTP Settings. Note
-this was **not enough by itself** — Supabase Auth has its own
-independent, separately-configured rate limit
-(Authentication → Rate Limits) that applies regardless of which SMTP
-provider is behind it; both had to be fixed. Also noticed, unresolved:
-a second Vercel project (`splitexpenses`, at `splitexpenses-gilt.vercel.app`)
-that isn't `varanasi` — auto-created by Vercel's GitHub integration the
-moment this repo was first pushed, and still auto-deploying on every
-`git push` since. Harmless (no custom domain, nobody uses that URL) but
-confusing; a `vercel remove splitexpenses --yes` was drafted but never
-actually run — real cleanup, not just a note, still to do.
-
-**Proposed, not yet decided:** a Shared Fund group mode (pool money up
-front for a trip, track spend by category, no hard budget caps — full
-BRD published as an artifact, out for the user's family to review).
-Priority order agreed for the roadmap's remaining open items:
-**1. CSV bulk-import, 2. Log an expense by typing a sentence, 3. Push
-notifications / activity feed, 4. Shared Fund mode.** None started yet.
-A custom per-group icon *upload* (as opposed to the auto-assigned
-decorative one) was raised and logged in `PRODUCT-ROADMAP.md` as a real
-feature to scope later, not folded into the UI-only pass above.
+**Documentation catch-up, done at the end of this session on request**
+(a good habit to repeat): `PRODUCT-ROADMAP.md`'s feature-comparison table
+had gone stale — it still listed Search/filter, Default splits, Data
+export, Settle-up deep link, Offline mode, and Comments as **Absent**
+long after all of them had shipped in earlier sessions; fixed, and the
+closing "where to start" section (which was still pointing at the
+settle-up deep link as the next thing to build) rewritten to reflect
+that everything in "Now" and three of "Next"'s four items are done.
+`HelpPage.jsx` had never been updated for *any* of this session's
+features, or for some from before it — added sections for CSV
+import/export/search, the sentence-parser, the Activity tab and
+notifications (including a first mention that notification settings
+even exist, which had never been documented), and a "Group settings"
+paragraph covering rename/trip-dates/duplicate/cover-photo together
+(the gear-icon modal itself had never been documented either).
 
 ## Current state
 
-- **19 migrations** (`002` through `020`), all applied to the live
+- **25 migrations** (`002` through `026`), all applied to the live
   database as of this session ending
-- **4 Edge Functions**: `admin-users` (list/suspend/delete/promote/
-  demote — also where `join_group_by_code`-adjacent admin actions live),
-  `receipt-scan` (optional, needs `GEMINI_API_KEY` and/or
-  `OPENROUTER_API_KEY`), `remind` (manual settle-up nudge), and
-  `trip-reminders-cron` (the automatic daily sweep, `pg_cron`-scheduled)
-- **48 automated unit tests** (`npm test`) — split/balance/currency math
-  plus, new this session, the offline write-queue's enqueue/collapsing
-  logic and merge functions (`src/lib/offlineQueue.test.js`). Everything
-  else (RLS/permission logic, the offline flow end-to-end, the Dashboard
-  redesign) is manual-checklist-only — `TESTING.md` has it, several
-  items marked `[x]` where actually verified in production this session
-  and dated, the rest still open checkboxes
-- **Git**: `origin/main` is up to date through `838745b` (password
-  reset) — everything from this session, including the two commits an
-  earlier handoff flagged as unpushed, is now on GitHub and deployed
-- **Auth email**: production sends through Resend custom SMTP, not
-  Supabase's default dev-only mailer — sender `noreply@mail.rajarori.com`,
-  domain verified in Resend, API key entered directly into Supabase →
-  Authentication → Emails → SMTP Settings (**the key itself lives only
-  there and in the user's Resend account — never in this repo, since
-  it's a public GitHub repo**). Supabase's separate Auth-level email
-  rate limit (Authentication → Rate Limits) was also raised — both
-  needed changing, not just one
-- `npm run deploy` (`deploy.sh`) runs build/lint/test before touching
-  Vercel — prefer this over raw `vercel --prod`; direct `vercel --prod`
-  was used a few times this session when `npm run deploy` hit an
-  unrelated `--debug`-only quirk (a sandboxed shell blocking the network
-  call, not a real auth problem — re-running unsandboxed fixed it),
-  always followed by the bundle-hash live check described below
+- **6 Edge Functions**: `admin-users`, `receipt-scan`,
+  `parse-expense-text` (new), `remind`, `trip-reminders-cron`,
+  `notify-group` (new) — all deployed live
+- **66 automated unit tests** (`npm test`) — 18 new this session
+  (`src/lib/csvImport.test.js`: parsing, per-field validation,
+  all-or-nothing behavior, the 500-row cap). Everything else new this
+  session (the Edge Functions, the activity feed, the banner upload) is
+  manual-checklist-verified against the live dev server and the real
+  Supabase project, same as this app's established pattern for
+  AI-integration and Storage-RLS paths
+- **Git**: `origin/main` up to date through `b24be3e` — every commit
+  this session pushed individually, in the order the features shipped
+- **New Storage buckets**: `group-banners` (public read, owner/manager
+  write via `can_manage_group()`) — `avatars` and `receipts` unchanged
 
 ## Operational lessons worth carrying forward
 
-1. **`color-mix()` percentages must stay within 0–100%.** A value like
-   `color-mix(in srgb, var(--x) 108%, white 0%)` doesn't clamp — it makes
-   the *entire* declaration invalid, silently, so the property falls back
-   to nothing rather than erroring visibly. Caught via a screenshot of a
-   blank button, not a linter.
-2. **A PostgREST embed between two tables that also share a bridge
-   table is ambiguous by default.** `groups` ↔ `profiles` directly
-   (`created_by`) and `groups` → `group_members` → `profiles` both exist,
-   so a bare `profiles(...)` embed on `groups` fails with "more than one
-   relationship was found." Fix: an explicit FK hint,
-   `profiles!<constraint_name>(...)`.
-3. **Safari can resolve a genuine network failure as a query *error*,
-   not a rejected promise.** Don't assume `try/catch` around a
-   `Promise.all` of Supabase calls is what catches "offline" — check
-   `navigator.onLine` alongside any query error too, or an offline-cache
-   fallback silently never fires on that browser.
-4. **`schema.sql` is not kept in sync with `supabase/migrations/*.sql`
-   as new ones land** (confirmed stale as of at least migration 016
-   onward). For a fresh project setup, the migrations directory run in
-   order is the actual source of truth right now, not `schema.sql` alone
-   — worth a dedicated pass to regenerate it, or explicitly documenting
-   that it's frozen at a point-in-time baseline.
-5. **Mock the UI before implementing it, for anything more than a small
-   tweak.** The Dashboard redesign went: three directions in one
-   published artifact → live iteration with the user (colors, icons,
-   copy, a real avatar photo, a real CSS bug caught in the mockup before
-   it ever reached real code) → one confident implementation pass. Worth
-   repeating for Group view / Admin if a further visual pass happens.
-6. **`emailRedirectTo` in code is necessary but not sufficient.**
-   Supabase silently falls back to the project's Site URL whenever the
-   requested redirect isn't in the Redirect URLs allow-list — it doesn't
-   error, it just sends a link to the wrong place. Any auth-redirect
-   change needs both the code *and* a check of Authentication → URL
-   Configuration on the actual project.
-7. **Supabase's default auth mailer and its Auth rate limit are two
-   separate throttles.** Configuring custom SMTP (Resend or otherwise)
-   doesn't by itself lift Authentication → Rate Limits' emails-per-hour
-   cap — that's an independent setting that still applies on top of
-   whichever provider is sending. Hit both before assuming email is
-   fixed.
+1. **A Storage RLS policy that needs to check other tables must use a
+   `SECURITY DEFINER` helper, not a raw join.** Those other tables
+   (`group_members`, `groups`) are themselves RLS-protected, and a plain
+   query against them from inside another table's policy evaluation
+   doesn't resolve the same way — it can silently deny access that
+   should be allowed. The existing `receipts` bucket policy already knew
+   this (via `is_group_member()`); the new `group-banners` one didn't at
+   first, and failed live even for the group's own owner before being
+   fixed the same way.
+2. **supabase-js resolves a query error, it doesn't throw one.** Any
+   `await supabase.from(...)...` whose `{ error }` isn't checked can
+   fail completely silently — this matters most in cleanup/rollback
+   code, where nothing else is watching for the failure. Found via a
+   CSV-import rollback that tried to delete a row a foreign key was
+   still blocking, "succeeded" from the code's point of view, and left
+   a ghost record behind.
+3. **Offline-queued operations need their own display-name context
+   stashed at enqueue time**, not looked up at sync time. `offlineQueue.js`'s
+   apply functions run later, detached from the component that queued
+   them, with no access to `members`/`group` state — the same reasoning
+   `homeCurrency` was already stashed in the payload for the exchange-rate
+   lookup now also applies to `actorName`/`groupName` for activity
+   logging.
+4. **Docs drift even when the roadmap doc itself is kept current per
+   feature.** The feature-comparison table and the closing "start here"
+   section are separate prose that doesn't auto-update just because the
+   detailed "Shipped" bullets above them do — worth a deliberate skim of
+   the *whole* roadmap doc (not just the section just edited) before
+   calling a docs pass done. `HelpPage.jsx` drifts independently of
+   `PRODUCT-ROADMAP.md` entirely — nothing keeps them in sync
+   automatically, so a new user-facing feature needs its own explicit
+   Help update, checked for, not assumed.
+
+(Earlier sessions' lessons — `color-mix()` percentage clamping, the
+PostgREST embed ambiguity fix, Safari's query-error-vs-rejection
+behavior, `schema.sql` drift, the mock-first-for-visual-passes pattern,
+`emailRedirectTo`'s allow-list requirement, and Supabase's two separate
+email throttles — are still valid and still worth knowing; trimmed from
+this file since they're about code that hasn't changed, not this
+session. `git log` on the relevant files is the way back to that detail
+if it's needed again.)
 
 ## What a fresh session should probably do first
 
-Check in on: whether the Shared Fund BRD got a family verdict, which of
-the four prioritized roadmap items to start, whether the Dashboard's
-visual direction should extend to Group view / Admin / Login (the
-mockup pattern above is ready to reuse), and whether the stray
-`splitexpenses` Vercel project has actually been deleted yet
-(`vercel remove splitexpenses --yes` — drafted, never run).
+Check on: whether the Shared Fund BRD (the one remaining roadmap
+priority item) got a family verdict — it's the only thing left in that
+ranked list, blocked on that, not on effort. The stray `splitexpenses`
+Vercel project cleanup (`vercel remove splitexpenses --yes`) is still
+outstanding from before this session — untouched, still worth doing.
+Whether the Dashboard/GroupView visual language (now including cover
+photos) should extend further — Admin and Login haven't had a visual
+pass yet.
