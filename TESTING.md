@@ -27,6 +27,25 @@ own project, safe to make test data.
       `/groups/<id>` by URL → redirected to Login, not a broken page
 - [ ] **P0** — Logged in as a non-admin, navigate directly to `/admin` by
       URL → redirected to Dashboard, not an error or a peek at admin data
+- [x] **P0** — Sign up with a new email → confirmation link in the email
+      lands on the production URL, not `localhost` (verified 2026-09-04 —
+      this was a real defect a new user hit; fixed via `emailRedirectTo` in
+      `Signup.jsx` plus the Supabase project's Site URL / Redirect URLs
+      allow-list, which is configured in the Supabase Dashboard, not this
+      repo)
+- [ ] **P0** — "Forgot password?" on Login → enter an email that has an
+      account → "Check your email" shown either way (no signal on whether
+      the address exists) → link in the email lands on `/reset-password` on
+      the production URL, not `localhost`
+- [ ] **P0** — Follow a valid reset-password link → land on "Choose a new
+      password," not "Link expired"
+- [ ] **P1** — On `/reset-password`, mismatched password/confirm → clear
+      error, not silently rejected
+- [ ] **P1** — Save a new password → lands on Dashboard signed in; signing
+      out and back in with the new password works, the old one doesn't
+- [ ] **P2** — Visit `/reset-password` directly with no recovery link
+      (nothing in the URL) → "Link expired" message after a few seconds,
+      not an infinite spinner
 
 ## Groups
 
