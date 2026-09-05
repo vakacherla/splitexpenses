@@ -153,11 +153,11 @@ query any time, not locked in a vendor's export button.
 
 ### Next — real features, real effort, still clearly worth it
 
-**Priority order set 2026-09-04**, for the four items still genuinely open
-in this section: **1. CSV bulk-import, 2. Log an expense by typing a
+**Priority order set 2026-09-04**, for the four items open in this
+section at the time: **1. CSV bulk-import, 2. Log an expense by typing a
 sentence, 3. Push notifications / activity feed, 4. Shared Fund mode**
-(tracked separately — see its own BRD, out for family review). Not yet
-started; this just records the agreed order before picking one up.
+(tracked separately — see its own BRD, out for family review). #1 is now
+shipped (below); the rest are still in that order.
 
 - ✅ **Shipped** — edit an existing expense. User feedback: real friction
   in practice, not hypothetical — the only way to fix a mistake used to
@@ -369,18 +369,52 @@ started; this just records the agreed order before picking one up.
   public, owner/manager-only write), and an upload control in group
   creation and Group settings, falling back to the auto-assigned
   decorative icon when unset. Still open — not scoped further yet.
-- **CSV bulk-import.** The real intent: someone's already tracking a
-  group's expenses in a spreadsheet and wants to bring the backlog in at
-  once instead of re-entering every row by hand — not a general-purpose
-  data pipe. Worth building, but only scoped tightly, since a bad bulk
-  import (wrong person, wrong currency, a silently skipped row) is much
-  harder to trust than one bad manual entry: CSV only, a strict template
-  matching this app's own export shape (no column-guessing), exact email
-  matching for who paid and who's in the split (never fuzzy name
-  matching), a mandatory preview of exactly what will be created before
-  anything touches the database, and every import tagged so a bad one
-  can be undone in one click rather than row by row. Still open —
-  revisit when there's an actual spreadsheet to bring in, not before.
+- ✅ **Shipped — CSV bulk-import.** The real intent: someone's already
+  tracking a group's expenses in a spreadsheet and wants to bring the
+  backlog in at once instead of re-entering every row by hand — not a
+  general-purpose data pipe. Scoped exactly as tightly as planned, since
+  a bad bulk import (wrong person, wrong currency, a silently skipped
+  row) is much harder to trust than one bad manual entry: CSV only, a
+  strict template mirroring the existing CSV export's column order and
+  punctuation (with email swapped in for display name in the two
+  people-columns, since names aren't unique and exact email matching was
+  the actual requirement), a "Download template" link inline in the
+  import modal so nobody has to reverse-engineer the format from
+  scratch, and a mandatory preview table of every row before anything
+  touches the database. **All-or-nothing, not a partial import**: if any
+  row fails validation (unknown email, unknown category, unsupported
+  currency, non-positive amount, a malformed date, or split amounts that
+  don't sum to the row's total), the whole file is rejected with every
+  problem listed by row number — no row is ever silently skipped, which
+  is exactly the trust gap that made a looser version not worth
+  building. Every successful import is tagged with a new
+  `import_batches` row (migration 021) — its own `id` is stamped onto
+  every `expenses.import_batch_id` it creates — so it can be undone in
+  one click two ways: an inline "Undo this import" right after a
+  successful run, or a persistent **"CSV imports"** list in Group
+  settings (filename, date, row count, who ran it) for undoing a bad
+  import discovered later, not just immediately after. Undo needed no
+  new RPC: it's a plain `update ... where import_batch_id = $1`
+  soft-delete, already permitted by the existing "creator or payer can
+  edit" RLS policy on `expenses` (migration 017) since the importer is
+  always `created_by` on every row in their own batch — v1 undo is
+  therefore self-service only (whoever ran the import), not a
+  manager-can-undo-anyone's-import tool, which would need a new
+  `SECURITY DEFINER` function and wasn't asked for. Exchange rates
+  resolve at import time (today's live rate), the same deliberate
+  "locked-in at entry, not backdated to the row's own date" convention
+  already established by Duplicate expense and the offline sync engine —
+  no new historical-rate API integration needed. Itemized splits aren't
+  supported in v1 since the export itself doesn't emit itemized detail
+  either, so every imported row is written as an "exact" split.
+  Reachable from "Import CSV" next to "Export CSV" on the Ledger —
+  unlike Export, always visible (not gated on the group already having
+  expenses), since an empty new group is the main backfill case this
+  exists for. Verified end-to-end against the live database: a
+  two-row/two-person import, balances recomputing correctly afterward,
+  the all-or-nothing rejection path (mixed valid/invalid rows correctly
+  blocking the whole file), and undo actually restoring the ledger to
+  empty and marking the batch "Undone."
 
 ### Deliberately not doing — and why
 

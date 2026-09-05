@@ -1,12 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabaseClient'
 
 export default function GroupSettingsModal({
   group,
+  currentUserId,
   onRename,
   onUpdateTripDates,
   onDeleteGroup,
   onDuplicate,
   duplicating,
+  onImportUndone,
   onClose,
 }) {
   const [renaming, setRenaming] = useState(false)
@@ -19,6 +22,38 @@ export default function GroupSettingsModal({
   const datesChanged = startDateDraft !== (group.start_date ?? '') || endDateDraft !== (group.end_date ?? '')
   const [showDuplicate, setShowDuplicate] = useState(false)
   const [duplicateName, setDuplicateName] = useState(`${group.name} (copy)`)
+  const [importBatches, setImportBatches] = useState(null)
+  const [undoingBatchId, setUndoingBatchId] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    supabase
+      .from('import_batches')
+      .select('id, filename, row_count, created_at, undone_at, created_by, profiles(display_name)')
+      .eq('group_id', group.id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        if (!cancelled) setImportBatches(data ?? [])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [group.id])
+
+  async function handleUndoImport(batchId) {
+    if (!confirm('Undo this import? Every expense it created will be removed from the ledger.')) return
+    setUndoingBatchId(batchId)
+    await supabase.from('expenses').update({ deleted_at: new Date().toISOString() }).eq('import_batch_id', batchId)
+    const { data } = await supabase
+      .from('import_batches')
+      .update({ undone_at: new Date().toISOString() })
+      .eq('id', batchId)
+      .select()
+      .single()
+    setImportBatches((prev) => prev.map((b) => (b.id === batchId ? { ...b, undone_at: data?.undone_at ?? new Date().toISOString() } : b)))
+    setUndoingBatchId(null)
+    onImportUndone?.()
+  }
 
   async function saveTripDates() {
     setSavingDates(true)
@@ -149,6 +184,37 @@ export default function GroupSettingsModal({
             </div>
           )}
         </div>
+
+        {importBatches?.length > 0 && (
+          <div className="pt-4 border-t border-line">
+            <p className="text-xs text-ink-soft mb-1.5">CSV imports</p>
+            <ul className="space-y-2">
+              {importBatches.map((b) => (
+                <li key={b.id} className="flex items-center justify-between gap-3 text-sm">
+                  <div className="min-w-0">
+                    <p className="text-ink truncate">
+                      {b.filename ?? 'import'} — {b.row_count} expense{b.row_count === 1 ? '' : 's'}
+                    </p>
+                    <p className="text-xs text-ink-soft">
+                      {new Date(b.created_at).toLocaleDateString()} by {b.profiles?.display_name ?? 'someone'}
+                    </p>
+                  </div>
+                  {b.undone_at ? (
+                    <span className="text-xs text-ink-soft shrink-0">Undone</span>
+                  ) : b.created_by === currentUserId ? (
+                    <button
+                      onClick={() => handleUndoImport(b.id)}
+                      disabled={undoingBatchId === b.id}
+                      className="text-xs font-medium text-owe hover:underline shrink-0 disabled:opacity-50"
+                    >
+                      {undoingBatchId === b.id ? 'Undoing…' : 'Undo'}
+                    </button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className="pt-4 border-t border-line">
           <p className="text-xs text-owe mb-2">Danger zone</p>

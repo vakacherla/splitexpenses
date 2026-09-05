@@ -8,6 +8,7 @@ import MembersPanel from '../components/MembersPanel'
 import AddExpenseForm from '../components/AddExpenseForm'
 import SettleUpModal from '../components/SettleUpModal'
 import GroupSettingsModal from '../components/GroupSettingsModal'
+import ImportCsvModal from '../components/ImportCsvModal'
 import LoadingScreen from '../components/LoadingScreen'
 import { SkeletonChart } from '../components/Skeleton'
 import EmptyState from '../components/EmptyState'
@@ -46,6 +47,7 @@ export default function GroupView() {
   const [editingExpense, setEditingExpense] = useState(null)
   const [duplicatingExpense, setDuplicatingExpense] = useState(null)
   const [showSettings, setShowSettings] = useState(false)
+  const [showImport, setShowImport] = useState(false)
   const [duplicatingGroup, setDuplicatingGroup] = useState(false)
   const [settleSuggestion, setSettleSuggestion] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -424,32 +426,44 @@ export default function GroupView() {
 
       {tab === 'ledger' && (
         <>
-          {displayExpenses.length > 0 && (
+          {(displayExpenses.length > 0 || isMember) && (
             <div className="flex flex-col sm:flex-row gap-3 mb-5">
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by description or payer…"
-                className="flex-1 rounded-lg border border-line bg-paper px-3.5 py-2 text-sm text-ink focus:border-primary outline-none"
-              />
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink focus:border-primary outline-none"
-              >
-                <option value="All">All categories</option>
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={handleExportCSV}
-                className="rounded-lg border border-line px-3.5 py-2 text-sm text-ink-soft hover:text-ink hover:border-primary transition-colors whitespace-nowrap"
-              >
-                Export CSV
-              </button>
+              {displayExpenses.length > 0 && (
+                <>
+                  <input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by description or payer…"
+                    className="flex-1 rounded-lg border border-line bg-paper px-3.5 py-2 text-sm text-ink focus:border-primary outline-none"
+                  />
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    className="rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink focus:border-primary outline-none"
+                  >
+                    <option value="All">All categories</option>
+                    {CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={handleExportCSV}
+                    className="rounded-lg border border-line px-3.5 py-2 text-sm text-ink-soft hover:text-ink hover:border-primary transition-colors whitespace-nowrap"
+                  >
+                    Export CSV
+                  </button>
+                </>
+              )}
+              {isMember && (
+                <button
+                  onClick={() => setShowImport(true)}
+                  className="rounded-lg border border-line px-3.5 py-2 text-sm text-ink-soft hover:text-ink hover:border-primary transition-colors whitespace-nowrap"
+                >
+                  Import CSV
+                </button>
+              )}
             </div>
           )}
 
@@ -530,12 +544,24 @@ export default function GroupView() {
       {showSettings && (
         <GroupSettingsModal
           group={group}
+          currentUserId={user.id}
           onRename={handleRenameGroup}
           onUpdateTripDates={handleUpdateTripDates}
           onDeleteGroup={handleDeleteGroup}
           onDuplicate={handleDuplicateGroup}
           duplicating={duplicatingGroup}
+          onImportUndone={load}
           onClose={() => setShowSettings(false)}
+        />
+      )}
+
+      {showImport && (
+        <ImportCsvModal
+          group={group}
+          members={members}
+          currentUserId={user.id}
+          onImported={load}
+          onClose={() => setShowImport(false)}
         />
       )}
 
