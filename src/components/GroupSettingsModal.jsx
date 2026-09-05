@@ -126,25 +126,54 @@ export default function GroupSettingsModal({
           />
           {canManage && (
             <div className="mt-2">
-              <div className="flex items-center gap-3">
-                <input
-                  ref={bannerInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleBannerChange}
-                />
+              <input
+                ref={bannerInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleBannerChange}
+              />
+              {bannerPath ? (
+                <div className="flex items-center justify-between rounded-xl border border-line bg-paper px-3.5 py-2.5">
+                  <span className="text-sm text-ink-soft truncate">
+                    {uploadingBanner ? 'Uploading…' : 'Cover photo set'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => bannerInputRef.current?.click()}
+                    disabled={uploadingBanner}
+                    className="text-xs font-medium text-primary hover:underline disabled:opacity-50 shrink-0 ml-2"
+                  >
+                    Change
+                  </button>
+                </div>
+              ) : (
                 <button
                   type="button"
                   onClick={() => bannerInputRef.current?.click()}
                   disabled={uploadingBanner}
-                  className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-line py-3 text-sm text-ink-soft hover:text-ink hover:border-primary transition-colors disabled:opacity-50"
                 >
-                  {uploadingBanner ? 'Uploading…' : bannerPath ? 'Change cover photo' : 'Add a cover photo'}
+                  <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
+                    <path
+                      d="M4 6.5a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-7Z"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      strokeLinejoin="round"
+                    />
+                    <circle cx="7.5" cy="9" r="1.25" stroke="currentColor" strokeWidth="1.4" />
+                    <path d="M4 12.5 8 9l2.5 2.5L14 8l2 2" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+                  </svg>
+                  {uploadingBanner ? 'Uploading…' : 'Add a cover photo'}
                 </button>
-              </div>
-              <p className="mt-1.5 text-[11px] font-medium text-accent border border-accent/30 bg-accent-tint rounded-lg px-3 py-2">
-                Best as a wide photo, about 3:1 (e.g. 1200×400px) — square or tall photos get cropped to fit.
+              )}
+              <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-ink">
+                <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5 shrink-0 mt-0.5 text-ink-soft" aria-hidden="true">
+                  <circle cx="10" cy="10" r="7.25" stroke="currentColor" strokeWidth="1.4" />
+                  <path d="M10 9v4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                  <circle cx="10" cy="6.75" r="0.9" fill="currentColor" />
+                </svg>
+                Landscape photos work best — square or portrait shots will get cropped to fit.
               </p>
             </div>
           )}
