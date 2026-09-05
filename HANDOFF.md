@@ -16,6 +16,54 @@ directly in Claude Code on the real project files, in a real git repo —
 the "should we move to git" question a previous handoff raised is
 resolved; this section of history doesn't need repeating.
 
+## System shape
+
+```
+Browser (React SPA)
+   │  compiled JS bundle, handed over once
+   ▼
+Vercel — static hosting only, nothing runs here at request time
+
+Browser (React SPA)
+   │  every runtime read/write goes straight here — authorized by
+   │  row-level security, no application server in between
+   ▼
+Supabase
+   ├─ Postgres (RLS)
+   ├─ Auth ──sends email via── Resend SMTP (noreply@mail.rajarori.com) ──► user's inbox
+   ├─ Storage — receipt photos
+   └─ Edge Functions — exist only because these need a secret the browser can't hold
+        ├─ admin-users          service-role key (admin list/suspend/promote/etc.)
+        ├─ receipt-scan         Gemini / OpenRouter key (AI receipt parsing)
+        ├─ remind               manual "nudge to settle up" (sends a push)
+        └─ trip-reminders-cron  pg_cron daily sweep (sends a push)
+
+Called directly from the browser — no secret involved, so no Edge Function needed
+   ├─ Frankfurter API (api.frankfurter.dev) — exchange rates
+   └─ Web Push (VITE_VAPID_PUBLIC_KEY)      — push subscription
+```
+
+This is the map; `ARCHITECTURE.md`'s "The shape, in one paragraph" section
+and its risk log underneath have the actual reasoning and tradeoffs. The
+one thing this diagram adds that wasn't written down anywhere before
+today: Auth's email path used to be Supabase's own shared, rate-limited
+dev mailer — it's now Resend, added this session after that limit broke
+a real signup (see below).
+
+**Tech stack**
+
+- **Frontend**: React 19, Vite 8, React Router 7, Tailwind CSS v4
+  (`@theme` tokens, class-based dark mode), Recharts (Reports charts)
+- **Backend**: Supabase — Postgres 17 (RLS-authorized, no app server),
+  Auth, Storage, Edge Functions (Deno)
+- **Testing/tooling**: Vitest, `oxlint`, `@supabase/supabase-js` v2
+- **Hosting/deploy**: Vercel (static hosting), GitHub
+  (`vakacherla/splitexpenses`, public repo)
+- **Third-party services**: Resend (transactional email, custom SMTP),
+  Frankfurter API (`api.frankfurter.dev`, exchange rates, no key
+  needed), Web Push (native browser API, VAPID keys, no third-party
+  service), Google Gemini / OpenRouter (optional, receipt-scan OCR)
+
 ## Everything built in this session, grouped
 
 **Admin, with real gaps closed by using it:** a super admin can add *or
