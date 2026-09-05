@@ -75,6 +75,47 @@ in the mockup phase: `color-mix()` with a percentage over 100% silently
 breaks the whole `background` declaration, not just clamps — a button
 had no background and invisible light text on top of it.
 
+**Auth email delivery — closed a real defect a live user hit.** A new
+(non-family) signup reported that their confirmation email linked to
+`localhost` instead of production. Root cause was two-layered, not just
+code: `Signup.jsx` now passes `emailRedirectTo`, but Supabase silently
+ignores that unless the target URL is also in the project's own
+Redirect URLs allow-list — and the project's Site URL / allow-list were
+still at their original localhost-era defaults. Fixed both (Site URL →
+`https://varanasi-eta.vercel.app`, a `https://varanasi-eta.vercel.app/**`
+wildcard added to Redirect URLs, alongside the existing
+`localhost:5173/**` one for local dev). While in there, discovered
+`HelpPage.jsx` had been promising a "sign-in screen's password reset"
+that didn't exist — `Login.jsx` had no forgot-password link at all.
+Built the real thing: `/forgot-password` and `/reset-password` pages
+(`ForgotPassword.jsx`, `ResetPassword.jsx`), reached via a new link on
+Login. `ResetPassword.jsx` has to tolerate the async gap between
+landing on the page and Supabase's client-side code-exchange actually
+producing a session — it shows a spinner for up to 4 seconds before
+concluding a link is genuinely invalid/expired, rather than flashing
+that on every legitimate visit.
+
+That surfaced one more thing: Supabase's *default* auth mailer is
+explicitly a low-volume dev-only sender — testing the new reset flow
+(plus the live user's own retries) hit its rate limit almost
+immediately (`email rate limit exceeded`). Fixed for real by setting up
+Resend as custom SMTP: verified `mail.rajarori.com` (a subdomain of a
+domain the user already owned but wasn't hosting anything on — chosen
+over the bare apex specifically so Resend's required MX/bounce record
+doesn't collide with ever putting normal email, e.g. Google Workspace,
+on `rajarori.com` itself), sending as `noreply@mail.rajarori.com`,
+wired into Supabase → Authentication → Emails → SMTP Settings. Note
+this was **not enough by itself** — Supabase Auth has its own
+independent, separately-configured rate limit
+(Authentication → Rate Limits) that applies regardless of which SMTP
+provider is behind it; both had to be fixed. Also noticed, unresolved:
+a second Vercel project (`splitexpenses`, at `splitexpenses-gilt.vercel.app`)
+that isn't `varanasi` — auto-created by Vercel's GitHub integration the
+moment this repo was first pushed, and still auto-deploying on every
+`git push` since. Harmless (no custom domain, nobody uses that URL) but
+confusing; a `vercel remove splitexpenses --yes` was drafted but never
+actually run — real cleanup, not just a note, still to do.
+
 **Proposed, not yet decided:** a Shared Fund group mode (pool money up
 front for a trip, track spend by category, no hard budget caps — full
 BRD published as an artifact, out for the user's family to review).
@@ -101,15 +142,23 @@ feature to scope later, not folded into the UI-only pass above.
   redesign) is manual-checklist-only — `TESTING.md` has it, several
   items marked `[x]` where actually verified in production this session
   and dated, the rest still open checkboxes
-- **Git**: two commits made this session (`a62156c`, `b039327`) sitting
-  on `main`, **not yet pushed to `origin`** — `origin/main` is still at
-  `2498e2f`. Decide whether to push before starting fresh tomorrow, or
-  the local/remote gap will just keep growing
+- **Git**: `origin/main` is up to date through `838745b` (password
+  reset) — everything from this session, including the two commits an
+  earlier handoff flagged as unpushed, is now on GitHub and deployed
+- **Auth email**: production sends through Resend custom SMTP, not
+  Supabase's default dev-only mailer — sender `noreply@mail.rajarori.com`,
+  domain verified in Resend, API key entered directly into Supabase →
+  Authentication → Emails → SMTP Settings (**the key itself lives only
+  there and in the user's Resend account — never in this repo, since
+  it's a public GitHub repo**). Supabase's separate Auth-level email
+  rate limit (Authentication → Rate Limits) was also raised — both
+  needed changing, not just one
 - `npm run deploy` (`deploy.sh`) runs build/lint/test before touching
   Vercel — prefer this over raw `vercel --prod`; direct `vercel --prod`
   was used a few times this session when `npm run deploy` hit an
-  unrelated `--debug`-only quirk, always followed by the bundle-hash live
-  check described below
+  unrelated `--debug`-only quirk (a sandboxed shell blocking the network
+  call, not a real auth problem — re-running unsandboxed fixed it),
+  always followed by the bundle-hash live check described below
 
 ## Operational lessons worth carrying forward
 
@@ -141,11 +190,24 @@ feature to scope later, not folded into the UI-only pass above.
    copy, a real avatar photo, a real CSS bug caught in the mockup before
    it ever reached real code) → one confident implementation pass. Worth
    repeating for Group view / Admin if a further visual pass happens.
+6. **`emailRedirectTo` in code is necessary but not sufficient.**
+   Supabase silently falls back to the project's Site URL whenever the
+   requested redirect isn't in the Redirect URLs allow-list — it doesn't
+   error, it just sends a link to the wrong place. Any auth-redirect
+   change needs both the code *and* a check of Authentication → URL
+   Configuration on the actual project.
+7. **Supabase's default auth mailer and its Auth rate limit are two
+   separate throttles.** Configuring custom SMTP (Resend or otherwise)
+   doesn't by itself lift Authentication → Rate Limits' emails-per-hour
+   cap — that's an independent setting that still applies on top of
+   whichever provider is sending. Hit both before assuming email is
+   fixed.
 
 ## What a fresh session should probably do first
 
 Check in on: whether the Shared Fund BRD got a family verdict, which of
-the four prioritized roadmap items to start, whether to push the two
-local commits to `origin`, and whether the Dashboard's visual direction
-should extend to Group view / Admin / Login — the mockup pattern above is
-ready to reuse for any of them.
+the four prioritized roadmap items to start, whether the Dashboard's
+visual direction should extend to Group view / Admin / Login (the
+mockup pattern above is ready to reuse), and whether the stray
+`splitexpenses` Vercel project has actually been deleted yet
+(`vercel remove splitexpenses --yes` — drafted, never run).

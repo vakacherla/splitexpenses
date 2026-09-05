@@ -128,7 +128,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 sm:px-6 py-10">
+    <div className="mx-auto max-w-3xl xl:max-w-6xl px-4 sm:px-6 py-10">
       <div
         className="relative mb-9 overflow-hidden rounded-3xl border border-line p-7 sm:p-9 shadow-raised"
         style={{
@@ -271,7 +271,7 @@ export default function Dashboard() {
           subtitle="Start one, or join a friend's with their invite code."
         />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {groups.map((g, idx) => {
             const accent = accentFor(g.id)
             return (
