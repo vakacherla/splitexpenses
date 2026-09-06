@@ -196,7 +196,7 @@ async function applyExpenseCreate(op) {
     targetUserIds: otherMembers,
     title: payload.groupName ?? 'Split Expenses',
     body: `${payload.actorName ?? 'Someone'} added an expense: ${summary}`,
-    url: `/groups/${op.groupId}`,
+    url: `/trips/${op.groupId}`,
   })
 }
 
@@ -324,7 +324,7 @@ async function applySettlementCreate(op) {
     targetUserIds: [otherParty],
     title: payload.groupName ?? 'Split Expenses',
     body: `${actorName} recorded a payment: ${summary}`,
-    url: `/groups/${op.groupId}`,
+    url: `/trips/${op.groupId}`,
   })
 }
 

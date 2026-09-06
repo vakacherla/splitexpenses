@@ -156,7 +156,7 @@ export default function ImportCsvModal({ group, members, currentUserId, onImport
         targetUserIds: otherMembers,
         title: group.name,
         body: `${actorName} imported ${summary}`,
-        url: `/groups/${group.id}`,
+        url: `/trips/${group.id}`,
       })
 
       setResult({ batchId: batch.id, count: validRows.length })
@@ -188,7 +188,7 @@ export default function ImportCsvModal({ group, members, currentUserId, onImport
         )
       } else {
         setSubmitError(
-          'Import failed, and the automatic cleanup couldn\'t reach the server either — some expenses from this attempt may still be in the ledger. Once you\'re back online, check "CSV imports" in Group settings and undo it there if so.'
+          'Import failed, and the automatic cleanup couldn\'t reach the server either — some expenses from this attempt may still be in the ledger. Once you\'re back online, check "CSV imports" in Trip settings and undo it there if so.'
         )
       }
       onImported()

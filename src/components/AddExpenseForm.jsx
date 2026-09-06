@@ -544,7 +544,7 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
         targetUserIds: otherMembers,
         title: group.name,
         body: `${actorName} added an expense: ${expenseSummary}`,
-        url: `/groups/${group.id}`,
+        url: `/trips/${group.id}`,
       })
     }
 
@@ -1031,7 +1031,7 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
                   onChange={(e) => setSaveAsDefault(e.target.checked)}
                   className="h-3.5 w-3.5 accent-primary"
                 />
-                Save this as the default split for this group
+                Save this as the default split for this trip
               </label>
             )}
           </div>

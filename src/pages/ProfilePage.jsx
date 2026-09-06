@@ -143,14 +143,14 @@ export default function ProfilePage() {
     <div className="mx-auto max-w-2xl px-4 sm:px-6 py-8 pb-16">
       <div className="mb-6">
         <Link to="/dashboard" className="text-sm text-ink-soft hover:text-ink">
-          ← Your groups
+          ← Your trips
         </Link>
         <div className="flex items-center gap-2 mt-1">
           <h1 className="font-display text-2xl sm:text-3xl text-ink">Your profile</h1>
           <HelpLink to="profile" />
         </div>
         <p className="text-sm text-ink-soft mt-0.5">
-          Visible to anyone you share a group with — this is how they'll recognize and reach you.
+          Visible to anyone you share a trip with — this is how they'll recognize and reach you.
         </p>
       </div>
 
@@ -262,9 +262,9 @@ export default function ProfilePage() {
 
       {memberships && memberships.length > 0 && (
         <div className="mt-10 pt-6 border-t border-line">
-          <h2 className="font-display text-lg text-ink mb-1">Nicknames per group</h2>
+          <h2 className="font-display text-lg text-ink mb-1">Nicknames per trip</h2>
           <p className="text-sm text-ink-soft mb-4">
-            Go by a different name in a specific group — everyone in that group sees it instead of your regular
+            Go by a different name in a specific trip — everyone in that trip sees it instead of your regular
             name, but only there.
           </p>
           <ul className="divide-y divide-line border-y border-line">
@@ -274,7 +274,7 @@ export default function ProfilePage() {
                 <li key={m.group_id} className="py-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-ink truncate">{m.groups?.name ?? 'Unknown group'}</p>
+                      <p className="text-ink truncate">{m.groups?.name ?? 'Unknown trip'}</p>
                       {!editing && (
                         <p className="text-xs text-ink-soft mt-0.5">
                           {m.nickname ? `Going by "${m.nickname}" here` : 'Using your regular name'}

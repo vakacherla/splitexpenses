@@ -53,12 +53,12 @@ describe('help section targets', () => {
     expect(missing).toEqual([])
   })
 
-  it('GroupView tab-to-section mapping points at real sections', () => {
-    const text = fs.readFileSync(path.join(SRC_DIR, 'pages/GroupView.jsx'), 'utf8')
+  it('TripView tab-to-section mapping points at real sections', () => {
+    const text = fs.readFileSync(path.join(SRC_DIR, 'pages/TripView.jsx'), 'utf8')
     const block = text.match(/TAB_HELP_SECTION\s*=\s*\{([\s\S]*?)\}/)?.[1]
-    expect(block, 'TAB_HELP_SECTION not found in GroupView.jsx').toBeTruthy()
+    expect(block, 'TAB_HELP_SECTION not found in TripView.jsx').toBeTruthy()
     const ids = [...block.matchAll(/:\s*'([a-z-]+)'/g)].map((m) => m[1])
-    // Every group tab (ledger/balances/reports/activity/members) should map to something.
+    // Every trip tab (ledger/balances/reports/activity/members) should map to something.
     expect(ids.length).toBeGreaterThanOrEqual(5)
     for (const id of ids) {
       expect(validIds.has(id), `TAB_HELP_SECTION has unknown id "${id}"`).toBe(true)

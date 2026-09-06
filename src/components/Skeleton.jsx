@@ -8,7 +8,7 @@ export function Skeleton({ className = '' }) {
 
 // Matches the app's common divide-y list-row shape: a title line, a
 // shorter subtitle line, and an optional trailing chunk (an amount, a
-// chevron). Used for the Dashboard's group list, RatesPage's currency
+// chevron). Used for the Dashboard's trip list, RatesPage's currency
 // list, and several Admin tabs.
 export function SkeletonRows({ count = 5, trailing = true }) {
   return (

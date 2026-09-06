@@ -67,7 +67,7 @@ export default function RatesPage() {
     <div className="mx-auto max-w-2xl px-4 sm:px-6 py-8">
       <div className="mb-6">
         <Link to="/dashboard" className="text-sm text-ink-soft hover:text-ink">
-          ← Your groups
+          ← Your trips
         </Link>
         <div className="flex items-center gap-2 mt-1">
           <h1 className="font-display text-2xl sm:text-3xl text-ink">Exchange rates</h1>

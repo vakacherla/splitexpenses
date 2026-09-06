@@ -4,7 +4,7 @@
 // just-added-while-offline expense/settlement shows up immediately.
 //
 // Write-through happens at the one clean seam each screen already has —
-// Dashboard.jsx's loadGroups() and GroupView.jsx's load() — right after a
+// Dashboard.jsx's loadGroups() and TripView.jsx's load() — right after a
 // fetch succeeds. Read-fallback happens in the same functions' catch
 // block, when a fetch fails outright (offline).
 

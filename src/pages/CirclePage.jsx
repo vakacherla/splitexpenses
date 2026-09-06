@@ -8,7 +8,7 @@ import LoadingScreen from '../components/LoadingScreen'
 import EmptyState from '../components/EmptyState'
 import CircleIcon from '../components/CircleIcon'
 import HelpLink from '../components/HelpLink'
-import { accentFor } from '../components/GroupIcon'
+import { accentFor } from '../components/TripIcon'
 
 export default function CirclePage() {
   const { circleId } = useParams()
@@ -95,7 +95,7 @@ export default function CirclePage() {
       setError(error.message)
       return
     }
-    navigate(`/groups/${data.id}`)
+    navigate(`/trips/${data.id}`)
   }
 
   async function handleJoinTrip(tripId) {
@@ -107,7 +107,7 @@ export default function CirclePage() {
       setError(error.message)
       return
     }
-    navigate(`/groups/${tripId}`)
+    navigate(`/trips/${tripId}`)
   }
 
   async function handleRemoveMember(targetUserId) {
@@ -130,7 +130,7 @@ export default function CirclePage() {
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <p className="text-owe mb-3">{error}</p>
         <Link to="/dashboard" className="text-primary hover:underline text-sm">
-          Back to your groups
+          Back to your trips
         </Link>
       </div>
     )
@@ -142,7 +142,7 @@ export default function CirclePage() {
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
       <div className="mb-6">
         <Link to="/dashboard" className="text-sm text-ink-soft hover:text-ink">
-          ← Your groups
+          ← Your trips
         </Link>
         <div className="flex items-center gap-3 mt-1">
           <div
@@ -220,7 +220,7 @@ export default function CirclePage() {
                 <li key={t.id} className="flex items-center justify-between gap-3 py-3">
                   <div className="min-w-0">
                     {isMine ? (
-                      <Link to={`/groups/${t.id}`} className="text-ink hover:text-primary truncate block">
+                      <Link to={`/trips/${t.id}`} className="text-ink hover:text-primary truncate block">
                         {t.name}
                       </Link>
                     ) : (

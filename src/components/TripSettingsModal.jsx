@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import { accentFor } from './GroupIcon'
-import GroupBanner from './GroupBanner'
+import { accentFor } from './TripIcon'
+import TripBanner from './TripBanner'
 import { validateTripDates, MIN_TRIP_DATE, MAX_TRIP_DATE } from '../lib/tripDates'
 import HelpLink from './HelpLink'
 
-export default function GroupSettingsModal({
+export default function TripSettingsModal({
   group,
   currentUserId,
   canManage,
   onRename,
   onUpdateTripDates,
-  onDeleteGroup,
+  onDeleteTrip,
   onDuplicate,
   duplicating,
   onImportUndone,
@@ -187,9 +187,9 @@ export default function GroupSettingsModal({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink/40 px-0 sm:px-4">
       <div className="w-full sm:max-w-sm bg-paper-raised rounded-t-3xl sm:rounded-2xl border border-line shadow-raised p-5 sm:p-6 space-y-4 max-h-[92dvh] overflow-y-auto">
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-xl text-ink">Group settings</h2>
+          <h2 className="font-display text-xl text-ink">Trip settings</h2>
           <div className="flex items-center gap-3">
-            <HelpLink to="group-settings" />
+            <HelpLink to="trip-settings" />
             <button type="button" onClick={onClose} className="text-ink-soft hover:text-ink text-sm">
               Close
             </button>
@@ -197,7 +197,7 @@ export default function GroupSettingsModal({
         </div>
 
         <div>
-          <GroupBanner
+          <TripBanner
             name={group.name}
             bannerPath={bannerPath}
             accent={accentFor(group.id)}
@@ -260,7 +260,7 @@ export default function GroupSettingsModal({
         </div>
 
         <div>
-          <p className="text-xs text-ink-soft mb-1.5">Group name</p>
+          <p className="text-xs text-ink-soft mb-1.5">Trip name</p>
           {renaming ? (
             <div className="flex items-center gap-2">
               <input
@@ -343,12 +343,12 @@ export default function GroupSettingsModal({
           <p className="text-xs text-ink-soft mb-1.5">Same people, next trip</p>
           {!showDuplicate ? (
             <button onClick={() => setShowDuplicate(true)} className="text-sm text-primary hover:underline">
-              Duplicate this group
+              Duplicate this trip
             </button>
           ) : (
             <div className="space-y-2">
               <p className="text-xs text-ink-soft">
-                Copies the members (and manager roles) and home currency into a new group with its own invite
+                Copies the members (and manager roles) and home currency into a new trip with its own invite
                 code. Expenses, settlements, and trip dates stay behind — it's a fresh start, not a continuation.
               </p>
               <input
@@ -463,13 +463,13 @@ export default function GroupSettingsModal({
           </p>
           {!confirmingDelete ? (
             <button onClick={() => setConfirmingDelete(true)} className="text-sm text-owe hover:underline">
-              Delete this group
+              Delete this trip
             </button>
           ) : (
             <div className="space-y-2">
               <p className="text-sm text-ink-soft">
                 This removes {group.name} from everyone's dashboard right away. Nothing is actually deleted — the
-                app's admin can restore it, in full, for 30 days. After that it's gone for good. Type the group
+                app's admin can restore it, in full, for 30 days. After that it's gone for good. Type the trip
                 name to confirm.
               </p>
               <input
@@ -480,11 +480,11 @@ export default function GroupSettingsModal({
               />
               <div className="flex items-center gap-3">
                 <button
-                  onClick={onDeleteGroup}
+                  onClick={onDeleteTrip}
                   disabled={deleteConfirmText !== group.name}
                   className="rounded-full bg-owe text-on-primary text-sm font-medium px-4 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Delete this group
+                  Delete this trip
                 </button>
                 <button
                   onClick={() => {

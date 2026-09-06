@@ -129,7 +129,7 @@ export default function SettleUpModal({ group, suggestion, membersMap, currentUs
       targetUserIds: [otherParty],
       title: group.name,
       body: `${actorName} recorded a payment: ${amountText}`,
-      url: `/groups/${group.id}`,
+      url: `/trips/${group.id}`,
     })
 
     onDone()

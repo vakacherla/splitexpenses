@@ -4,15 +4,15 @@ import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import ExpenseRow from '../components/ExpenseRow'
 import BalancesPanel from '../components/BalancesPanel'
-import MembersPanel from '../components/MembersPanel'
+import TripMembersPanel from '../components/TripMembersPanel'
 import AddExpenseForm from '../components/AddExpenseForm'
 import SettleUpModal from '../components/SettleUpModal'
-import GroupSettingsModal from '../components/GroupSettingsModal'
+import TripSettingsModal from '../components/TripSettingsModal'
 import ImportCsvModal from '../components/ImportCsvModal'
-import GroupBanner from '../components/GroupBanner'
+import TripBanner from '../components/TripBanner'
 import ActivityFeed from '../components/ActivityFeed'
 import HelpLink from '../components/HelpLink'
-import { accentFor } from '../components/GroupIcon'
+import { accentFor } from '../components/TripIcon'
 import LoadingScreen from '../components/LoadingScreen'
 import { SkeletonChart } from '../components/Skeleton'
 import EmptyState from '../components/EmptyState'
@@ -44,7 +44,7 @@ const TAB_HELP_SECTION = {
   members: 'members',
 }
 
-export default function GroupView() {
+export default function TripView() {
   const { groupId } = useParams()
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -231,7 +231,7 @@ export default function GroupView() {
   }, [displayExpenses, members, searchQuery, categoryFilter])
 
   async function handleDeleteExpense(id) {
-    if (!confirm('Delete this expense for everyone in the group?')) return
+    if (!confirm('Delete this expense for everyone in the trip?')) return
     const exp = expenses.find((e) => e.id === id)
     const actorName = membersMap[user.id]?.display_name ?? 'Someone'
     const summary = exp ? `${exp.description} — ${exp.amount} ${exp.currency}` : 'an expense'
@@ -268,7 +268,7 @@ export default function GroupView() {
     load()
   }
 
-  if (loading) return <LoadingScreen label="Loading group…" />
+  if (loading) return <LoadingScreen label="Loading trip…" />
 
   if (error && !group) {
     const offlineNoCache = error === 'offline-no-cache'
@@ -276,7 +276,7 @@ export default function GroupView() {
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <p className={offlineNoCache ? 'text-ink-soft mb-3' : 'text-owe mb-3'}>
           {offlineNoCache
-            ? "You're offline and haven't opened this group on this device before. Reconnect to load it the first time."
+            ? "You're offline and haven't opened this trip on this device before. Reconnect to load it the first time."
             : error}
         </p>
         <div className="flex items-center justify-center gap-4">
@@ -286,7 +286,7 @@ export default function GroupView() {
             </button>
           )}
           <Link to="/dashboard" className="text-primary hover:underline text-sm">
-            Back to your groups
+            Back to your trips
           </Link>
         </div>
       </div>
@@ -304,7 +304,7 @@ export default function GroupView() {
     downloadCSV(`${safeName}-expenses.csv`, csv)
   }
 
-  async function handleRenameGroup(newName) {
+  async function handleRenameTrip(newName) {
     const { error } = await supabase.from('groups').update({ name: newName }).eq('id', group.id)
     if (error) {
       setError(error.message)
@@ -352,7 +352,7 @@ export default function GroupView() {
     const balance = netBalances.get(memberId) ?? 0
     const memberName = membersMap[memberId]?.display_name ?? 'This person'
     if (Math.abs(balance) > 0.01) {
-      setError(`Can't remove ${memberName} — they still have an outstanding balance in this group. Settle up first.`)
+      setError(`Can't remove ${memberName} — they still have an outstanding balance in this trip. Settle up first.`)
       return
     }
     if (!confirm(`Remove ${memberName} from ${group.name}? Their past expenses stay in the ledger, but they'd need a new invite to rejoin.`))
@@ -373,10 +373,10 @@ export default function GroupView() {
     load()
   }
 
-  async function handleDeleteGroup() {
+  async function handleDeleteTrip() {
     // Archives rather than actually deleting — everything (expenses,
     // members, settlements) stays intact and can be restored by the
-    // platform admin. See Admin → Groups → Archived.
+    // platform admin. See Admin → Trips → Archived.
     const { error } = await supabase.from('groups').update({ archived_at: new Date().toISOString() }).eq('id', group.id)
     if (error) {
       setError(error.message)
@@ -385,7 +385,7 @@ export default function GroupView() {
     navigate('/dashboard')
   }
 
-  async function handleDuplicateGroup(newName) {
+  async function handleDuplicateTrip(newName) {
     setDuplicatingGroup(true)
     setError('')
     const { data, error } = await supabase.rpc('duplicate_group', {
@@ -398,7 +398,7 @@ export default function GroupView() {
       return
     }
     setShowSettings(false)
-    navigate(`/groups/${data.id}`)
+    navigate(`/trips/${data.id}`)
   }
 
   async function handleToggleManager(memberId, makeManager) {
@@ -416,7 +416,7 @@ export default function GroupView() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8 pb-28">
-      <GroupBanner
+      <TripBanner
         name={group.name}
         bannerPath={group.banner_path}
         accent={accentFor(group.id)}
@@ -424,7 +424,7 @@ export default function GroupView() {
       />
       <div className="mb-6">
         <Link to="/dashboard" className="text-sm text-ink-soft hover:text-ink">
-          ← Your groups
+          ← Your trips
         </Link>
         {group.circle_id && circleName && (
           <Link to={`/circles/${group.circle_id}`} className="block text-sm text-ink-soft hover:text-ink mt-0.5">
@@ -436,8 +436,8 @@ export default function GroupView() {
           {canManage && (
             <button
               onClick={() => setShowSettings(true)}
-              aria-label="Group settings"
-              title="Group settings"
+              aria-label="Trip settings"
+              title="Trip settings"
               className="h-8 w-8 shrink-0 flex items-center justify-center rounded-full border border-line text-ink-soft hover:text-ink hover:border-primary transition-colors"
             >
               <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -459,7 +459,7 @@ export default function GroupView() {
         <p className="text-sm text-ink-soft mt-0.5">Home currency: {group.home_currency}</p>
         {!isMember && (
           <p className="text-xs text-accent mt-2 border border-accent/30 bg-accent-tint rounded-full inline-block px-3 py-1">
-            Viewing as admin — you're not a member of this group
+            Viewing as admin — you're not a member of this trip
           </p>
         )}
         {stale && (
@@ -598,7 +598,7 @@ export default function GroupView() {
       {tab === 'activity' && <ActivityFeed groupId={group.id} />}
 
       {tab === 'members' && (
-        <MembersPanel
+        <TripMembersPanel
           group={group}
           members={members}
           currentUserId={user.id}
@@ -610,14 +610,14 @@ export default function GroupView() {
       )}
 
       {showSettings && (
-        <GroupSettingsModal
+        <TripSettingsModal
           group={group}
           currentUserId={user.id}
           canManage={canManage}
-          onRename={handleRenameGroup}
+          onRename={handleRenameTrip}
           onUpdateTripDates={handleUpdateTripDates}
-          onDeleteGroup={handleDeleteGroup}
-          onDuplicate={handleDuplicateGroup}
+          onDeleteTrip={handleDeleteTrip}
+          onDuplicate={handleDuplicateTrip}
           duplicating={duplicatingGroup}
           onImportUndone={load}
           onBannerChanged={load}

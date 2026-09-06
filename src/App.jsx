@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import { useAuth } from './context/AuthContext'
 import ConfigGate from './components/ConfigGate'
@@ -12,7 +12,7 @@ import Signup from './pages/Signup'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
-import GroupView from './pages/GroupView'
+import TripView from './pages/TripView'
 
 const CirclePage = lazy(() => import('./pages/CirclePage'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
@@ -35,6 +35,14 @@ function Root() {
   const { user, loading } = useAuth()
   if (loading) return <LoadingScreen />
   return <Navigate to={user ? '/dashboard' : '/login'} replace />
+}
+
+// Old /groups/:id links (bookmarks, shared links, push-notification
+// deep links from before the Trip rename) still need to work — this
+// forwards them to the same trip under its new URL instead of 404ing.
+function OldGroupLinkRedirect() {
+  const { groupId } = useParams()
+  return <Navigate to={`/trips/${groupId}`} replace />
 }
 
 export default function App() {
@@ -84,13 +92,14 @@ export default function App() {
             }
           />
           <Route
-            path="/groups/:groupId"
+            path="/trips/:groupId"
             element={
               <ProtectedRoute>
-                <GroupView />
+                <TripView />
               </ProtectedRoute>
             }
           />
+          <Route path="/groups/:groupId" element={<OldGroupLinkRedirect />} />
           <Route
             path="/circles/:circleId"
             element={

@@ -3,7 +3,7 @@ import { useOnlineStatus } from '../lib/useOnlineStatus'
 import { useOfflineQueue, useIsSyncing, getLastConflicts, runSync, retryOp, discardOp } from '../lib/offlineQueue'
 
 // Small hand-drawn line icons, matching the stroke style used everywhere
-// else in the app (CategoryIcon, the group-settings gear, etc.) rather
+// else in the app (CategoryIcon, the trip-settings gear, etc.) rather
 // than pulling in an icon library for four glyphs.
 function OfflineIcon() {
   return (

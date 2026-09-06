@@ -48,8 +48,8 @@ const TEMPLATES = {
   expense_deleted: (e) => `${e.actor_name} deleted an expense: ${e.summary}`,
   settlement_added: (e) => `${e.actor_name} recorded a payment: ${e.summary}`,
   settlement_deleted: (e) => `${e.actor_name} undid a payment: ${e.summary}`,
-  member_joined: (e) => `${e.summary} joined the group`,
-  member_removed: (e) => `${e.summary} was removed from the group`,
+  member_joined: (e) => `${e.summary} joined the trip`,
+  member_removed: (e) => `${e.summary} was removed from the trip`,
   csv_import: (e) => `${e.actor_name} imported ${e.summary}`,
 }
 
@@ -89,7 +89,7 @@ export default function ActivityFeed({ groupId }) {
           </svg>
         }
         title="Nothing yet"
-        subtitle="Activity in this group — expenses, payments, and member changes — will show up here."
+        subtitle="Activity in this trip — expenses, payments, and member changes — will show up here."
       />
     )
   }

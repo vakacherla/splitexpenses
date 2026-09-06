@@ -6,8 +6,8 @@ import CurrencySelect from '../components/CurrencySelect'
 import { SkeletonRows } from '../components/Skeleton'
 import EmptyState from '../components/EmptyState'
 import Avatar from '../components/Avatar'
-import GroupBanner from '../components/GroupBanner'
-import { accentFor } from '../components/GroupIcon'
+import TripBanner from '../components/TripBanner'
+import { accentFor } from '../components/TripIcon'
 import CircleIcon from '../components/CircleIcon'
 import HelpLink from '../components/HelpLink'
 import { runSync } from '../lib/offlineQueue'
@@ -76,7 +76,7 @@ export default function Dashboard() {
         setStale(cached.cachedAt)
         setError('')
       } else {
-        setError(err.message || "Couldn't load your groups — check your connection.")
+        setError(err.message || "Couldn't load your trips — check your connection.")
       }
     }
   }
@@ -134,7 +134,7 @@ export default function Dashboard() {
       setError(memberError.message)
       return
     }
-    navigate(`/groups/${group.id}`)
+    navigate(`/trips/${group.id}`)
   }
 
   async function handleJoin(e) {
@@ -148,7 +148,7 @@ export default function Dashboard() {
       setError(error.message)
       return
     }
-    navigate(`/groups/${data.id}`)
+    navigate(`/trips/${data.id}`)
   }
 
   async function handleCreateCircle(e) {
@@ -218,7 +218,7 @@ export default function Dashboard() {
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary-tint px-3 py-1 font-mono text-[11px] uppercase tracking-wide text-primary">
               <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-              {groups ? `${groups.length} group${groups.length === 1 ? '' : 's'}` : 'Your groups'}
+              {groups ? `${groups.length} trip${groups.length === 1 ? '' : 's'}` : 'Your trips'}
             </span>
             {circles && circles.length > 0 && (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent-tint px-3 py-1 font-mono text-[11px] uppercase tracking-wide text-accent">
@@ -255,7 +255,7 @@ export default function Dashboard() {
                   'linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 88%, white 12%), var(--color-primary-dark))',
               }}
             >
-              ＋ New group
+              ＋ New trip
             </button>
             <button
               onClick={() => {
@@ -310,7 +310,7 @@ export default function Dashboard() {
           className="mb-8 bg-paper-raised border border-line rounded-2xl p-5 shadow-raised flex flex-col sm:flex-row gap-3 sm:items-end"
         >
           <div className="flex-1">
-            <label className="block text-sm text-ink-soft mb-1.5">Group name</label>
+            <label className="block text-sm text-ink-soft mb-1.5">Trip name</label>
             <input
               autoFocus
               value={newName}
@@ -444,7 +444,7 @@ export default function Dashboard() {
 
       {groups === null && error ? (
         <div className="text-center py-10">
-          <p className="text-sm text-ink-soft mb-3">You're offline and this device has never loaded your groups before.</p>
+          <p className="text-sm text-ink-soft mb-3">You're offline and this device has never loaded your trips before.</p>
           <button onClick={loadGroups} className="text-primary hover:underline text-sm">
             Retry
           </button>
@@ -462,7 +462,7 @@ export default function Dashboard() {
                 <path d="M9 12.2c.7-1 1.9-1.7 4-1.7 2.5 0 4.5 1.5 4.5 4.5" strokeLinecap="round" />
               </svg>
             }
-            title="No groups yet"
+            title="No trips yet"
             subtitle="Start one, or join a friend's with their invite code."
           />
         )
@@ -473,11 +473,11 @@ export default function Dashboard() {
             return (
               <Link
                 key={g.id}
-                to={`/groups/${g.id}`}
+                to={`/trips/${g.id}`}
                 className="group/card animate-rise-in relative block overflow-hidden rounded-[20px] border border-line bg-paper-raised p-6 shadow-[0_1px_2px_rgba(22,36,29,0.04)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_28px_44px_-20px_rgba(22,36,29,0.3)]"
                 style={{ animationDelay: `${idx * 0.07}s` }}
               >
-                <GroupBanner name={g.name} bannerPath={g.banner_path} accent={accent} className="-mx-6 -mt-6 mb-4 h-28 sm:h-32" />
+                <TripBanner name={g.name} bannerPath={g.banner_path} accent={accent} className="-mx-6 -mt-6 mb-4 h-28 sm:h-32" />
 
                 <div className="mb-4 flex items-start justify-between">
                   <div className="flex -space-x-2.5">

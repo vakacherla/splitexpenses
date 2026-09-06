@@ -1,6 +1,6 @@
-// Small decorative per-group badge on the Dashboard — purely visual
-// variety (no "group type" field exists or is being added), picked
-// deterministically from the group's own id so it stays the same on every
+// Small decorative per-trip badge on the Dashboard — purely visual
+// variety (no "trip type" field exists or is being added), picked
+// deterministically from the trip's own id so it stays the same on every
 // visit rather than reshuffling. Hand-drawn to match CategoryIcon's style
 // rather than pulling in an icon library for four glyphs.
 const ICONS = [
@@ -33,23 +33,23 @@ export function hashString(id) {
   return hash
 }
 
-export function groupIconIndex(id) {
+export function tripIconIndex(id) {
   return hashString(id) % ICONS.length
 }
 
-// Purely decorative per-group accent — no "color" field exists or is being
-// added, this just picks one deterministically from the group's own id so
+// Purely decorative per-trip accent — no "color" field exists or is being
+// added, this just picks one deterministically from the trip's own id so
 // it stays the same on every visit rather than reshuffling. Shared between
-// Dashboard's cards and GroupBanner's fallback treatment.
+// Dashboard's cards and TripBanner's fallback treatment.
 const ACCENTS = ['#2f5233', '#b8901f', '#a04338', '#4a6a8a', '#6b4a8a', '#3a7d7d']
 export function accentFor(id) {
   return ACCENTS[hashString(id) % ACCENTS.length]
 }
 
-export default function GroupIcon({ id, className = 'h-[18px] w-[18px]' }) {
+export default function TripIcon({ id, className = 'h-[18px] w-[18px]' }) {
   return (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" className={className} aria-hidden="true">
-      {ICONS[groupIconIndex(id)]}
+      {ICONS[tripIconIndex(id)]}
     </svg>
   )
 }

@@ -1,6 +1,6 @@
-import { hashString } from './GroupIcon'
+import { hashString } from './TripIcon'
 
-// Same hand-drawn, deterministic-per-id pattern as GroupIcon — a
+// Same hand-drawn, deterministic-per-id pattern as TripIcon — a
 // different glyph set (a ring of people, sun, tree, interlocking rings)
 // so a Circle reads visually distinct from any individual Trip inside
 // it, purely decorative, picked from the Circle's own id.

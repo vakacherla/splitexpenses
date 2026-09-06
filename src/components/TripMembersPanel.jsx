@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import Avatar from './Avatar'
 import { paymentProviderLabel } from '../lib/paymentLinks'
 
-export default function MembersPanel({
+export default function TripMembersPanel({
   group,
   members,
   currentUserId,
@@ -102,7 +102,7 @@ export default function MembersPanel({
                         onClick={() => onRemoveMember(m.user_id)}
                         className="text-xs text-owe hover:underline"
                       >
-                        Remove from group
+                        Remove from trip
                       </button>
                     )}
                   </div>

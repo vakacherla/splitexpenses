@@ -20,14 +20,14 @@ export const HELP_SECTIONS = [
       <>
         <p>
           <strong className="text-ink">Sign up</strong> with your email and a password — no confirmation
-          steps needed for most groups.
+          steps needed for most trips.
         </p>
         <p>
-          <strong className="text-ink">Join a group</strong> from your dashboard using the invite code
-          whoever created the group sent you — tap "Join with a code," type it in, and you're in.
+          <strong className="text-ink">Join a trip</strong> from your dashboard using the invite code
+          whoever created the trip sent you — tap "Join with a code," type it in, and you're in.
         </p>
         <p>
-          <strong className="text-ink">Starting your own group?</strong> Tap "New group," give it a name and
+          <strong className="text-ink">Starting your own trip?</strong> Tap "New trip," give it a name and
           a home currency (this is just the currency balances are shown in — everyone can still log expenses
           in whatever currency they actually paid in).
         </p>
@@ -37,8 +37,8 @@ export const HELP_SECTIONS = [
           on anyone in the Circle can start a new Trip inside it without a fresh invite code each time.
           Creating a Trip inside a Circle starts it with everyone currently in the Circle already added — you
           can still remove someone from just that one Trip afterward without affecting the Circle or any other
-          Trip. An existing standalone group can also be attached to a Circle later (or detached again) from
-          its Group settings, without changing who's already in it.
+          Trip. An existing standalone trip can also be attached to a Circle later (or detached again) from
+          its own settings, without changing who's already in it.
         </p>
       </>
     ),
@@ -67,7 +67,7 @@ export const HELP_SECTIONS = [
         </p>
         <H>Attaching an existing Trip</H>
         <p>
-          Already have a Trip and want it organized into a Circle? From that Trip's Group settings, pick a
+          Already have a Trip and want it organized into a Circle? From that Trip's settings, pick a
           Circle you're in and tap "Attach" — or "Detach" to pull it back out. Either way, nobody already on
           that Trip is added or removed; attaching just lets the Circle's other members see it and ask to
           join.
@@ -86,18 +86,18 @@ export const HELP_SECTIONS = [
     body: (
       <>
         <p>
-          Open a group and tap the <strong className="text-ink">+</strong> button.
+          Open a trip and tap the <strong className="text-ink">+</strong> button.
         </p>
         <H>Description, date &amp; category</H>
         <p>
           Description is required — a short blank one gets "Give the expense a short description." Date
-          defaults to today and must fall between 2000 and 2100 (same range as a group's trip dates). Category
+          defaults to today and must fall between 2000 and 2100 (same range as a trip's dates). Category
           is a dropdown of fixed options and defaults to "Misc" if you skip it.
         </p>
         <H>Amount &amp; currency</H>
         <p>
           Must be greater than zero, and no more than 10,000,000 per expense. Currency defaults to the
-          group's home currency; pick a different one and you'll see today's converted amount before saving
+          trip's home currency; pick a different one and you'll see today's converted amount before saving
           (offline, that conversion is filled in once you're back online instead).
         </p>
         <H>Paid by &amp; split with</H>
@@ -117,7 +117,7 @@ export const HELP_SECTIONS = [
         </p>
         <p>
           Tick <strong className="text-ink">"Save this as the default"</strong> (Equal or Percentage only) to
-          pre-select that split next time anyone in the group adds an expense.
+          pre-select that split next time anyone in the trip adds an expense.
         </p>
         <H>Faster ways to fill this in</H>
         <p>
@@ -143,7 +143,7 @@ export const HELP_SECTIONS = [
       <>
         <p>
           The Ledger has a <strong className="text-ink">search box and a category filter</strong> once a
-          group has more than a few expenses — search matches the description or who paid.
+          trip has more than a few expenses — search matches the description or who paid.
         </p>
         <p>
           <strong className="text-ink">Export CSV</strong> downloads every expense as a spreadsheet, one row
@@ -161,7 +161,7 @@ export const HELP_SECTIONS = [
           imported until it's fixed. If something goes wrong partway through, whatever was already created
           gets automatically rolled back, so you're never left with a half-finished import.
         </p>
-        <p>Made a mistake anyway? Every import is undoable in one click, right after it finishes or later from Group settings.</p>
+        <p>Made a mistake anyway? Every import is undoable in one click, right after it finishes or later from Trip settings.</p>
       </>
     ),
   },
@@ -196,7 +196,7 @@ export const HELP_SECTIONS = [
       <>
         <H>Where everyone stands</H>
         <p>
-          Each person's row shows whether they're settled up, owed money, or owe money, for the group
+          Each person's row shows whether they're settled up, owed money, or owe money, for the trip
           overall.
         </p>
         <H>Suggested settle-up</H>
@@ -225,7 +225,7 @@ export const HELP_SECTIONS = [
     title: 'Reports',
     body: (
       <>
-        <p>Everything below is converted into the group's home currency first, so totals always compare like for like.</p>
+        <p>Everything below is converted into the trip's home currency first, so totals always compare like for like.</p>
         <p>
           <strong className="text-ink">Total spent</strong>, a breakdown{' '}
           <strong className="text-ink">by category</strong>, a breakdown{' '}
@@ -241,14 +241,14 @@ export const HELP_SECTIONS = [
     body: (
       <>
         <p>
-          A running history of the group's last 100 events, newest first — expenses added, edited, or
+          A running history of the trip's last 100 events, newest first — expenses added, edited, or
           deleted, payments recorded or undone, people joining or leaving, and CSV imports (one entry per
           import, not one per row). It's there to catch up on what happened while you were away.
         </p>
         <p>
           Turn on <strong className="text-ink">notifications</strong> (see "Your profile") to also get a
-          push alert on this device for group activity and settle-up reminders — tapping one takes you
-          straight to that group.
+          push alert on this device for trip activity and settle-up reminders — tapping one takes you
+          straight to that trip.
         </p>
       </>
     ),
@@ -259,11 +259,11 @@ export const HELP_SECTIONS = [
     body: (
       <>
         <H>Invite code</H>
-        <p>Tap "Copy" to share it — anyone with the code can join this group from their dashboard.</p>
+        <p>Tap "Copy" to share it — anyone with the code can join this trip from their dashboard.</p>
         <H>Managers</H>
         <p>
-          Only the group's owner can promote or demote a manager, and can't do it to themselves or to
-          whoever originally created the group.
+          Only the trip's owner can promote or demote a manager, and can't do it to themselves or to
+          whoever originally created the trip.
         </p>
         <H>Removing someone</H>
         <p>
@@ -276,11 +276,11 @@ export const HELP_SECTIONS = [
     ),
   },
   {
-    id: 'group-settings',
-    title: 'Group settings',
+    id: 'trip-settings',
+    title: 'Trip settings',
     body: (
       <>
-        <p>Only the group's owner and any manager can see this (the gear icon next to the group's name).</p>
+        <p>Only the trip's owner and any manager can see this (the gear icon next to the trip's name).</p>
         <H>Trip dates</H>
         <p>
           Optional and independent — set just a start, just an end, both, or neither. Each date must fall
@@ -291,17 +291,17 @@ export const HELP_SECTIONS = [
         <H>Cover photo</H>
         <p>
           Landscape photos work best — square or portrait shots get cropped to fit. Shows up on your
-          dashboard card and the group page itself.
+          dashboard card and the trip page itself.
         </p>
-        <H>Duplicate group</H>
+        <H>Duplicate trip</H>
         <p>
-          Copies the members, their manager roles, and the home currency into a new group with a fresh invite
+          Copies the members, their manager roles, and the home currency into a new trip with a fresh invite
           code. Expenses, settlements, and trip dates are <strong className="text-ink">not</strong> copied —
           it's meant for a next trip with the same people, not a backup.
         </p>
-        <H>Deleting a group</H>
+        <H>Deleting a trip</H>
         <p>
-          You'll need to type the group's exact name to confirm. This removes it from everyone's dashboard
+          You'll need to type the trip's exact name to confirm. This removes it from everyone's dashboard
           right away, but nothing is actually deleted — the app's admin can restore it in full for 30 days,
           after which it's gone for good.
         </p>
@@ -324,14 +324,14 @@ export const HELP_SECTIONS = [
           Two optional, independent fields — a home number and a separate travel number, useful if you're on
           a local SIM for part of a trip.
         </p>
-        <H>Nicknames per group</H>
+        <H>Nicknames per trip</H>
         <p>
-          Set a different display name for one specific group without changing your name anywhere else —
-          only that group sees it. Clear it to go back to your regular name.
+          Set a different display name for one specific trip without changing your name anywhere else —
+          only that trip sees it. Clear it to go back to your regular name.
         </p>
         <H>Notifications</H>
         <p>
-          Turn on push alerts for this device for group activity and settle-up reminders. If your browser
+          Turn on push alerts for this device for trip activity and settle-up reminders. If your browser
           doesn't support push, reminders still arrive by email.
         </p>
         <p>
@@ -351,7 +351,7 @@ export const HELP_SECTIONS = [
           weekday. This page is informational only — it never touches an expense you've already logged.
         </p>
         <p>
-          The base currency starts on whichever home currency is most common across your groups. Use the{' '}
+          The base currency starts on whichever home currency is most common across your trips. Use the{' '}
           <strong className="text-ink">quick-convert box</strong> for a one-off amount, or scroll the table
           below it to see that base currency against everything else.
         </p>
@@ -370,17 +370,17 @@ export const HELP_SECTIONS = [
           admin can recover it (for 30 days) if that turns out to be a mistake.
         </p>
         <p>
-          <strong className="text-ink">Can I be in more than one group?</strong> Yes — your dashboard lists
-          every group you're part of, and each is tracked completely separately.
+          <strong className="text-ink">Can I be in more than one trip?</strong> Yes — your dashboard lists
+          every trip you're part of, and each is tracked completely separately.
         </p>
         <p>
           <strong className="text-ink">I forgot my password.</strong> Use the sign-in screen's password
-          reset — if that email doesn't arrive, the group's admin (if it has one) can help directly, since
+          reset — if that email doesn't arrive, the trip's admin (if it has one) can help directly, since
           self-service email delivery isn't guaranteed for every account.
         </p>
         <p>
-          <strong className="text-ink">Is my data private?</strong> Only people in a group can see that
-          group's expenses — nothing is public, and different groups can't see each other's information.
+          <strong className="text-ink">Is my data private?</strong> Only people in a trip can see that
+          trip's expenses — nothing is public, and different trips can't see each other's information.
         </p>
       </>
     ),

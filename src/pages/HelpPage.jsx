@@ -67,7 +67,7 @@ export default function HelpPage() {
       <div className="mx-auto max-w-2xl px-4 sm:px-6 py-10">
         {user && (
           <Link to="/dashboard" className="text-sm text-ink-soft hover:text-ink block mb-4">
-            ← Your groups
+            ← Your trips
           </Link>
         )}
         <h1 className="font-display text-3xl text-ink mb-2">How to use this</h1>

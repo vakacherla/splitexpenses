@@ -86,7 +86,7 @@ export default function Signup() {
               required
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="How your group will see you"
+              placeholder="How your trip mates will see you"
               className="w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-ink focus:border-primary outline-none"
             />
           </div>

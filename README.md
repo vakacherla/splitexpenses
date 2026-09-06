@@ -1,10 +1,10 @@
 # Split Expenses — shared expenses, any currency
 
-A small group expense splitter for ongoing groups (a flat, a family fund, a
+A small trip expense splitter for ongoing trips (a flat, a family fund, a
 recurring trip) where members pay in different currencies. Balances are
-always shown in one currency per group, converted with live exchange rates.
+always shown in one currency per trip, converted with live exchange rates.
 Expenses are categorized for a reporting dashboard, and there's a
-platform-admin panel for managing accounts and groups.
+platform-admin panel for managing accounts and trips.
 
 Works on phones and laptops from a single responsive layout — no separate
 mobile app. Light and dark mode are both built in.
@@ -14,7 +14,7 @@ mobile app. Light and dark mode are both built in.
 | Piece | Choice | Why |
 |---|---|---|
 | Frontend | React + Vite + Tailwind v4 | Fast to build and deploy, no server rendering needed |
-| Backend & database | [Supabase](https://supabase.com) (Postgres + Auth) | Free tier is plenty for a few friend/family groups; you don't run or pay for a server |
+| Backend & database | [Supabase](https://supabase.com) (Postgres + Auth) | Free tier is plenty for a few friend/family trips; you don't run or pay for a server |
 | Auth | Email + password (Supabase Auth) | You asked for proper accounts over passwordless links |
 | Exchange rates | [Frankfurter API](https://frankfurter.dev) | Free, no API key, ECB reference rates, refreshed each weekday |
 | Charts | [Recharts](https://recharts.org) | Used only on the Reports tab and Admin page — both are code-split so most people never download it |
@@ -24,7 +24,7 @@ mobile app. Light and dark mode are both built in.
 
 **Scope decisions worth knowing about**, since you'll be the one maintaining
 this:
-- Each group has one **home currency**, set when the group is created. Every
+- Each trip has one **home currency**, set when the trip is created. Every
   expense (and every settlement) can be logged in *any* currency; it's
   converted to the home currency at the exchange rate on the day it's
   entered, and that converted amount is stored — so balances don't shift
@@ -37,14 +37,14 @@ this:
   payment history with an Undo, in case something's logged wrong.
 - Debts are simplified (fewest possible payments) rather than showing every
   underlying expense as a separate IOU.
-- Within a group, any member can still edit or delete any expense — that
+- Within a trip, any member can still edit or delete any expense — that
   hasn't changed. What HAS changed: "delete" is now a recoverable soft
-  delete (see "Deleting a group is a recoverable archive" below — the
+  delete (see "Deleting a trip is a recoverable archive" below — the
   same thing applies to expenses, restorable from Admin → Trash), so a
   member can still remove a wrong entry themselves, but nobody can
   actually destroy shared financial history by mistake. What's also new
   is a separate **platform-admin** layer on top: one flag
-  (`profiles.is_admin`) that gives full visibility into every group and
+  (`profiles.is_admin`) that gives full visibility into every trip and
   the ability to suspend, unsuspend, or delete any user account. Nobody
   can grant this to themselves through the app — a database trigger
   blocks it — so the first admin has to be set by hand in SQL (step 4
@@ -53,25 +53,25 @@ this:
   failure) if that person has recorded expenses or settlements anywhere —
   removing them would corrupt someone else's shared ledger. **Suspending**
   works regardless, and is the safer default for "get this person out."
-- **Deleting a group is a recoverable archive, not a real delete** —
-  whoever created a group (or a manager they've appointed, or you, as
+- **Deleting a trip is a recoverable archive, not a real delete** —
+  whoever created a trip (or a manager they've appointed, or you, as
   platform admin) can "delete" it, which just hides it and sets a
   timestamp; every expense, member, and settlement stays intact
-  underneath. Only you can permanently purge an archived group (Admin →
-  Groups → Archived), and only after 30 days — before that, it's a
+  underneath. Only you can permanently purge an archived trip (Admin →
+  Trips → Archived), and only after 30 days — before that, it's a
   one-click restore. **Deleting a single expense works the same way** —
   any member can delete a wrong entry from the Ledger, it disappears and
   stops counting toward balances immediately, but it's recoverable from
   Admin → Trash on the same 30-day timeline. Both are deliberately a
   manual, admin-driven batch job rather than an automatic timer, since
   "gone for good" shouldn't happen on a schedule nobody's watching.
-- **Removing a member from a group** (also creator-only) is blocked while
-  they still have a non-zero balance in that group, for the same reason
+- **Removing a member from a trip** (also creator-only) is blocked while
+  they still have a non-zero balance in that trip, for the same reason
   user deletion is blocked — their past expenses stay in the ledger, but
   a debt with nobody left to show it against is a bug waiting to happen.
 - **Expense categories** are a fixed list (Food, Lodging, Flights, Train,
   Taxi/Cab, Groceries, Shopping, Activities, Utilities, Misc) rather than
-  freeform text or per-group custom categories — keeps reports clean, no
+  freeform text or per-trip custom categories — keeps reports clean, no
   "Taxi" vs "taxi" vs "Cab" fragmentation. Adding a category later means
   editing two places: the list in `src/lib/categories.js` and the matching
   `CHECK` constraint in the database (a migration file for that already
@@ -107,12 +107,12 @@ this:
   app's side, so the fix is a fallback, not a smarter link: the
   recipient's raw payment ID is always shown, copyable, right next to
   the button, with a note explaining when to use it.
-- **A group's default split** (who's normally included, equal vs.
+- **A trip's default split** (who's normally included, equal vs.
   percentage) can be saved from the add-expense form and is then
-  suggested — never forced — the next time anyone in that group adds an
+  suggested — never forced — the next time anyone in that trip adds an
   expense. Exact-amount splits aren't saveable as a default, since by
   definition they're specific to one expense.
-- **CSV export** is a straight dump of that group's expenses, one row
+- **CSV export** is a straight dump of that trip's expenses, one row
   each, with participant shares flattened into a single column — built
   for opening in a spreadsheet, not for re-importing anywhere.
 - **Receipt scanning is genuinely optional** and isolated on purpose: it's
@@ -140,7 +140,7 @@ this:
 4. (Optional but recommended) Under **Authentication → Providers → Email**,
    decide whether you want "Confirm email" on. It's on by default — new
    users get a confirmation email before they can sign in. Turn it off if
-   you'd rather skip that step for a small private group.
+   you'd rather skip that step for a small private trip.
 
 ## 2. Run it locally
 
@@ -151,7 +151,7 @@ cp .env.example .env
 npm run dev
 ```
 
-Open the printed local URL. Create an account, create a group, and you're
+Open the printed local URL. Create an account, create a trip, and you're
 in.
 
 ## 3. Deploy
@@ -239,7 +239,7 @@ Worth knowing: this Edge Function was written but not run end-to-end before
 handing it to you — everything else in this project was built and tested in
 a sandbox, but Edge Functions need a real Supabase project to execute
 against. If step 5 doesn't work cleanly, share the error and we'll debug it
-the same way we tracked down the group-creation RLS issue earlier.
+the same way we tracked down the trip-creation RLS issue earlier.
 
 ## 5. Set up receipt scanning (optional)
 
@@ -297,8 +297,8 @@ Two ways someone gets nudged about money they owe:
 1. **Manual** — a "Remind" button on the Balances tab's suggested
    settle-up list, next to "Record payment", visible to whoever's owed
    money.
-2. **Automatic** — once a group's optional end date (set under its
-   Members tab → Group settings) passes, anyone who still owes money
+2. **Automatic** — once a trip's optional end date (set under its
+   Members tab → Trip settings) passes, anyone who still owes money
    there gets nudged once, then again every 3 days for as long as it
    stays unsettled.
 
@@ -329,7 +329,7 @@ supabase secrets set VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:you@example.com
 ```
 Each person who wants push notifications turns them on themselves, from
 their own device, under Profile → Notifications — it's a per-device
-browser permission, not something set once for the whole group.
+browser permission, not something set once for the whole trip.
 
 Deploy both functions:
 ```bash
@@ -343,14 +343,14 @@ needs a Supabase plan where `pg_cron`/`pg_net` are available.
 
 ## 7. Using it
 
-- **Create a group** from the dashboard, pick its home currency.
-- **Invite people** via the 6-character code on the group's Members tab —
+- **Create a trip** from the dashboard, pick its home currency.
+- **Invite people** via the 6-character code on the trip's Members tab —
   they enter it under "Join with a code" after creating their own account.
 - **Add an expense**: scan a receipt or fill it in by hand — description,
   category, amount and currency, who paid, who to split it between
   (equal/percentage/exact/itemized), and an optional note. If the expense currency
-  differs from the group's home currency, you'll see the live converted
-  amount before saving. Any group member can **Duplicate** an existing
+  differs from the trip's home currency, you'll see the live converted
+  amount before saving. Any trip member can **Duplicate** an existing
   expense (next to Edit, once you expand it) to pre-fill a new one with
   the same details — handy for a recurring rent or utility bill — except
   the date, which defaults to today, and the receipt, which isn't copied.
@@ -369,16 +369,16 @@ needs a Supabase plan where `pg_cron`/`pg_net` are available.
   pre-filled UPI/Venmo/PayPal link once the recipient's added their
   payment handle on the Members tab.
 - **Search and filter** the Ledger by description, payer, or category once
-  a group has more than a handful of expenses, and **export the whole
+  a trip has more than a handful of expenses, and **export the whole
   ledger as CSV** from the same tab.
 - **Reports tab** breaks total spend down by category and by who paid, plus
   a category × person table.
 - **Admin** (only visible to admins) opens with a platform-wide
-  **Overview** (total groups, users, active users, expenses logged,
+  **Overview** (total trips, users, active users, expenses logged,
   settlements recorded — each stat is clickable, jumping straight to the
   tab that explains it) and a **Reports** tab — spend by category and by
-  group, across every group on the platform. Multi-currency is handled by
-  grouping rather than converting: a INR group and a USD group each get
+  trip, across every trip on the platform. Multi-currency is handled by
+  grouping rather than converting: a INR trip and a USD trip each get
   their own total rather than being added into one number using today's
   exchange rate, which would be an estimate dressed up as a fact. The
   **Users** tab lists everyone — suspend, unsuspend, or delete an account — and
@@ -390,50 +390,50 @@ needs a Supabase plan where `pg_cron`/`pg_net` are available.
   admin status, including their own (nobody, not even a super admin, can
   act on their own account here, which is also what makes it structurally
   impossible to ever end up with zero super admins). A super admin also
-  sees a **Manage groups** control on each user's row — it lists every
-  group that person is currently in (each with its own **Remove**), plus
-  a picker to add them to any active group directly, bypassing the invite
+  sees a **Manage trips** control on each user's row — it lists every
+  trip that person is currently in (each with its own **Remove**), plus
+  a picker to add them to any active trip directly, bypassing the invite
   code entirely. Adding rescues an account that signed up but never
-  got/used an invite code and would otherwise sit with zero groups
+  got/used an invite code and would otherwise sit with zero trips
   forever; removing exists specifically to undo a super admin's own
-  mistake (wrong group picked) without needing to also be that group's
-  owner/manager — day-to-day removal is still the group owner/manager's
-  job (Group settings, below). The **Groups** tab
-  lists every group, with the option to rename or archive one, and shows
+  mistake (wrong trip picked) without needing to also be that trip's
+  owner/manager — day-to-day removal is still the trip owner/manager's
+  job (Trip settings, below). The **Trips** tab
+  lists every trip, with the option to rename or archive one, and shows
   who created it and when (the `created_by`/`created_at` columns have
   always existed — this just surfaces them for platform-wide
   traceability). A **Settlements** tab lists every settlement recorded
-  across every group — who paid whom, in which group, when, and how
+  across every trip — who paid whom, in which trip, when, and how
   much — and a **Trash** tab lists every deleted expense platform-wide,
-  restorable or permanently purgeable the same way as archived groups.
-- **Group settings**, on the Members tab, is visible to whoever created
-  that group **or a manager they've named** — rename it, remove a
+  restorable or permanently purgeable the same way as archived trips.
+- **Trip settings**, on the Members tab, is visible to whoever created
+  that trip **or a manager they've named** — rename it, remove a
   regular member (blocked while they still have an outstanding balance,
-  so nobody's debt silently disappears), or archive the group (typing
-  its name is required — see "Deleting a group" above for what this
+  so nobody's debt silently disappears), or archive the trip (typing
+  its name is required — see "Deleting a trip" above for what this
   actually does). The creator alone can name a manager (a "Make manager"
   link next to that person on the Members tab) — a manager gets the same
   day-to-day powers but can't appoint another manager or touch the
   creator's own membership. None of this needs the platform admin — a
-  family member who starts their own group runs it themselves. The same
-  panel also has **Duplicate this group** — copies every member (with
-  their manager roles) and the home currency into a fresh group with its
+  family member who starts their own trip runs it themselves. The same
+  panel also has **Duplicate this trip** — copies every member (with
+  their manager roles) and the home currency into a fresh trip with its
   own new invite code, for when the same people are doing a next trip
   together. Expenses, settlements, and trip dates deliberately don't come
   along; it's a blank ledger, not a continuation. Whoever duplicates it
-  becomes the new group's owner, regardless of their role in the
+  becomes the new trip's owner, regardless of their role in the
   original.
 - **Exchange rates** (the swap icon in the nav) is a standalone,
   informational page — pick a currency, see it against every currency
   the app supports, or use the quick-convert box for a one-off amount.
-  Defaults to whichever currency shows up most across your own groups
+  Defaults to whichever currency shows up most across your own trips
   rather than an arbitrary starting point. Same Frankfurter data source
   as the live conversion shown when adding an expense; this page never
   writes anything, it's read-only.
 - **Your profile** (click your name, top right) is where you set your photo, display name, payment handle,
   and up to two phone numbers (home + a separate travel number, for a local SIM abroad) — visible to anyone
-  you share a group with. It also lists every group you're in with an optional **nickname per group**, so
-  you can go by something different in one group without it changing anywhere else.
+  you share a trip with. It also lists every trip you're in with an optional **nickname per trip**, so
+  you can go by something different in one trip without it changing anywhere else.
 - **A public `/help` page** covers all of the above in plain language, for
   people you invite rather than for you — the `?` icon in the nav links to
   it, and it's also reachable (and fully usable) without signing in first,
@@ -472,7 +472,7 @@ instead.
 src/
   lib/            supabaseClient, fx, balances, split, categories, paymentLinks, csvExport
   context/        auth state (includes is_admin) and theme (dark/light)
-  pages/          Login, Signup, Dashboard, GroupView, AdminPage
+  pages/          Login, Signup, Dashboard, TripView, CirclePage, AdminPage
   components/     forms, panels, ReportsPanel, AdminRoute, ThemeToggle, and shared UI
 supabase/
   schema.sql               run once, on a fresh project
@@ -488,7 +488,7 @@ supabase/
   cover most of the value without full automation)~~ — shipped, see "Add an
   expense" above
 - Date-range filtering on the Reports tab
-- ~~Per-group owner roles (separate from the platform-admin layer)~~ — shipped
+- ~~Per-trip owner roles (separate from the platform-admin layer)~~ — shipped
 - ~~True offline mode (a real architecture change — see
   `PRODUCT-ROADMAP.md`)~~ — shipped
 

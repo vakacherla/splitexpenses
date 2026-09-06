@@ -8,7 +8,7 @@ import { Skeleton, SkeletonRows, SkeletonStatGrid, SkeletonChart } from '../comp
 const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'users', label: 'Users' },
-  { id: 'groups', label: 'Groups' },
+  { id: 'groups', label: 'Trips' },
   { id: 'reports', label: 'Reports' },
   { id: 'settlements', label: 'Settlements' },
   { id: 'trash', label: 'Trash' },
@@ -18,13 +18,13 @@ const TABS = [
 const REQUEST_STATUSES = ['new', 'reviewing', 'planned', 'done', 'declined']
 const ARCHIVE_DAYS = 30
 
-// Same hand-drawn line-icon style as EmptyState/CategoryIcon/GroupIcon —
+// Same hand-drawn line-icon style as EmptyState/CategoryIcon/TripIcon —
 // reusing the exact paths already used elsewhere for the same concept
-// (Dashboard's "no groups" icon, GroupView's "no expenses" receipt,
+// (Dashboard's "no trips" icon, TripView's "no expenses" receipt,
 // Navbar's exchange-rates arrows) rather than drawing new ones, so a
 // stat tile and the empty state it might lead to actually look related.
 const STAT_ICONS = {
-  Groups: (
+  Trips: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4">
       <rect x="3" y="3" width="6" height="6" rx="1.2" />
       <rect x="11" y="3" width="6" height="6" rx="1.2" />
@@ -213,7 +213,7 @@ export default function AdminPage() {
     const byGroupMap = {}
     for (const e of data ?? []) {
       const currency = e.groups?.home_currency ?? '?'
-      const groupName = e.groups?.name ?? 'Unknown group'
+      const groupName = e.groups?.name ?? 'Unknown trip'
       byCategoryCurrency[currency] ??= {}
       byCategoryCurrency[currency][e.category] = (byCategoryCurrency[currency][e.category] ?? 0) + e.amount_in_home
       byGroupMap[e.group_id] ??= { id: e.group_id, name: groupName, currency, total: 0, count: 0 }
@@ -320,7 +320,7 @@ export default function AdminPage() {
   async function handlePurgeAllEligible(eligibleGroups) {
     if (
       !confirm(
-        `Permanently delete ${eligibleGroups.length} group${eligibleGroups.length === 1 ? '' : 's'} that have been archived 30+ days? This cannot be undone.`
+        `Permanently delete ${eligibleGroups.length} trip${eligibleGroups.length === 1 ? '' : 's'} that have been archived 30+ days? This cannot be undone.`
       )
     )
       return
@@ -498,7 +498,7 @@ export default function AdminPage() {
       setUserGroups([])
       return
     }
-    setUserGroups(data.map((row) => ({ id: row.group_id, name: row.groups?.name ?? 'Unknown group' })))
+    setUserGroups(data.map((row) => ({ id: row.group_id, name: row.groups?.name ?? 'Unknown trip' })))
   }
 
   async function openManageGroups(u) {
@@ -526,7 +526,7 @@ export default function AdminPage() {
   }
 
   async function handleRemoveFromGroup(u, groupId, groupName) {
-    if (!confirm(`Remove ${u.display_name ?? u.email} from ${groupName}? Their past expenses there (if any) stay in the ledger, but they'd need a new invite — or another "Add to group" — to rejoin.`))
+    if (!confirm(`Remove ${u.display_name ?? u.email} from ${groupName}? Their past expenses there (if any) stay in the ledger, but they'd need a new invite — or another "Add to trip" — to rejoin.`))
       return
     setBusyId(u.id)
     setAddToGroupMessage('')
@@ -558,10 +558,10 @@ export default function AdminPage() {
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
       <div className="mb-6">
         <Link to="/dashboard" className="text-sm text-ink-soft hover:text-ink">
-          ← Your groups
+          ← Your trips
         </Link>
         <h1 className="font-display text-2xl sm:text-3xl text-ink mt-1">Admin</h1>
-        <p className="text-sm text-ink-soft mt-0.5">Platform-wide user and group management.</p>
+        <p className="text-sm text-ink-soft mt-0.5">Platform-wide user and trip management.</p>
       </div>
 
       <div className="flex gap-1 border-b border-line mb-6">
@@ -586,7 +586,7 @@ export default function AdminPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
-              { label: 'Groups', value: overview.groups, tab: 'groups' },
+              { label: 'Trips', value: overview.groups, tab: 'groups' },
               { label: 'Users', value: overview.users, tab: 'users' },
               { label: 'Active users', value: overview.activeUsers, tab: 'users' },
               { label: 'Expenses logged', value: overview.expenses, tab: 'reports' },
@@ -644,7 +644,7 @@ export default function AdminPage() {
                         disabled={busyId === u.id}
                         className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
                       >
-                        Manage groups
+                        Manage trips
                       </button>
                     )}
                     {profile?.is_super_admin && (
@@ -712,7 +712,7 @@ export default function AdminPage() {
                           <Skeleton className="h-3 w-20" />
                         </div>
                       ) : userGroups.length === 0 ? (
-                        <p className="text-xs text-ink-soft">No groups.</p>
+                        <p className="text-xs text-ink-soft">No trips.</p>
                       ) : (
                         <ul className="space-y-1">
                           {userGroups.map((g) => (
@@ -740,7 +740,7 @@ export default function AdminPage() {
                             onChange={(e) => setSelectedGroupId(e.target.value)}
                             className="text-xs rounded-full border border-line bg-paper-raised px-2.5 py-1 text-ink focus:border-primary outline-none"
                           >
-                            <option value="">Add to a group…</option>
+                            <option value="">Add to a trip…</option>
                             {groupOptions.map((g) => (
                               <option key={g.id} value={g.id}>
                                 {g.name}
@@ -810,7 +810,7 @@ export default function AdminPage() {
                               </button>
                             </div>
                           ) : (
-                            <Link to={`/groups/${g.id}`} className="text-ink hover:text-primary truncate block">
+                            <Link to={`/trips/${g.id}`} className="text-ink hover:text-primary truncate block">
                               {g.name}
                             </Link>
                           )}
@@ -985,7 +985,7 @@ export default function AdminPage() {
             </div>
 
             <div>
-              <h3 className="font-display text-lg text-ink mb-3">Spend by group</h3>
+              <h3 className="font-display text-lg text-ink mb-3">Spend by trip</h3>
               {reports.byGroup.length === 0 ? (
                 <p className="text-sm text-ink-soft">No expenses logged yet.</p>
               ) : (
@@ -994,7 +994,7 @@ export default function AdminPage() {
                     .sort((a, b) => b.total - a.total)
                     .map((g) => (
                       <li key={g.id} className="flex items-center justify-between py-2 text-sm">
-                        <Link to={`/groups/${g.id}`} className="text-ink hover:text-primary truncate">
+                        <Link to={`/trips/${g.id}`} className="text-ink hover:text-primary truncate">
                           {g.name}
                         </Link>
                         <span className="num text-ink-soft shrink-0">
@@ -1024,7 +1024,7 @@ export default function AdminPage() {
                       {s.to_profile?.display_name ?? s.to_profile?.email ?? 'Unknown'}
                     </p>
                     <p className="text-xs text-ink-soft mt-0.5 truncate">
-                      {s.groups?.name ?? 'Unknown group'} ·{' '}
+                      {s.groups?.name ?? 'Unknown trip'} ·{' '}
                       {new Date(s.created_at).toLocaleDateString(undefined, {
                         year: 'numeric',
                         month: 'short',
@@ -1078,7 +1078,7 @@ export default function AdminPage() {
                             {e.description} · {formatMoney(e.amount, e.currency)}
                           </p>
                           <p className="text-xs text-ink-soft mt-0.5">
-                            {e.groups?.name ?? 'Unknown group'} · {e.category} · deleted {days} day
+                            {e.groups?.name ?? 'Unknown trip'} · {e.category} · deleted {days} day
                             {days === 1 ? '' : 's'} ago
                             {eligible ? ' · eligible for permanent deletion' : ` · ${ARCHIVE_DAYS - days} days left to restore`}
                           </p>
