@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import { formatMoney } from '../lib/fx'
-import { SkeletonRows, SkeletonStatGrid, SkeletonChart } from '../components/Skeleton'
+import { Skeleton, SkeletonRows, SkeletonStatGrid, SkeletonChart } from '../components/Skeleton'
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
@@ -17,6 +17,50 @@ const TABS = [
 
 const REQUEST_STATUSES = ['new', 'reviewing', 'planned', 'done', 'declined']
 const ARCHIVE_DAYS = 30
+
+// Same hand-drawn line-icon style as EmptyState/CategoryIcon/GroupIcon —
+// reusing the exact paths already used elsewhere for the same concept
+// (Dashboard's "no groups" icon, GroupView's "no expenses" receipt,
+// Navbar's exchange-rates arrows) rather than drawing new ones, so a
+// stat tile and the empty state it might lead to actually look related.
+const STAT_ICONS = {
+  Groups: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4">
+      <circle cx="7" cy="7" r="2.3" />
+      <path d="M2.5 16c0-3 2-4.5 4.5-4.5s4.5 1.5 4.5 4.5" strokeLinecap="round" />
+      <circle cx="13" cy="7" r="2.3" />
+      <path d="M9 12.2c.7-1 1.9-1.7 4-1.7 2.5 0 4.5 1.5 4.5 4.5" strokeLinecap="round" />
+    </svg>
+  ),
+  Users: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4">
+      <circle cx="10" cy="7" r="2.6" />
+      <path d="M4 16c0-3.3 2.3-5 6-5s6 1.7 6 5" strokeLinecap="round" />
+    </svg>
+  ),
+  'Active users': (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4">
+      <circle cx="9" cy="7" r="2.4" />
+      <path d="M3.5 15.5c0-3 2.2-4.7 5.5-4.7s5.5 1.7 5.5 4.7" strokeLinecap="round" />
+      <circle cx="15.3" cy="5.3" r="1.7" fill="currentColor" stroke="none" />
+    </svg>
+  ),
+  'Expenses logged': (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4">
+      <path d="M5 3h10v14l-1.5-1-1.5 1-1.5-1-1.5 1-1.5-1-1.5 1V3Z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M7.5 7h5M7.5 10h5M7.5 13h3" strokeLinecap="round" />
+    </svg>
+  ),
+  'Settlements recorded': (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4">
+      <path
+        d="M4 7h10.5M14.5 7 11.5 4M14.5 7l-3 3M16 13H5.5M5.5 13 8.5 10M5.5 13l3 3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
+}
 
 function daysSince(isoDate) {
   return Math.floor((Date.now() - new Date(isoDate).getTime()) / (1000 * 60 * 60 * 24))
@@ -509,6 +553,12 @@ export default function AdminPage() {
                 onClick={() => setTab(stat.tab)}
                 className="text-left rounded-xl border border-line bg-paper-raised px-4 py-4 hover:border-primary transition-colors"
               >
+                <div
+                  className="h-8 w-8 rounded-full bg-primary-tint text-primary flex items-center justify-center mb-2"
+                  aria-hidden="true"
+                >
+                  <div className="h-4 w-4">{STAT_ICONS[stat.label]}</div>
+                </div>
                 <p className="num font-display text-3xl text-ink">{stat.value}</p>
                 <p className="text-xs text-ink-soft mt-1">{stat.label}</p>
               </button>
@@ -613,7 +663,10 @@ export default function AdminPage() {
                     <div>
                       <p className="text-xs text-ink-soft mb-1">Currently in</p>
                       {userGroups === null ? (
-                        <p className="text-xs text-ink-soft">Loading…</p>
+                        <div className="space-y-1.5 py-0.5">
+                          <Skeleton className="h-3 w-28" />
+                          <Skeleton className="h-3 w-20" />
+                        </div>
                       ) : userGroups.length === 0 ? (
                         <p className="text-xs text-ink-soft">No groups.</p>
                       ) : (
@@ -635,7 +688,7 @@ export default function AdminPage() {
                     </div>
                     <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-line">
                       {groupOptions === null ? (
-                        <p className="text-xs text-ink-soft">Loading groups…</p>
+                        <Skeleton className="h-6 w-40 rounded-full" />
                       ) : (
                         <>
                           <select

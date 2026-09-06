@@ -79,6 +79,7 @@ export default function ResetPassword() {
       </div>
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
+          <img src="/icon.svg" alt="" className="h-12 w-12 rounded-2xl mx-auto mb-3" />
           <h1 className="font-display text-3xl text-ink">Choose a new password</h1>
         </div>
 

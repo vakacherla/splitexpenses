@@ -34,6 +34,7 @@ export default function Login() {
       </div>
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
+          <img src="/icon.svg" alt="" className="h-12 w-12 rounded-2xl mx-auto mb-3" />
           <h1 className="font-display text-3xl text-ink">Split Expenses</h1>
           <p className="mt-2 text-sm text-ink-soft">Shared expenses, any currency.</p>
         </div>
