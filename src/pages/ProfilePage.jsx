@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { PAYMENT_PROVIDERS } from '../lib/paymentLinks'
 import Avatar from '../components/Avatar'
 import NotificationSettings from '../components/NotificationSettings'
+import HelpLink from '../components/HelpLink'
 
 export default function ProfilePage() {
   const { user, refreshProfile } = useAuth()
@@ -144,7 +145,10 @@ export default function ProfilePage() {
         <Link to="/dashboard" className="text-sm text-ink-soft hover:text-ink">
           ← Your groups
         </Link>
-        <h1 className="font-display text-2xl sm:text-3xl text-ink mt-1">Your profile</h1>
+        <div className="flex items-center gap-2 mt-1">
+          <h1 className="font-display text-2xl sm:text-3xl text-ink">Your profile</h1>
+          <HelpLink to="profile" />
+        </div>
         <p className="text-sm text-ink-soft mt-0.5">
           Visible to anyone you share a group with — this is how they'll recognize and reach you.
         </p>

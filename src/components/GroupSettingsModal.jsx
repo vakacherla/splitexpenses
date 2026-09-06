@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 import { accentFor } from './GroupIcon'
 import GroupBanner from './GroupBanner'
 import { validateTripDates, MIN_TRIP_DATE, MAX_TRIP_DATE } from '../lib/tripDates'
+import HelpLink from './HelpLink'
 
 export default function GroupSettingsModal({
   group,
@@ -115,9 +116,12 @@ export default function GroupSettingsModal({
       <div className="w-full sm:max-w-sm bg-paper-raised rounded-t-3xl sm:rounded-2xl border border-line shadow-raised p-5 sm:p-6 space-y-4 max-h-[92dvh] overflow-y-auto">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-xl text-ink">Group settings</h2>
-          <button type="button" onClick={onClose} className="text-ink-soft hover:text-ink text-sm">
-            Close
-          </button>
+          <div className="flex items-center gap-3">
+            <HelpLink to="getting-started" />
+            <button type="button" onClick={onClose} className="text-ink-soft hover:text-ink text-sm">
+              Close
+            </button>
+          </div>
         </div>
 
         <div>

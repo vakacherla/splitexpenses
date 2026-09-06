@@ -11,6 +11,7 @@ import GroupSettingsModal from '../components/GroupSettingsModal'
 import ImportCsvModal from '../components/ImportCsvModal'
 import GroupBanner from '../components/GroupBanner'
 import ActivityFeed from '../components/ActivityFeed'
+import HelpLink from '../components/HelpLink'
 import { accentFor } from '../components/GroupIcon'
 import LoadingScreen from '../components/LoadingScreen'
 import { SkeletonChart } from '../components/Skeleton'
@@ -32,6 +33,16 @@ const TABS = [
   { id: 'activity', label: 'Activity' },
   { id: 'members', label: 'Members' },
 ]
+
+// Which Help section answers questions about each tab, so the "?" next to
+// the tab bar jumps straight there instead of the top of the whole guide.
+const TAB_HELP_SECTION = {
+  ledger: 'search-export-import',
+  balances: 'balances',
+  reports: 'reports',
+  activity: 'activity',
+  members: 'getting-started',
+}
 
 export default function GroupView() {
   const { groupId } = useParams()
@@ -435,18 +446,21 @@ export default function GroupView() {
         )}
       </div>
 
-      <div className="flex gap-1 border-b border-line mb-6">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`px-3.5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              tab === t.id ? 'border-primary text-ink' : 'border-transparent text-ink-soft hover:text-ink'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="flex items-center justify-between border-b border-line mb-6">
+        <div className="flex gap-1">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`px-3.5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                tab === t.id ? 'border-primary text-ink' : 'border-transparent text-ink-soft hover:text-ink'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <HelpLink to={TAB_HELP_SECTION[tab]} className="mb-2 mr-1" />
       </div>
 
       {error && <p className="mb-4 text-sm text-owe">{error}</p>}

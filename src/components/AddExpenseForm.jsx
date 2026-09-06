@@ -8,6 +8,7 @@ import { splitEvenly, splitByPercentages, splitItemized } from '../lib/split'
 import { logActivity, notifyGroup } from '../lib/activity'
 import { CATEGORIES } from '../lib/categories'
 import CurrencySelect from './CurrencySelect'
+import HelpLink from './HelpLink'
 
 const SPLIT_MODES = [
   { id: 'equal', label: 'Equal' },
@@ -569,9 +570,12 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
           <h2 className="font-display text-xl text-ink">
             {editingExpense ? 'Edit expense' : duplicateFrom ? 'Duplicate expense' : 'Add an expense'}
           </h2>
-          <button type="button" onClick={onClose} className="text-ink-soft hover:text-ink text-sm">
-            Close
-          </button>
+          <div className="flex items-center gap-3">
+            <HelpLink to="adding-expense" />
+            <button type="button" onClick={onClose} className="text-ink-soft hover:text-ink text-sm">
+              Close
+            </button>
+          </div>
         </div>
 
         <div className="px-5 sm:px-6 pb-6 space-y-5">

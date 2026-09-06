@@ -6,6 +6,7 @@ import { downloadCSV } from '../lib/csvExport'
 import { buildImportTemplate, parseCSV, validateImportRows, MAX_IMPORT_ROWS } from '../lib/csvImport'
 import { useOnlineStatus } from '../lib/useOnlineStatus'
 import { logActivity, notifyGroup } from '../lib/activity'
+import HelpLink from './HelpLink'
 
 function OfflineNotice({ children }) {
   return (
@@ -231,9 +232,12 @@ export default function ImportCsvModal({ group, members, currentUserId, onImport
       <div className="w-full sm:max-w-2xl bg-paper-raised rounded-t-3xl sm:rounded-2xl border border-line shadow-raised p-5 sm:p-6 space-y-4 max-h-[92dvh] overflow-y-auto">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-xl text-ink">Import expenses from CSV</h2>
-          <button type="button" onClick={onClose} className="text-ink-soft hover:text-ink text-sm">
-            Close
-          </button>
+          <div className="flex items-center gap-3">
+            <HelpLink to="search-export-import" />
+            <button type="button" onClick={onClose} className="text-ink-soft hover:text-ink text-sm">
+              Close
+            </button>
+          </div>
         </div>
 
         {result ? (

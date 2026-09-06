@@ -1,13 +1,15 @@
-import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ThemeToggle from '../components/ThemeToggle'
 import FeatureRequestForm from '../components/FeatureRequestForm'
 
-function Section({ title, defaultOpen, children }) {
+function Section({ id, title, defaultOpen, children }) {
   return (
     <details
+      id={id}
       open={defaultOpen}
-      className="group border-b border-line py-4 [&_summary::-webkit-details-marker]:hidden"
+      className="group scroll-mt-6 border-b border-line py-4 [&_summary::-webkit-details-marker]:hidden"
     >
       <summary className="flex items-center justify-between cursor-pointer list-none">
         <span className="font-display text-lg text-ink">{title}</span>
@@ -27,6 +29,19 @@ function Section({ title, defaultOpen, children }) {
 
 export default function HelpPage() {
   const { user } = useAuth()
+  const location = useLocation()
+
+  // Lets other screens link straight to the relevant section (e.g.
+  // /help#balances) instead of dropping people at the top of a long page
+  // they then have to scroll through to find the part that applies to them.
+  useEffect(() => {
+    const id = location.hash.slice(1)
+    if (!id) return
+    const el = document.getElementById(id)
+    if (!el) return
+    if (el.tagName === 'DETAILS') el.open = true
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [location.hash])
 
   return (
     <div className="min-h-dvh bg-paper">
@@ -60,7 +75,7 @@ export default function HelpPage() {
           order.
         </p>
 
-        <Section title="Getting started" defaultOpen>
+        <Section id="getting-started" title="Getting started" defaultOpen>
           <p>
             <strong className="text-ink">Sign up</strong> with your email and a password — no confirmation
             steps needed for most groups.
@@ -83,7 +98,7 @@ export default function HelpPage() {
           </p>
         </Section>
 
-        <Section title="Adding an expense">
+        <Section id="adding-expense" title="Adding an expense">
           <p>
             Open a group and tap the <strong className="text-ink">+</strong> button. Fill in:
           </p>
@@ -136,7 +151,7 @@ export default function HelpPage() {
           </p>
         </Section>
 
-        <Section title="Search, export, and bulk import">
+        <Section id="search-export-import" title="Search, export, and bulk import">
           <p>
             The Ledger has a <strong className="text-ink">search box and a category filter</strong> once a
             group has more than a few expenses — search matches the description or who paid.
@@ -157,7 +172,7 @@ export default function HelpPage() {
           </p>
         </Section>
 
-        <Section title="Working offline">
+        <Section id="offline" title="Working offline">
           <p>
             No signal doesn't mean you can't log an expense. Add, edit, or delete an expense — or record a
             settlement — with no connection at all, and it shows up right away tagged{' '}
@@ -176,7 +191,7 @@ export default function HelpPage() {
           </p>
         </Section>
 
-        <Section title="Understanding balances">
+        <Section id="balances" title="Understanding balances">
           <p>The Balances tab shows, for each person, whether they're owed money or owe money overall.</p>
           <p>
             Below that, <strong className="text-ink">"Suggested settle-up"</strong> shows the fewest possible
@@ -186,7 +201,7 @@ export default function HelpPage() {
           </p>
         </Section>
 
-        <Section title="Settling up">
+        <Section id="settling-up" title="Settling up">
           <p>
             When you're ready to pay someone back, tap <strong className="text-ink">"Record payment"</strong>{' '}
             next to a suggestion. You can adjust the amount or pay in a different currency if that's easier.
@@ -204,7 +219,7 @@ export default function HelpPage() {
           <p>Made a mistake? Any recorded payment can be undone from the Balances tab.</p>
         </Section>
 
-        <Section title="Reports">
+        <Section id="reports" title="Reports">
           <p>
             The Reports tab totals up everything the group has spent — broken down by category and by who
             paid — plus a table crossing the two. Useful for "where did all our money actually go" after a
@@ -212,7 +227,7 @@ export default function HelpPage() {
           </p>
         </Section>
 
-        <Section title="Activity feed & notifications">
+        <Section id="activity" title="Activity feed & notifications">
           <p>
             The <strong className="text-ink">Activity</strong> tab is a running history of everything that's
             happened in the group — expenses added, edited, or deleted, payments recorded or undone, people
@@ -226,7 +241,7 @@ export default function HelpPage() {
           </p>
         </Section>
 
-        <Section title="Your profile">
+        <Section id="profile" title="Your profile">
           <p>
             Tap your name (top right) to open your profile. From there you can add a photo, change how your
             name displays, add your payment handle (UPI ID, Venmo username, or PayPal.me link) so other
@@ -249,7 +264,7 @@ export default function HelpPage() {
           </p>
         </Section>
 
-        <Section title="A few common questions">
+        <Section id="faq" title="A few common questions">
           <p>
             <strong className="text-ink">Where can I just check today's exchange rate?</strong> The exchange
             icon in the top nav opens a rates page — pick a currency, see it against everything else, or use
@@ -277,7 +292,7 @@ export default function HelpPage() {
           </p>
         </Section>
 
-        <Section title="Have an idea?" defaultOpen={Boolean(user)}>
+        <Section id="feedback" title="Have an idea?" defaultOpen={Boolean(user)}>
           {user ? (
             <>
               <p>

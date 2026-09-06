@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabaseClient'
 import { fetchSupportedCurrencies, FALLBACK_CURRENCIES, getAllRates } from '../lib/fx'
 import CurrencySelect from '../components/CurrencySelect'
 import { SkeletonRows } from '../components/Skeleton'
+import HelpLink from '../components/HelpLink'
 
 export default function RatesPage() {
   const { user } = useAuth()
@@ -68,7 +69,10 @@ export default function RatesPage() {
         <Link to="/dashboard" className="text-sm text-ink-soft hover:text-ink">
           ← Your groups
         </Link>
-        <h1 className="font-display text-2xl sm:text-3xl text-ink mt-1">Exchange rates</h1>
+        <div className="flex items-center gap-2 mt-1">
+          <h1 className="font-display text-2xl sm:text-3xl text-ink">Exchange rates</h1>
+          <HelpLink to="faq" />
+        </div>
         <p className="text-sm text-ink-soft mt-0.5">
           The same source this app uses when converting an expense — Frankfurter, built on European Central
           Bank reference rates, refreshed each weekday. Informational only; it doesn't affect any expense
