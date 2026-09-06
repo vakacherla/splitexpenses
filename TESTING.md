@@ -24,7 +24,7 @@ own project, safe to make test data.
 - [ ] **P0** — Sign out → back at Login, and hitting Back afterward doesn't
       show cached authenticated pages
 - [ ] **P0** — Logged out, navigate directly to `/dashboard` or
-      `/groups/<id>` by URL → redirected to Login, not a broken page
+      `/trips/<id>` by URL → redirected to Login, not a broken page
 - [ ] **P0** — Logged in as a non-admin, navigate directly to `/admin` by
       URL → redirected to Dashboard, not an error or a peek at admin data
 - [x] **P0** — Sign up with a new email → confirmation link in the email
@@ -47,54 +47,54 @@ own project, safe to make test data.
       (nothing in the URL) → "Link expired" message after a few seconds,
       not an infinite spinner
 
-## Groups
+## Trips
 
 - [ ] **P0** — Dashboard hero shows a real greeting with your actual first
-      name and a group count that matches your real group list; the same
+      name and a trip count that matches your real trip list; the same
       greeting persists across navigating away and back within one
       browser session, but can differ after closing and reopening the tab
-- [ ] **P1** — Each group card shows real member avatars (a photo for
+- [ ] **P1** — Each trip card shows real member avatars (a photo for
       anyone who's set one, initials for anyone who hasn't) — hovering
-      one shows their name in a small tooltip; the per-group icon badge
-      and accent color stay the same across reloads for the same group
-- [ ] **P0** — Create a group → appears on Dashboard, you're its only
+      one shows their name in a small tooltip; the per-trip icon badge
+      and accent color stay the same across reloads for the same trip
+- [ ] **P0** — Create a trip → appears on Dashboard, you're its only
       member, invite code is visible under Members
 - [ ] **P0** — Second account joins with the correct invite code → shows
       up in both accounts' member lists
 - [ ] **P1** — Second account tries an invalid/mistyped code → clear
       error, doesn't join anything
-- [ ] **P1** — Belonging to multiple groups → Dashboard lists all of them
+- [ ] **P1** — Belonging to multiple trips → Dashboard lists all of them
       with correct member counts
-- [ ] **P0** — Group creator makes another member a manager → that
-      member can now rename the group, remove a regular member, and
+- [ ] **P0** — Trip creator makes another member a manager → that
+      member can now rename the trip, remove a regular member, and
       archive it
 - [ ] **P0** — A manager cannot make someone else a manager, remove
       another manager, or remove/demote the creator — none of those
       controls should even appear for a manager
 - [ ] **P1** — Creator removes someone's manager status → they
-      immediately lose those powers (Group settings section disappears
+      immediately lose those powers (Trip settings section disappears
       for them)
-- [ ] **P1** — A regular (non-manager) member sees no Group settings
+- [ ] **P1** — A regular (non-manager) member sees no Trip settings
       section at all
-- [ ] **P0** — Owner or manager duplicates a group (Group settings →
-      "Duplicate this group") → a new group appears on their Dashboard
+- [ ] **P0** — Owner or manager duplicates a trip (Trip settings →
+      "Duplicate this trip") → a new trip appears on their Dashboard
       with the entered name (or "<name> (copy)" if left blank), the same
-      home currency, a *different* invite code, and every source-group
+      home currency, a *different* invite code, and every source-trip
       member present with their manager roles intact — except the person
-      who did the duplicating, who is the new group's owner regardless of
+      who did the duplicating, who is the new trip's owner regardless of
       their role in the source
-- [ ] **P0** — The duplicated group has zero expenses, zero settlements,
+- [ ] **P0** — The duplicated trip has zero expenses, zero settlements,
       and no trip dates carried over — it's a blank ledger
 - [ ] **P1** — A regular (non-manager) member sees no "Duplicate this
-      group" option in Group settings (the section shouldn't even be
+      trip" option in Trip settings (the section shouldn't even be
       reachable — they have no settings gear at all)
-- [ ] **P1** — Owner or manager uploads a cover photo (Group settings →
+- [ ] **P1** — Owner or manager uploads a cover photo (Trip settings →
       "Add a cover photo") → appears full-bleed on the Dashboard card and
-      the group page banner; a regular member sees no upload control at
+      the trip page banner; a regular member sees no upload control at
       all
 - [ ] **P2** — Uploading a square or portrait photo → it's center-cropped
       to fit the wide banner strip, not stretched or tiled
-- [x] **P0** — Group settings → Trip dates: setting an end date before
+- [x] **P0** — Trip settings → Trip dates: setting an end date before
       the start date is blocked — Save disables and an inline error
       shows; the date pickers' own min/max also prevent picking an
       invalid combination via the calendar widget. Verified in prod
@@ -103,11 +103,11 @@ own project, safe to make test data.
       date field (e.g. `0005` or `9999`) is rejected the same way as a
       bad ordering, both fields independently. Verified in prod
       2026-09-05 — caught live as `0005-05-05` / `0644-04-04` on a real
-      group.
+      trip.
 
 ## Expenses
 
-- [ ] **P0** — Add an expense in the group's home currency → no FX panel
+- [ ] **P0** — Add an expense in the trip's home currency → no FX panel
       shown, saves and appears in the ledger correctly
 - [ ] **P0** — Add an expense in a *different* currency → live-converted
       amount shown before saving, and both the original and converted
@@ -133,7 +133,7 @@ own project, safe to make test data.
 - [ ] **P0** — Edit an expense's split (e.g. switch equal → exact, or
       reassign who's included) without touching amount/currency → saves
       correctly, Balances reflects the new split, and the original
-      exchange_rate/amount_in_home are unchanged (check via the group's
+      exchange_rate/amount_in_home are unchanged (check via the trip's
       home-currency figure not shifting for an expense in a foreign
       currency)
 - [x] **P0** — Edit an expense's amount or currency → a fresh exchange
@@ -164,7 +164,7 @@ own project, safe to make test data.
 - [ ] **P1** — Expanding an itemized expense's row shows the per-item
       breakdown (who it was assigned to) alongside the final per-person
       totals
-- [ ] **P0** — "Duplicate" on an expense (any group member, not just
+- [ ] **P0** — "Duplicate" on an expense (any trip member, not just
       whoever entered/paid for it) opens the add-expense form pre-filled
       with the same description, category, amount, currency, payer,
       split type, and participants/shares — but today's date, not the
@@ -205,12 +205,12 @@ own project, safe to make test data.
 - [ ] **P0** — Recording a payment in a *different* currency shows the
       live-converted equivalent and both amounts are stored correctly
 - [ ] **P1** — Undoing a settlement reverts the balance exactly back
-- [ ] **P2** — A fully-settled group shows "nothing to settle," not an
+- [ ] **P2** — A fully-settled trip shows "nothing to settle," not an
       empty or confusing state
-- [ ] **P1** — Set a trip's end date in the past (Members → Group
+- [ ] **P1** — Set a trip's end date in the past (Members → Trip
       settings) → within a day, everyone who still owes money there gets
       a reminder (email and/or push, whichever's configured); a fully
-      settled group with a past end date gets no reminder
+      settled trip with a past end date gets no reminder
 - [ ] **P1** — The manual "Remind" button on a suggested settle-up row
       only shows for whoever's owed money on that row, and actually
       delivers (check both the recipient's email and their device, if
@@ -230,14 +230,14 @@ own project, safe to make test data.
       shares — this is deliberate, see README)
 - [ ] **P1** — Category × person table numbers are internally consistent
       with the two charts above
-- [ ] **P2** — A group with no expenses shows an empty state, not a
+- [ ] **P2** — A trip with no expenses shows an empty state, not a
       broken chart
 
 ## Admin — Users
 
 - [ ] **P0** — Non-admin account: no "Admin" link anywhere in the nav
 - [ ] **P0** — Admin → Users lists every account on the platform, not
-      just your own groups' members
+      just your own trips' members
 - [ ] **P0** — Suspending a user immediately prevents them from signing in
 - [ ] **P1** — Unsuspending restores their ability to sign in
 - [ ] **P0** — Deleting a user with **no** expense/settlement history
@@ -255,77 +255,77 @@ own project, safe to make test data.
 - [ ] **P1** — The very first super admin (oldest admin account) shows
       the "SU" badge; anyone promoted after shows "admin" until also
       made super admin
-- [ ] **P0** — Only a super admin sees "Add to group" on a user's row; a
+- [ ] **P0** — Only a super admin sees "Add to trip" on a user's row; a
       regular admin doesn't see it at all
-- [ ] **P0** — Super admin picks a user with zero groups and a target
-      group, clicks Add → that user now has that group on their own
+- [ ] **P0** — Super admin picks a user with zero trips and a target
+      trip, clicks Add → that user now has that trip on their own
       Dashboard next time they load it, with no invite code ever
       exchanged
-- [ ] **P1** — Picking a user already in the target group and adding
+- [ ] **P1** — Picking a user already in the target trip and adding
       them again is a harmless no-op (no duplicate row, no error)
 - [ ] **P1** — A non-super-admin calling `admin_add_user_to_group`
       directly (e.g. via the Network tab / SQL, replaying the RPC) gets
-      rejected with "Only a super admin can add a user to a group
+      rejected with "Only a super admin can add a user to a trip
       directly," not actual data
-- [ ] **P0** — "Manage groups" on a user's row lists every group they're
+- [ ] **P0** — "Manage trips" on a user's row lists every trip they're
       currently in with its own Remove button; clicking Remove takes
-      them out of that group immediately (check their own Dashboard next
+      them out of that trip immediately (check their own Dashboard next
       load) without touching any other membership
-- [ ] **P1** — Removing a user from a group they have expense history in
+- [ ] **P1** — Removing a user from a trip they have expense history in
       leaves those expenses in the ledger untouched — only their roster
       membership disappears
 - [ ] **P1** — A non-super-admin calling `admin_remove_user_from_group`
       directly gets rejected the same way as the add RPC
 
-## Admin — Groups
+## Admin — Trips
 
-- [ ] **P0** — Admin → Groups lists every group platform-wide with
+- [ ] **P0** — Admin → Trips lists every trip platform-wide with
       accurate member counts
-- [ ] **P1** — Each group (active and archived) shows an accurate
+- [ ] **P1** — Each trip (active and archived) shows an accurate
       "Created &lt;date&gt; by &lt;name&gt;" line matching who actually created it
       and when
 - [ ] **P0** — Every Overview stat tile is clickable and lands on the
-      right tab (Groups/Users/Active users/Expenses logged/Settlements
+      right tab (Trips/Users/Active users/Expenses logged/Settlements
       recorded)
 - [ ] **P0** — Admin → Settlements lists every settlement platform-wide
-      with correct from/to names, group, date, and amount (including the
+      with correct from/to names, trip, date, and amount (including the
       home-currency equivalent when the settlement currency differs from
-      the group's)
-- [ ] **P1** — Renaming a group updates immediately, and the new name
-      shows correctly on that group's own page too
-- [ ] **P0** — Deleting a group archives it (check the Supabase table
+      the trip's)
+- [ ] **P1** — Renaming a trip updates immediately, and the new name
+      shows correctly on that trip's own page too
+- [ ] **P0** — Deleting a trip archives it (check the Supabase table
       editor: the row and its expenses/splits/settlements are all still
       there, just `archived_at` is set) — it disappears from every
       member's dashboard immediately
-- [ ] **P0** — An archived group shows under "Archived" with a day count
+- [ ] **P0** — An archived trip shows under "Archived" with a day count
       and 30-days-left message; Restore brings it back to normal
-- [ ] **P0** — "Permanently delete" on an archived group actually removes
+- [ ] **P0** — "Permanently delete" on an archived trip actually removes
       the row and its expenses/splits/settlements (only appears/succeeds
       once 30+ days have passed)
-- [ ] **P1** — Clicking into a group from Admin lands on its real
+- [ ] **P1** — Clicking into a trip from Admin lands on its real
       Ledger/Balances/Reports/Members, shows a "Viewing as admin" note,
       and hides the add-expense button
 
 ## Admin — Trash
 
-- [ ] **P0** — Deleting an expense from a group's Ledger removes it from
+- [ ] **P0** — Deleting an expense from a trip's Ledger removes it from
       that ledger and from balance calculations immediately, but the row
       still exists (check the table editor: `deleted_at` is set, not
       actually gone)
 - [ ] **P0** — That expense shows up in Admin → Trash with the right
-      group name, amount, and day count
-- [ ] **P0** — Restoring it from Trash brings it back to the group's
+      trip name, amount, and day count
+- [ ] **P0** — Restoring it from Trash brings it back to the trip's
       Ledger and balances exactly as before
 - [ ] **P0** — "Delete permanently" on a trashed expense actually removes
       the row (only appears/succeeds once 30+ days have passed)
 - [ ] **P1** — A regular (non-admin) member never sees deleted expenses
-      anywhere, including if they know the group is theirs — deleting is
+      anywhere, including if they know the trip is theirs — deleting is
       still self-service, only recovery is admin-only
 
 ## Security boundaries (do these even though they're awkward to test)
 
-- [ ] **P0** — Using a second account that is *not* a member of a group,
-      confirm they cannot see that group anywhere in their own UI
+- [ ] **P0** — Using a second account that is *not* a member of a trip,
+      confirm they cannot see that trip anywhere in their own UI
 - [ ] **P0** — With browser dev tools open, try editing your own profile
       via a direct Supabase call to set `is_admin: true` while signed in
       as a non-admin — confirm it does *not* take effect (the database
@@ -336,7 +336,7 @@ own project, safe to make test data.
 
 ## Cross-device & responsive
 
-- [ ] **P0** — Full flow (sign in → create group → add expense → view
+- [ ] **P0** — Full flow (sign in → create trip → add expense → view
       balances) works on an actual phone, not just a resized browser
       window
 - [ ] **P1** — No horizontal scrolling anywhere on a small screen
@@ -353,14 +353,14 @@ own project, safe to make test data.
       browser
 - [ ] **P2** — First visit with no saved preference matches your system's
       light/dark setting
-- [ ] **P1** — Spot-check Login, Dashboard, a group's Ledger/Balances/
+- [ ] **P1** — Spot-check Login, Dashboard, a trip's Ledger/Balances/
       Reports, and Admin in dark mode — everything should stay readable,
       not just "not broken"
 
 ## Offline mode
 
-- [x] **P0** — Load a group online once, go offline (airplane mode or
-      devtools "Offline"), reload the page → the group renders fully from
+- [x] **P0** — Load a trip online once, go offline (airplane mode or
+      devtools "Offline"), reload the page → the trip renders fully from
       cache with a "Showing saved data from…" note, not a spinner.
       Verified 2026-09-04.
 - [x] **P0** — While offline, add a same-currency expense → appears
@@ -370,7 +370,7 @@ own project, safe to make test data.
 - [x] **P0** — Reconnecting after an offline add syncs automatically and
       the ledger updates on its own — no manual page refresh needed.
       Fixed 2026-09-04 after initial testing found the synced row wasn't
-      appearing until a hard refresh: `GroupView` now reloads the moment a
+      appearing until a hard refresh: `TripView` now reloads the moment a
       sync run finishes (watches the syncing→idle transition), since the
       queue entry disappearing on success doesn't by itself put the real
       row into the page's own state.
@@ -401,14 +401,14 @@ own project, safe to make test data.
 - [ ] **P0** — `/admin` as a non-admin, offline, direct URL → shows a
       clear connection-error/retry state, never hangs forever on
       "Checking access…"
-- [ ] **P1** — First-ever offline visit to a group never opened on this
+- [ ] **P1** — First-ever offline visit to a trip never opened on this
       device (or the Dashboard on a fresh device with no cache) → a clear
       "reconnect to load this the first time" message, not an infinite
       skeleton
 - [x] **P0** — A genuine network failure that resolves as a query *error*
       rather than a rejected request (confirmed on Safari/WebKit, message
       text "TypeError: Load failed") is still treated as offline, not
-      shown as a raw error — `GroupView.load()` checks `navigator.onLine`
+      shown as a raw error — `TripView.load()` checks `navigator.onLine`
       alongside any query error before deciding whether to fall back to
       cache. Fixed 2026-09-04 after real Safari testing surfaced the raw
       error message on an offline reload.
