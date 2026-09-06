@@ -26,10 +26,10 @@ const ARCHIVE_DAYS = 30
 const STAT_ICONS = {
   Groups: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4">
-      <circle cx="7" cy="7" r="2.3" />
-      <path d="M2.5 16c0-3 2-4.5 4.5-4.5s4.5 1.5 4.5 4.5" strokeLinecap="round" />
-      <circle cx="13" cy="7" r="2.3" />
-      <path d="M9 12.2c.7-1 1.9-1.7 4-1.7 2.5 0 4.5 1.5 4.5 4.5" strokeLinecap="round" />
+      <rect x="3" y="3" width="6" height="6" rx="1.2" />
+      <rect x="11" y="3" width="6" height="6" rx="1.2" />
+      <rect x="3" y="11" width="6" height="6" rx="1.2" />
+      <rect x="11" y="11" width="6" height="6" rx="1.2" />
     </svg>
   ),
   Users: (
