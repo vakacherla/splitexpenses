@@ -3,6 +3,9 @@
 // skipped row) is much harder to trust than one bad manual entry, so
 // there's no column-guessing and no partial import — see validateImportRows.
 
+import { validateDateInRange } from './tripDates'
+import { MAX_AMOUNT, isAmountTooLarge } from './amountBounds'
+
 // The import loop inserts one row at a time (an expense, its splits, and
 // an FX-rate lookup — no batching), and the preview table below isn't
 // virtualized, so an unbounded file would get slower and heavier to
@@ -144,6 +147,10 @@ export function validateImportRows(rows, { members, categories, currencies }) {
     if (!DATE_RE.test(dateText) || Number.isNaN(new Date(dateText).getTime())) {
       return { rowNumber, raw: cols, error: `Invalid date "${dateText}" — expected YYYY-MM-DD` }
     }
+    const dateCheck = validateDateInRange(dateText, 'Date')
+    if (!dateCheck.valid) {
+      return { rowNumber, raw: cols, error: dateCheck.error }
+    }
     if (!description) {
       return { rowNumber, raw: cols, error: 'Description is required' }
     }
@@ -157,6 +164,9 @@ export function validateImportRows(rows, { members, categories, currencies }) {
     const amount = Number(amountText)
     if (!Number.isFinite(amount) || amount <= 0) {
       return { rowNumber, raw: cols, error: `Invalid amount "${amountText}"` }
+    }
+    if (isAmountTooLarge(amount)) {
+      return { rowNumber, raw: cols, error: `Amount "${amountText}" can't be more than ${MAX_AMOUNT.toLocaleString()}` }
     }
     if (!currencySet.has(currency.toUpperCase())) {
       return { rowNumber, raw: cols, error: `Unsupported currency "${currency}"` }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validateTripDates, MIN_TRIP_YEAR, MAX_TRIP_YEAR } from './tripDates'
+import { validateTripDates, validateDateInRange, MIN_TRIP_YEAR, MAX_TRIP_YEAR } from './tripDates'
 
 describe('validateTripDates', () => {
   it('allows neither date set', () => {
@@ -134,5 +134,33 @@ describe('validateTripDates', () => {
   it('is order-independent for which side is "start" vs "end" when both are unset', () => {
     expect(validateTripDates('', null)).toEqual({ valid: true, error: null })
     expect(validateTripDates(null, '')).toEqual({ valid: true, error: null })
+  })
+})
+
+describe('validateDateInRange', () => {
+  it('treats an unset date as valid', () => {
+    expect(validateDateInRange(null)).toEqual({ valid: true, error: null })
+    expect(validateDateInRange('')).toEqual({ valid: true, error: null })
+  })
+
+  it('accepts a date within range', () => {
+    expect(validateDateInRange('2026-09-10')).toEqual({ valid: true, error: null })
+  })
+
+  it('rejects a wildly far-future year typo, using the given label', () => {
+    const result = validateDateInRange('9999-01-01', 'Expense date')
+    expect(result.valid).toBe(false)
+    expect(result.error).toMatch(/Expense date must be between/)
+  })
+
+  it('rejects an absurdly low year', () => {
+    const result = validateDateInRange('0005-05-05', 'Date')
+    expect(result.valid).toBe(false)
+    expect(result.error).toMatch(/Date must be between/)
+  })
+
+  it('defaults the label to "Date" when none is given', () => {
+    const result = validateDateInRange('9999-01-01')
+    expect(result.error).toMatch(/^Date must be between/)
   })
 })

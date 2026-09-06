@@ -42,16 +42,17 @@ export const HELP_SECTIONS = [
         <p>
           Open a group and tap the <strong className="text-ink">+</strong> button.
         </p>
-        <H>Description &amp; category</H>
+        <H>Description, date &amp; category</H>
         <p>
-          Description is required — a short blank one gets "Give the expense a short description." Category
+          Description is required — a short blank one gets "Give the expense a short description." Date
+          defaults to today and must fall between 2000 and 2100 (same range as a group's trip dates). Category
           is a dropdown of fixed options and defaults to "Misc" if you skip it.
         </p>
         <H>Amount &amp; currency</H>
         <p>
-          Must be greater than zero. Currency defaults to the group's home currency; pick a different one and
-          you'll see today's converted amount before saving (offline, that conversion is filled in once
-          you're back online instead).
+          Must be greater than zero, and no more than 10,000,000 per expense. Currency defaults to the
+          group's home currency; pick a different one and you'll see today's converted amount before saving
+          (offline, that conversion is filled in once you're back online instead).
         </p>
         <H>Paid by &amp; split with</H>
         <p>
@@ -61,7 +62,8 @@ export const HELP_SECTIONS = [
         <H>How to split it</H>
         <p>
           <strong className="text-ink">Equal</strong> divides evenly. <strong className="text-ink">
-          Percentage</strong> needs each person's share to add up to 100% (a little rounding slack is fine).{' '}
+          Percentage</strong> needs each individual share between 0 and 100%, and all shares together to add
+          up to 100% (a little rounding slack is fine).{' '}
           <strong className="text-ink">Exact amounts</strong> needs the shares to add up to the total, to the
           cent. <strong className="text-ink">Itemized</strong> needs at least one line item, each with a
           description, an amount above zero, and at least one person assigned — tax and tip, if you add them,

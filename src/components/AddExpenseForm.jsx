@@ -7,6 +7,8 @@ import { enqueue } from '../lib/offlineQueue'
 import { splitEvenly, splitByPercentages, splitItemized } from '../lib/split'
 import { logActivity, notifyGroup } from '../lib/activity'
 import { CATEGORIES } from '../lib/categories'
+import { validateDateInRange, MIN_TRIP_DATE, MAX_TRIP_DATE } from '../lib/tripDates'
+import { MAX_AMOUNT, isAmountTooLarge } from '../lib/amountBounds'
 import CurrencySelect from './CurrencySelect'
 import HelpLink from './HelpLink'
 
@@ -127,6 +129,12 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
 
   const percentageTotal = participantIds.reduce((sum, id) => sum + (parseFloat(percentageShares[id]) || 0), 0)
   const percentageMismatch = splitMode === 'percentage' && Math.abs(percentageTotal - 100) > 0.5
+  const percentageOutOfRange =
+    splitMode === 'percentage' &&
+    participantIds.some((id) => {
+      const p = parseFloat(percentageShares[id])
+      return Number.isFinite(p) && (p < 0 || p > 100)
+    })
 
   const percentageShareAmounts = useMemo(() => {
     if (participantIds.length === 0) return {}
@@ -343,17 +351,26 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
     setError('')
 
     if (!description.trim()) return setError('Give the expense a short description.')
+    const dateCheck = validateDateInRange(date, 'Date')
+    if (!dateCheck.valid) return setError(dateCheck.error)
+    if (taxNum < 0) return setError('Tax cannot be negative.')
+    if (tipNum < 0) return setError('Tip cannot be negative.')
     if (splitMode === 'itemized') {
       if (items.length === 0) return setError('Add at least one item.')
       if (items.some((it) => !it.description.trim() || !(parseFloat(it.amount) > 0))) {
         return setError('Give every item a description and an amount greater than zero.')
+      }
+      if (items.some((it) => isAmountTooLarge(parseFloat(it.amount)))) {
+        return setError(`An item's amount can't be more than ${MAX_AMOUNT.toLocaleString()}.`)
       }
       if (items.some((it) => it.participantIds.filter((id) => participantIds.includes(id)).length === 0)) {
         return setError('Assign every item to at least one person.')
       }
     }
     if (parsedAmount <= 0) return setError('Enter an amount greater than zero.')
+    if (isAmountTooLarge(parsedAmount)) return setError(`Amount can't be more than ${MAX_AMOUNT.toLocaleString()}.`)
     if (participantIds.length === 0) return setError('Pick at least one person to split with.')
+    if (percentageOutOfRange) return setError('Each person’s percentage must be between 0 and 100.')
     if (exactMismatch) return setError(`Exact shares add up to ${exactTotal.toFixed(2)}, not ${parsedAmount.toFixed(2)}.`)
     if (percentageMismatch) return setError(`Percentages add up to ${percentageTotal.toFixed(1)}%, not 100%.`)
 
@@ -804,6 +821,8 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
+                min={MIN_TRIP_DATE}
+                max={MAX_TRIP_DATE}
                 className="rounded-lg border border-line bg-paper px-3.5 py-2.5 text-ink focus:border-primary outline-none"
               />
             </div>

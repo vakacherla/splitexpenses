@@ -6,6 +6,7 @@ import { useOnlineStatus } from '../lib/useOnlineStatus'
 import { enqueue } from '../lib/offlineQueue'
 import { buildPaymentLink, paymentProviderLabel } from '../lib/paymentLinks'
 import { logActivity, notifyGroup } from '../lib/activity'
+import { MAX_AMOUNT, isAmountTooLarge } from '../lib/amountBounds'
 import CurrencySelect from './CurrencySelect'
 
 export default function SettleUpModal({ group, suggestion, membersMap, currentUserId, onDone, onClose }) {
@@ -54,6 +55,7 @@ export default function SettleUpModal({ group, suggestion, membersMap, currentUs
   async function handleSubmit(e) {
     e.preventDefault()
     if (!parsedAmount || parsedAmount <= 0) return setError('Enter an amount greater than zero.')
+    if (isAmountTooLarge(parsedAmount)) return setError(`Amount can't be more than ${MAX_AMOUNT.toLocaleString()}.`)
 
     setError('')
     setSaving(true)

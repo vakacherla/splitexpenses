@@ -135,6 +135,23 @@ describe('validateImportRows', () => {
     expect(rows[0].error).toMatch(/Invalid date/)
   })
 
+  it('rejects a well-formed but implausible date (year out of range)', () => {
+    const row = validRow()
+    row[0] = '9999-01-01'
+    const { hasErrors, rows } = validate([row])
+    expect(hasErrors).toBe(true)
+    expect(rows[0].error).toMatch(/Date must be between/)
+  })
+
+  it('rejects an amount above the plausibility ceiling', () => {
+    const row = validRow()
+    row[4] = '50000000'
+    row[6] = 'a@example.com: 25000000; b@example.com: 25000000'
+    const { hasErrors, rows } = validate([row])
+    expect(hasErrors).toBe(true)
+    expect(rows[0].error).toMatch(/can't be more than/)
+  })
+
   it('rejects when split amounts do not sum to the total', () => {
     const row = validRow()
     row[6] = 'a@example.com: 40; b@example.com: 40'

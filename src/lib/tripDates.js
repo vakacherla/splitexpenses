@@ -13,16 +13,25 @@ function yearOf(dateStr) {
   return Number(dateStr.slice(0, 4))
 }
 
+// Same year-range check trip dates need, generalized so any other single
+// date field in the app (an expense's date, a CSV-imported date) can reuse
+// the identical bound instead of a second copy of the same magic numbers.
+export function validateDateInRange(dateStr, label = 'Date') {
+  if (!dateStr) return { valid: true, error: null }
+  const year = yearOf(dateStr)
+  if (!Number.isFinite(year) || year < MIN_TRIP_YEAR || year > MAX_TRIP_YEAR) {
+    return { valid: false, error: `${label} must be between ${MIN_TRIP_YEAR} and ${MAX_TRIP_YEAR}.` }
+  }
+  return { valid: true, error: null }
+}
+
 export function validateTripDates(startDate, endDate) {
   for (const [label, date] of [
     ['Start date', startDate],
     ['End date', endDate],
   ]) {
-    if (!date) continue
-    const year = yearOf(date)
-    if (!Number.isFinite(year) || year < MIN_TRIP_YEAR || year > MAX_TRIP_YEAR) {
-      return { valid: false, error: `${label} must be between ${MIN_TRIP_YEAR} and ${MAX_TRIP_YEAR}.` }
-    }
+    const result = validateDateInRange(date, label)
+    if (!result.valid) return result
   }
   if (startDate && endDate && endDate < startDate) {
     return { valid: false, error: 'End date is before the start date.' }
