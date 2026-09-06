@@ -49,6 +49,7 @@ export default function GroupView() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [group, setGroup] = useState(null)
+  const [circleName, setCircleName] = useState(null)
   const [members, setMembers] = useState([])
   const [expenses, setExpenses] = useState([])
   const [settlements, setSettlements] = useState([])
@@ -173,6 +174,25 @@ export default function GroupView() {
   useEffect(() => {
     runSync()
   }, [])
+
+  useEffect(() => {
+    if (!group?.circle_id) {
+      setCircleName(null)
+      return
+    }
+    let cancelled = false
+    supabase
+      .from('circles')
+      .select('name')
+      .eq('id', group.circle_id)
+      .single()
+      .then(({ data }) => {
+        if (!cancelled) setCircleName(data?.name ?? null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [group?.circle_id])
 
   // A synced expense/settlement disappears from the queue the moment it
   // succeeds (see offlineQueue.js's removeOp) — but the *real* row only
@@ -406,6 +426,11 @@ export default function GroupView() {
         <Link to="/dashboard" className="text-sm text-ink-soft hover:text-ink">
           ← Your groups
         </Link>
+        {group.circle_id && circleName && (
+          <Link to={`/circles/${group.circle_id}`} className="block text-sm text-ink-soft hover:text-ink mt-0.5">
+            {circleName} ›
+          </Link>
+        )}
         <div className="flex items-center gap-2 mt-1">
           <h1 className="font-display text-2xl sm:text-3xl text-ink">{group.name}</h1>
           {canManage && (
@@ -596,6 +621,7 @@ export default function GroupView() {
           duplicating={duplicatingGroup}
           onImportUndone={load}
           onBannerChanged={load}
+          onCircleChanged={load}
           onClose={() => setShowSettings(false)}
         />
       )}

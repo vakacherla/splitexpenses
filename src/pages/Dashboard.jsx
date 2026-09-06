@@ -31,6 +31,14 @@ export default function Dashboard() {
   const [code, setCode] = useState('')
   const [joining, setJoining] = useState(false)
 
+  const [circles, setCircles] = useState(null)
+  const [showCreateCircle, setShowCreateCircle] = useState(false)
+  const [newCircleName, setNewCircleName] = useState('')
+  const [creatingCircle, setCreatingCircle] = useState(false)
+  const [showJoinCircle, setShowJoinCircle] = useState(false)
+  const [circleCode, setCircleCode] = useState('')
+  const [joiningCircle, setJoiningCircle] = useState(false)
+
   async function loadGroups() {
     try {
       // Deliberately NOT `.from('groups').select(...)` — that would rely on
@@ -44,7 +52,7 @@ export default function Dashboard() {
       const { data, error } = await supabase
         .from('group_members')
         .select(
-          'groups(id, name, home_currency, invite_code, created_at, archived_at, banner_path, group_members(user_id, nickname, profiles(display_name, avatar_path)))'
+          'groups(id, name, home_currency, invite_code, created_at, archived_at, banner_path, circle_id, group_members(user_id, nickname, profiles(display_name, avatar_path)))'
         )
         .eq('user_id', user.id)
       if (error) throw error
@@ -71,8 +79,29 @@ export default function Dashboard() {
     }
   }
 
+  async function loadCircles() {
+    // Same "query through the membership table" pattern as loadGroups,
+    // for the same reason — this is "circles I'm actually in," not
+    // whatever RLS would otherwise let an admin account see. No offline
+    // fallback for this one: circles are additive/optional, so simply
+    // not showing them while offline (standalone groups still load from
+    // cache as before) is an acceptable v1 gap rather than complicating
+    // offlineCache.js's shape for a feature most groups will never use.
+    const { data, error } = await supabase
+      .from('circle_members')
+      .select('circles(id, name, invite_code, created_at, archived_at)')
+      .eq('user_id', user.id)
+    if (error) return
+    const myCircles = (data ?? [])
+      .map((row) => row.circles)
+      .filter((c) => c && !c.archived_at)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    setCircles(myCircles)
+  }
+
   useEffect(() => {
     loadGroups()
+    loadCircles()
     runSync()
   }, [])
 
@@ -119,6 +148,54 @@ export default function Dashboard() {
     }
     navigate(`/groups/${data.id}`)
   }
+
+  async function handleCreateCircle(e) {
+    e.preventDefault()
+    if (!newCircleName.trim()) return
+    setCreatingCircle(true)
+    setError('')
+
+    const { data: circle, error: circleError } = await supabase
+      .from('circles')
+      .insert({ name: newCircleName.trim(), created_by: user.id })
+      .select()
+      .single()
+
+    if (circleError) {
+      setError(circleError.message)
+      setCreatingCircle(false)
+      return
+    }
+
+    const { error: memberError } = await supabase
+      .from('circle_members')
+      .insert({ circle_id: circle.id, user_id: user.id })
+
+    setCreatingCircle(false)
+    if (memberError) {
+      setError(memberError.message)
+      return
+    }
+    navigate(`/circles/${circle.id}`)
+  }
+
+  async function handleJoinCircle(e) {
+    e.preventDefault()
+    if (!circleCode.trim()) return
+    setJoiningCircle(true)
+    setError('')
+    const { data, error } = await supabase.rpc('join_circle_by_code', { code: circleCode.trim() })
+    setJoiningCircle(false)
+    if (error) {
+      setError(error.message)
+      return
+    }
+    navigate(`/circles/${data.id}`)
+  }
+
+  // Trips that belong to a Circle show up inside that Circle's own card
+  // above instead of in this flat grid — a Trip is never shown twice.
+  const standaloneGroups = (groups ?? []).filter((g) => !g.circle_id)
 
   return (
     <div className="mx-auto max-w-3xl xl:max-w-6xl px-4 sm:px-6 py-10">
@@ -180,6 +257,28 @@ export default function Dashboard() {
               Join with a code
             </button>
           </div>
+          <p className="mt-3 text-xs text-ink-soft">
+            Take trips with the same people often?{' '}
+            <button
+              onClick={() => {
+                setShowCreateCircle((v) => !v)
+                setShowJoinCircle(false)
+              }}
+              className="text-primary hover:underline"
+            >
+              Create a circle
+            </button>{' '}
+            ·{' '}
+            <button
+              onClick={() => {
+                setShowJoinCircle((v) => !v)
+                setShowCreateCircle(false)
+              }}
+              className="text-primary hover:underline"
+            >
+              Join a circle
+            </button>
+          </p>
         </div>
       </div>
 
@@ -241,6 +340,81 @@ export default function Dashboard() {
         </form>
       )}
 
+      {showCreateCircle && (
+        <form
+          onSubmit={handleCreateCircle}
+          className="mb-8 bg-paper-raised border border-line rounded-2xl p-5 shadow-raised flex flex-col sm:flex-row gap-3 sm:items-end"
+        >
+          <div className="flex-1">
+            <label className="block text-sm text-ink-soft mb-1.5">Circle name</label>
+            <input
+              autoFocus
+              value={newCircleName}
+              onChange={(e) => setNewCircleName(e.target.value)}
+              placeholder="Smith Family, College Friends…"
+              className="w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-ink focus:border-primary outline-none"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={creatingCircle}
+            className="rounded-full bg-primary text-on-primary text-sm font-medium px-5 py-2.5 hover:bg-primary-dark transition-colors disabled:opacity-60"
+          >
+            {creatingCircle ? 'Creating…' : 'Create'}
+          </button>
+        </form>
+      )}
+
+      {showJoinCircle && (
+        <form
+          onSubmit={handleJoinCircle}
+          className="mb-8 bg-paper-raised border border-line rounded-2xl p-5 shadow-raised flex flex-col sm:flex-row gap-3 sm:items-end"
+        >
+          <div className="flex-1">
+            <label className="block text-sm text-ink-soft mb-1.5">Circle invite code</label>
+            <input
+              autoFocus
+              value={circleCode}
+              onChange={(e) => setCircleCode(e.target.value.toUpperCase())}
+              placeholder="e.g. 7K2QF1"
+              className="w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-ink tracking-widest focus:border-primary outline-none uppercase"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={joiningCircle}
+            className="rounded-full bg-primary text-on-primary text-sm font-medium px-5 py-2.5 hover:bg-primary-dark transition-colors disabled:opacity-60"
+          >
+            {joiningCircle ? 'Joining…' : 'Join'}
+          </button>
+        </form>
+      )}
+
+      {circles && circles.length > 0 && (
+        <div className="mb-8 space-y-4">
+          {circles.map((c) => {
+            const trips = (groups ?? []).filter((g) => g.circle_id === c.id)
+            return (
+              <Link
+                key={c.id}
+                to={`/circles/${c.id}`}
+                className="block rounded-2xl border border-line bg-paper-raised p-5 hover:border-primary transition-colors"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-display text-lg text-ink">{c.name}</p>
+                  <span className="text-xs text-ink-soft shrink-0">
+                    {trips.length} trip{trips.length === 1 ? '' : 's'} →
+                  </span>
+                </div>
+                {trips.length > 0 && (
+                  <p className="mt-1 text-sm text-ink-soft truncate">{trips.map((t) => t.name).join(' · ')}</p>
+                )}
+              </Link>
+            )
+          })}
+        </div>
+      )}
+
       {groups === null && error ? (
         <div className="text-center py-10">
           <p className="text-sm text-ink-soft mb-3">You're offline and this device has never loaded your groups before.</p>
@@ -250,22 +424,24 @@ export default function Dashboard() {
         </div>
       ) : groups === null ? (
         <SkeletonRows count={3} />
-      ) : groups.length === 0 ? (
-        <EmptyState
-          icon={
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4">
-              <circle cx="7" cy="7" r="2.3" />
-              <path d="M2.5 16c0-3 2-4.5 4.5-4.5s4.5 1.5 4.5 4.5" strokeLinecap="round" />
-              <circle cx="13" cy="7" r="2.3" />
-              <path d="M9 12.2c.7-1 1.9-1.7 4-1.7 2.5 0 4.5 1.5 4.5 4.5" strokeLinecap="round" />
-            </svg>
-          }
-          title="No groups yet"
-          subtitle="Start one, or join a friend's with their invite code."
-        />
+      ) : standaloneGroups.length === 0 ? (
+        circles && circles.length > 0 ? null : (
+          <EmptyState
+            icon={
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4">
+                <circle cx="7" cy="7" r="2.3" />
+                <path d="M2.5 16c0-3 2-4.5 4.5-4.5s4.5 1.5 4.5 4.5" strokeLinecap="round" />
+                <circle cx="13" cy="7" r="2.3" />
+                <path d="M9 12.2c.7-1 1.9-1.7 4-1.7 2.5 0 4.5 1.5 4.5 4.5" strokeLinecap="round" />
+              </svg>
+            }
+            title="No groups yet"
+            subtitle="Start one, or join a friend's with their invite code."
+          />
+        )
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {groups.map((g, idx) => {
+          {standaloneGroups.map((g, idx) => {
             const accent = accentFor(g.id)
             return (
               <Link

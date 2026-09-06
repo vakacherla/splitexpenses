@@ -14,6 +14,7 @@ import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import GroupView from './pages/GroupView'
 
+const CirclePage = lazy(() => import('./pages/CirclePage'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
 const HelpPage = lazy(() => import('./pages/HelpPage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
@@ -87,6 +88,16 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <GroupView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/circles/:circleId"
+            element={
+              <ProtectedRoute>
+                <Suspense fallback={<LoadingScreen />}>
+                  <CirclePage />
+                </Suspense>
               </ProtectedRoute>
             }
           />

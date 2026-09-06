@@ -16,6 +16,7 @@ export default function GroupSettingsModal({
   duplicating,
   onImportUndone,
   onBannerChanged,
+  onCircleChanged,
   onClose,
 }) {
   const [renaming, setRenaming] = useState(false)
@@ -36,6 +37,11 @@ export default function GroupSettingsModal({
   const [importBatches, setImportBatches] = useState(null)
   const [undoingBatchId, setUndoingBatchId] = useState(null)
   const [undoError, setUndoError] = useState('')
+  const [myCircles, setMyCircles] = useState(null)
+  const [currentCircleName, setCurrentCircleName] = useState(null)
+  const [selectedCircleId, setSelectedCircleId] = useState('')
+  const [circleBusy, setCircleBusy] = useState(false)
+  const [circleError, setCircleError] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -51,6 +57,72 @@ export default function GroupSettingsModal({
       cancelled = true
     }
   }, [group.id])
+
+  // Circles the current user could attach this Trip to — only fetched
+  // for whoever can actually manage this Trip, since only they see the
+  // section that uses it.
+  useEffect(() => {
+    if (!canManage) return
+    let cancelled = false
+    supabase
+      .from('circle_members')
+      .select('circles(id, name)')
+      .eq('user_id', currentUserId)
+      .then(({ data }) => {
+        if (!cancelled) setMyCircles((data ?? []).map((row) => row.circles).filter(Boolean))
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [canManage, currentUserId])
+
+  useEffect(() => {
+    if (!group.circle_id) {
+      setCurrentCircleName(null)
+      return
+    }
+    let cancelled = false
+    supabase
+      .from('circles')
+      .select('name')
+      .eq('id', group.circle_id)
+      .single()
+      .then(({ data }) => {
+        if (!cancelled) setCurrentCircleName(data?.name ?? null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [group.circle_id])
+
+  async function handleAttachCircle() {
+    if (!selectedCircleId) return
+    setCircleBusy(true)
+    setCircleError('')
+    const { error } = await supabase.rpc('attach_trip_to_circle', {
+      target_group_id: group.id,
+      target_circle_id: selectedCircleId,
+    })
+    setCircleBusy(false)
+    if (error) {
+      setCircleError(error.message)
+      return
+    }
+    setSelectedCircleId('')
+    onCircleChanged?.()
+  }
+
+  async function handleDetachCircle() {
+    setCircleBusy(true)
+    setCircleError('')
+    const { error } = await supabase.rpc('detach_trip_from_circle', { target_group_id: group.id })
+    setCircleBusy(false)
+    if (error) {
+      setCircleError(error.message)
+      return
+    }
+    onCircleChanged?.()
+  }
 
   async function handleUndoImport(batchId) {
     if (!confirm('Undo this import? Every expense it created will be removed from the ledger.')) return
@@ -301,6 +373,53 @@ export default function GroupSettingsModal({
             </div>
           )}
         </div>
+
+        {canManage && (
+          <div className="pt-4 border-t border-line">
+            <p className="text-xs text-ink-soft mb-1.5">Circle</p>
+            {circleError && <p className="text-xs text-owe mb-1.5">{circleError}</p>}
+            {group.circle_id ? (
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-ink">{currentCircleName ?? 'A circle'}</p>
+                <button
+                  onClick={handleDetachCircle}
+                  disabled={circleBusy}
+                  className="text-xs font-medium text-owe hover:underline disabled:opacity-50"
+                >
+                  {circleBusy ? 'Removing…' : 'Detach'}
+                </button>
+              </div>
+            ) : myCircles && myCircles.length > 0 ? (
+              <div className="flex items-center gap-2">
+                <select
+                  value={selectedCircleId}
+                  onChange={(e) => setSelectedCircleId(e.target.value)}
+                  className="flex-1 text-sm rounded-lg border border-line bg-paper px-3 py-1.5 text-ink focus:border-primary outline-none"
+                >
+                  <option value="">Attach to a circle…</option>
+                  {myCircles.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleAttachCircle}
+                  disabled={!selectedCircleId || circleBusy}
+                  className="text-xs font-medium text-primary hover:underline disabled:opacity-50 shrink-0"
+                >
+                  {circleBusy ? 'Attaching…' : 'Attach'}
+                </button>
+              </div>
+            ) : (
+              <p className="text-xs text-ink-soft">You're not in any circles yet — create or join one from your dashboard.</p>
+            )}
+            <p className="mt-1.5 text-xs text-ink-soft">
+              Organizing this trip into a circle lets everyone in that circle see it and join — it doesn't change
+              who's already here.
+            </p>
+          </div>
+        )}
 
         {importBatches?.length > 0 && (
           <div className="pt-4 border-t border-line">

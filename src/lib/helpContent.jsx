@@ -31,6 +31,15 @@ export const HELP_SECTIONS = [
           a home currency (this is just the currency balances are shown in — everyone can still log expenses
           in whatever currency they actually paid in).
         </p>
+        <H>Taking trips with the same people often?</H>
+        <p>
+          Create a <strong className="text-ink">Circle</strong> instead — invite everyone once, and from then
+          on anyone in the Circle can start a new Trip inside it without a fresh invite code each time.
+          Creating a Trip inside a Circle starts it with everyone currently in the Circle already added — you
+          can still remove someone from just that one Trip afterward without affecting the Circle or any other
+          Trip. An existing standalone group can also be attached to a Circle later (or detached again) from
+          its Group settings, without changing who's already in it.
+        </p>
       </>
     ),
   },

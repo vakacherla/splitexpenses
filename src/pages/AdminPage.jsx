@@ -105,6 +105,10 @@ export default function AdminPage() {
   const [userGroups, setUserGroups] = useState(null)
   const [selectedGroupId, setSelectedGroupId] = useState('')
   const [addToGroupMessage, setAddToGroupMessage] = useState('')
+  const [manageCircleGroupId, setManageCircleGroupId] = useState(null)
+  const [allCircles, setAllCircles] = useState(null)
+  const [selectedCircleForGroup, setSelectedCircleForGroup] = useState('')
+  const [circleActionMessage, setCircleActionMessage] = useState('')
 
   async function loadUsers() {
     setError('')
@@ -121,7 +125,7 @@ export default function AdminPage() {
     const { data, error } = await supabase
       .from('groups')
       .select(
-        'id, name, home_currency, invite_code, created_at, archived_at, created_by, profiles!groups_created_by_fkey(display_name, email), group_members(user_id)'
+        'id, name, home_currency, invite_code, created_at, archived_at, created_by, circle_id, profiles!groups_created_by_fkey(display_name, email), group_members(user_id)'
       )
       .order('created_at', { ascending: false })
     if (error) {
@@ -443,6 +447,46 @@ export default function AdminPage() {
     setGroupOptions(data)
   }
 
+  async function loadAllCircles() {
+    if (allCircles !== null) return
+    const { data, error } = await supabase.from('circles').select('id, name').order('name')
+    if (error) {
+      setCircleActionMessage(error.message)
+      return
+    }
+    setAllCircles(data)
+  }
+
+  function toggleManageCircle(g) {
+    if (manageCircleGroupId === g.id) {
+      setManageCircleGroupId(null)
+      return
+    }
+    setCircleActionMessage('')
+    setSelectedCircleForGroup(g.circle_id ?? '')
+    setManageCircleGroupId(g.id)
+    loadAllCircles()
+  }
+
+  // One RPC does both attach and detach — passing an empty selection
+  // through as null simply clears circle_id, same as detach_trip_from_
+  // circle does for the self-service path.
+  async function handleAdminSetCircle(g) {
+    setBusyId(g.id)
+    setCircleActionMessage('')
+    const { error } = await supabase.rpc('admin_attach_group_to_circle', {
+      target_group_id: g.id,
+      target_circle_id: selectedCircleForGroup || null,
+    })
+    setBusyId(null)
+    if (error) {
+      setCircleActionMessage(error.message)
+      return
+    }
+    setManageCircleGroupId(null)
+    await loadGroups()
+  }
+
   async function loadUserGroups(u) {
     setUserGroups(null)
     const { data, error } = await supabase
@@ -740,7 +784,7 @@ export default function AdminPage() {
                 <div>
                   <ul className="divide-y divide-line border-y border-line">
                     {activeGroups.map((g) => (
-                      <li key={g.id} className="flex items-center justify-between gap-3 py-3">
+                      <li key={g.id} className="flex items-center justify-between gap-3 py-3 flex-wrap">
                         <div className="min-w-0 flex-1">
                           {editingGroupId === g.id ? (
                             <div className="flex items-center gap-2">
@@ -785,6 +829,15 @@ export default function AdminPage() {
                         </div>
                         {editingGroupId !== g.id && (
                           <div className="flex items-center gap-3 shrink-0">
+                            {profile?.is_super_admin && (
+                              <button
+                                onClick={() => toggleManageCircle(g)}
+                                disabled={busyId === g.id}
+                                className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+                              >
+                                Circle
+                              </button>
+                            )}
                             <button
                               onClick={() => startRename(g)}
                               disabled={busyId === g.id}
@@ -799,6 +852,42 @@ export default function AdminPage() {
                             >
                               Delete
                             </button>
+                          </div>
+                        )}
+                        {manageCircleGroupId === g.id && (
+                          <div className="mt-2 w-full rounded-lg border border-line bg-paper px-3 py-2.5 space-y-2 basis-full">
+                            {allCircles === null ? (
+                              <Skeleton className="h-6 w-40 rounded-full" />
+                            ) : (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <select
+                                  value={selectedCircleForGroup}
+                                  onChange={(e) => setSelectedCircleForGroup(e.target.value)}
+                                  className="text-xs rounded-full border border-line bg-paper-raised px-2.5 py-1 text-ink focus:border-primary outline-none"
+                                >
+                                  <option value="">— None (standalone) —</option>
+                                  {allCircles.map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                      {c.name}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  onClick={() => handleAdminSetCircle(g)}
+                                  disabled={busyId === g.id}
+                                  className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  onClick={() => setManageCircleGroupId(null)}
+                                  className="text-xs text-ink-soft hover:text-ink"
+                                >
+                                  Close
+                                </button>
+                              </div>
+                            )}
+                            {circleActionMessage && <p className="text-xs text-owe">{circleActionMessage}</p>}
                           </div>
                         )}
                       </li>
