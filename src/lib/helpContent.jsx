@@ -2,6 +2,15 @@
 // HelpPopover a screen's "?" icon opens — one copy of the wording either
 // way, so a section can be read in place (via HelpLink) or as part of the
 // full guide, without the two ever drifting apart.
+//
+// Sections a HelpLink points at are written field-by-field, matching what's
+// actually on that screen (exact limits, defaults, validation messages) —
+// a generic overview doesn't answer "why won't this date save."
+
+function H({ children }) {
+  return <h4 className="font-display text-sm font-semibold text-ink pt-1 first:pt-0">{children}</h4>
+}
+
 export const HELP_SECTIONS = [
   {
     id: 'getting-started',
@@ -20,14 +29,7 @@ export const HELP_SECTIONS = [
         <p>
           <strong className="text-ink">Starting your own group?</strong> Tap "New group," give it a name and
           a home currency (this is just the currency balances are shown in — everyone can still log expenses
-          in whatever currency they actually paid in). Share the invite code shown on the group's Members tab
-          with anyone you want to add.
-        </p>
-        <p>
-          <strong className="text-ink">Group settings</strong> (the gear icon next to a group's name, visible
-          to its owner and any manager) is where you rename the group, set optional trip dates, add a cover
-          photo — a real trip photo shows up on your dashboard card and the group page itself instead of the
-          plain colored default — and duplicate the group (same people, fresh invite code) for a next trip.
+          in whatever currency they actually paid in).
         </p>
       </>
     ),
@@ -38,54 +40,50 @@ export const HELP_SECTIONS = [
     body: (
       <>
         <p>
-          Open a group and tap the <strong className="text-ink">+</strong> button. Fill in:
+          Open a group and tap the <strong className="text-ink">+</strong> button.
         </p>
-        <ul className="list-disc pl-5 space-y-1">
-          <li>
-            <strong className="text-ink">What it was for</strong> — a short description, plus a category
-            (Food, Transport, Lodging, etc.) for the reports later.
-          </li>
-          <li>
-            <strong className="text-ink">Amount and currency</strong> — if it's different from the group's
-            home currency, you'll see the converted amount before saving, using that day's exchange rate.
-          </li>
-          <li>
-            <strong className="text-ink">Who paid</strong>, and <strong className="text-ink">who to split
-            it between</strong> — uncheck anyone who wasn't part of that particular expense.
-          </li>
-          <li>
-            <strong className="text-ink">How to split it</strong>: Equal (default), Percentage (e.g. 60/40),
-            or Exact amounts if it doesn't divide evenly.
-          </li>
-        </ul>
+        <H>Description &amp; category</H>
         <p>
-          If your group always splits the same way, tick <strong className="text-ink">"Save this as the
-          default"</strong> — it'll be pre-selected next time anyone adds an expense.
+          Description is required — a short blank one gets "Give the expense a short description." Category
+          is a dropdown of fixed options and defaults to "Misc" if you skip it.
         </p>
+        <H>Amount &amp; currency</H>
         <p>
-          <strong className="text-ink">In a hurry? Just describe it.</strong> Type something like "lunch
-          24.50 split with Anna and Ben" into the box above the form instead of filling in every field by
-          hand, and tap "Parse" — the description, amount, currency, category, payer, and who to split with
-          all fill in from that one sentence (defaulting sensibly — payer to you, split to everyone — for
-          anything it can't confidently work out). Same as receipt scanning below, it's a starting point:
-          review what filled in before saving.
+          Must be greater than zero. Currency defaults to the group's home currency; pick a different one and
+          you'll see today's converted amount before saving (offline, that conversion is filled in once
+          you're back online instead).
+        </p>
+        <H>Paid by &amp; split with</H>
+        <p>
+          Payer defaults to you. Split-with is a checkbox list of members — uncheck anyone not part of this
+          expense, but at least one person must stay checked.
+        </p>
+        <H>How to split it</H>
+        <p>
+          <strong className="text-ink">Equal</strong> divides evenly. <strong className="text-ink">
+          Percentage</strong> needs each person's share to add up to 100% (a little rounding slack is fine).{' '}
+          <strong className="text-ink">Exact amounts</strong> needs the shares to add up to the total, to the
+          cent. <strong className="text-ink">Itemized</strong> needs at least one line item, each with a
+          description, an amount above zero, and at least one person assigned — tax and tip, if you add them,
+          split proportionally by what each person actually ordered.
         </p>
         <p>
-          <strong className="text-ink">Scanning a receipt</strong> (if your group has this turned on): tap
-          "Scan a receipt" and take a photo — the description, amount, date, and category fill in
-          automatically. If the photo shows individual items, it can even split the bill "Itemized" —
-          assign each item to whoever actually ordered it, and tax/tip get shared proportionally. Always
-          double-check before saving; it's a starting point, not the final word.
+          Tick <strong className="text-ink">"Save this as the default"</strong> (Equal or Percentage only) to
+          pre-select that split next time anyone in the group adds an expense.
         </p>
+        <H>Faster ways to fill this in</H>
         <p>
-          <strong className="text-ink">Skipped the scan, or want to add the photo later?</strong> Expand any
-          expense that doesn't have a receipt yet and tap <strong className="text-ink">"Attach receipt"</strong> —
-          same option also sits inside "Edit" if that's where you go looking for it first.
+          <strong className="text-ink">Describe it in one line</strong> — "lunch 24.50 split with Anna and
+          Ben" — and tap Parse to fill description, amount, currency, category, payer, and split from that
+          sentence. <strong className="text-ink">Scan a receipt</strong> to fill description/amount/date/
+          category from a photo, or split it item-by-item automatically if the photo shows a line-by-line
+          bill. Both need a connection, and both are a starting point — check what filled in before saving.
         </p>
+        <H>After it's saved</H>
         <p>
-          <strong className="text-ink">Recurring expense, like rent?</strong> Expand it and tap{' '}
-          <strong className="text-ink">"Duplicate"</strong> — it pre-fills a new expense with the same
-          details (today's date, no receipt), so re-logging it is a few seconds instead of a fresh form.
+          Expand an expense to <strong className="text-ink">attach a receipt</strong> photo later, or{' '}
+          <strong className="text-ink">Duplicate</strong> it for a recurring cost like rent — everything
+          copies except the date, which resets to today.
         </p>
       </>
     ),
@@ -100,19 +98,22 @@ export const HELP_SECTIONS = [
           group has more than a few expenses — search matches the description or who paid.
         </p>
         <p>
-          <strong className="text-ink">Export CSV</strong> downloads every expense in the group as a
-          spreadsheet file, one row per expense, splits included.
+          <strong className="text-ink">Export CSV</strong> downloads every expense as a spreadsheet, one row
+          per expense, splits included.
+        </p>
+        <H>Import CSV</H>
+        <p>
+          Tap "Download template" for a CSV with the exact columns expected — <em>Date, Description,
+          Category, Paid by (email), Amount, Currency, Split between, Note</em> — people are matched by
+          email, so there's no ambiguity about who's who. It's capped at{' '}
+          <strong className="text-ink">500 rows per file</strong>; split a bigger backlog into a few files.
         </p>
         <p>
-          <strong className="text-ink">Import CSV</strong> is the reverse: bringing in a backlog you've
-          already been tracking elsewhere. Tap "Download template" first — the file it gives you has the
-          exact columns expected (people are matched by email, not name, so there's no ambiguity about who's
-          who), fill in your rows, then upload it back. You'll see every row validated before anything is
-          created — if even one row has a problem, nothing is imported until it's fixed, so you're never
-          left guessing which rows actually went in. Files are capped at 500 rows; split a bigger backlog
-          into a few smaller files. Made a mistake? Every import is undoable in one click, either right after
-          it finishes or later from Group settings.
+          Every row is validated before anything is created — if even one row has a problem, nothing is
+          imported until it's fixed. If something goes wrong partway through, whatever was already created
+          gets automatically rolled back, so you're never left with a half-finished import.
         </p>
+        <p>Made a mistake anyway? Every import is undoable in one click, right after it finishes or later from Group settings.</p>
       </>
     ),
   },
@@ -142,39 +143,32 @@ export const HELP_SECTIONS = [
   },
   {
     id: 'balances',
-    title: 'Understanding balances',
+    title: 'Balances & settling up',
     body: (
       <>
-        <p>The Balances tab shows, for each person, whether they're owed money or owe money overall.</p>
+        <H>Where everyone stands</H>
         <p>
-          Below that, <strong className="text-ink">"Suggested settle-up"</strong> shows the fewest possible
-          payments needed to square everyone up — it's smarter than paying back every individual expense
-          separately, so don't be surprised if it suggests you pay someone you didn't directly split anything
-          with. The math still works out the same for everyone.
+          Each person's row shows whether they're settled up, owed money, or owe money, for the group
+          overall.
         </p>
-      </>
-    ),
-  },
-  {
-    id: 'settling-up',
-    title: 'Settling up',
-    body: (
-      <>
+        <H>Suggested settle-up</H>
         <p>
-          When you're ready to pay someone back, tap <strong className="text-ink">"Record payment"</strong>{' '}
-          next to a suggestion. You can adjust the amount or pay in a different currency if that's easier.
+          Shows the fewest possible payments needed to square everyone up — smarter than paying back every
+          individual expense separately, so don't be surprised if it suggests you pay someone you never
+          directly split anything with. The math still works out the same for everyone.
         </p>
+        <H>Recording a payment</H>
         <p>
-          If the person you're paying has added their payment info (see "Your profile" below), you'll see a{' '}
-          <strong className="text-ink">"Pay via UPI / Venmo / PayPal"</strong> button that opens your payment
-          app with the amount already filled in.
+          Tap <strong className="text-ink">"Record payment"</strong> next to a suggestion — you can adjust
+          the amount or currency if that's easier. If the person you're paying has added a payment handle
+          (see "Your profile"), you'll also see a one-tap "Pay via UPI / Venmo / PayPal" button. Recording a
+          payment only tells the app it happened — it doesn't move money itself; still pay them the normal
+          way.
         </p>
         <p>
-          Recording a payment just tells the app it happened — it doesn't move money itself. Still pay them
-          the normal way (cash, bank transfer, the pay link above); this just keeps everyone's balance
-          accurate afterward.
+          <strong className="text-ink">Remind</strong> is shown to you on anything you're owed, and nudges
+          the other person. Made a mistake? Any recorded payment can be undone from here.
         </p>
-        <p>Made a mistake? Any recorded payment can be undone from the Balances tab.</p>
       </>
     ),
   },
@@ -182,11 +176,15 @@ export const HELP_SECTIONS = [
     id: 'reports',
     title: 'Reports',
     body: (
-      <p>
-        The Reports tab totals up everything the group has spent — broken down by category and by who
-        paid — plus a table crossing the two. Useful for "where did all our money actually go" after a
-        trip.
-      </p>
+      <>
+        <p>Everything below is converted into the group's home currency first, so totals always compare like for like.</p>
+        <p>
+          <strong className="text-ink">Total spent</strong>, a breakdown{' '}
+          <strong className="text-ink">by category</strong>, a breakdown{' '}
+          <strong className="text-ink">by who paid</strong>, and a table crossing the two — useful for "where
+          did all our money actually go" after a trip.
+        </p>
+      </>
     ),
   },
   {
@@ -195,15 +193,69 @@ export const HELP_SECTIONS = [
     body: (
       <>
         <p>
-          The <strong className="text-ink">Activity</strong> tab is a running history of everything that's
-          happened in the group — expenses added, edited, or deleted, payments recorded or undone, people
-          joining or leaving, and CSV imports (as one entry per import, not one per row). It's there to catch
-          up on what happened while you were away, not just react in the moment.
+          A running history of the group's last 100 events, newest first — expenses added, edited, or
+          deleted, payments recorded or undone, people joining or leaving, and CSV imports (one entry per
+          import, not one per row). It's there to catch up on what happened while you were away.
         </p>
         <p>
-          Turn on <strong className="text-ink">notifications</strong> (see "Your profile" below) to also get
-          a push alert on this device when someone adds an expense, records a payment to you, or when a
-          settle-up reminder comes due — tapping one takes you straight to that group.
+          Turn on <strong className="text-ink">notifications</strong> (see "Your profile") to also get a
+          push alert on this device for group activity and settle-up reminders — tapping one takes you
+          straight to that group.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: 'members',
+    title: 'Members',
+    body: (
+      <>
+        <H>Invite code</H>
+        <p>Tap "Copy" to share it — anyone with the code can join this group from their dashboard.</p>
+        <H>Managers</H>
+        <p>
+          Only the group's owner can promote or demote a manager, and can't do it to themselves or to
+          whoever originally created the group.
+        </p>
+        <H>Removing someone</H>
+        <p>
+          The owner can remove anyone except the creator; a manager can only remove ordinary members (not the
+          owner, creator, or other managers). Removing is blocked while that person still has an outstanding
+          balance — settle up first. Their past expenses stay in the ledger either way.
+        </p>
+        <p>Your own row shows "Edit your info" instead, linking to your profile.</p>
+      </>
+    ),
+  },
+  {
+    id: 'group-settings',
+    title: 'Group settings',
+    body: (
+      <>
+        <p>Only the group's owner and any manager can see this (the gear icon next to the group's name).</p>
+        <H>Trip dates</H>
+        <p>
+          Optional and independent — set just a start, just an end, both, or neither. Each date must fall
+          between <strong className="text-ink">2000 and 2100</strong>, and if both are set, the end date
+          can't be before the start (same-day trips are fine). Once the end date passes, anyone who still
+          owes money gets an automatic reminder.
+        </p>
+        <H>Cover photo</H>
+        <p>
+          Landscape photos work best — square or portrait shots get cropped to fit. Shows up on your
+          dashboard card and the group page itself.
+        </p>
+        <H>Duplicate group</H>
+        <p>
+          Copies the members, their manager roles, and the home currency into a new group with a fresh invite
+          code. Expenses, settlements, and trip dates are <strong className="text-ink">not</strong> copied —
+          it's meant for a next trip with the same people, not a backup.
+        </p>
+        <H>Deleting a group</H>
+        <p>
+          You'll need to type the group's exact name to confirm. This removes it from everyone's dashboard
+          right away, but nothing is actually deleted — the app's admin can restore it in full for 30 days,
+          after which it's gone for good.
         </p>
       </>
     ),
@@ -213,25 +265,47 @@ export const HELP_SECTIONS = [
     title: 'Your profile',
     body: (
       <>
+        <p>Tap your name (top right) to open this.</p>
+        <H>Payment handle</H>
         <p>
-          Tap your name (top right) to open your profile. From there you can add a photo, change how your
-          name displays, add your payment handle (UPI ID, Venmo username, or PayPal.me link) so other
-          members get a one-tap pay button when they owe you, and add up to two phone numbers — a home
-          number and a separate travel number, useful if you're on a local SIM for part of a trip.
+          Pick a provider (UPI, Venmo, or PayPal.me) and add your handle so other members get a one-tap pay
+          button when they owe you. Clear the handle and the provider clears with it.
+        </p>
+        <H>Phone numbers</H>
+        <p>
+          Two optional, independent fields — a home number and a separate travel number, useful if you're on
+          a local SIM for part of a trip.
+        </p>
+        <H>Nicknames per group</H>
+        <p>
+          Set a different display name for one specific group without changing your name anywhere else —
+          only that group sees it. Clear it to go back to your regular name.
+        </p>
+        <H>Notifications</H>
+        <p>
+          Turn on push alerts for this device for group activity and settle-up reminders. If your browser
+          doesn't support push, reminders still arrive by email.
         </p>
         <p>
-          <strong className="text-ink">Notifications</strong> also live here — turn them on for this device
-          to get a push alert for group activity and settle-up reminders. If your browser doesn't support
-          push, reminders still arrive by email.
+          The sun/moon icon in the top corner (on every screen) switches between light and dark mode — your
+          choice is remembered.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: 'rates',
+    title: 'Exchange rates',
+    body: (
+      <>
+        <p>
+          Rates come from Frankfurter, built on European Central Bank reference rates and refreshed each
+          weekday. This page is informational only — it never touches an expense you've already logged.
         </p>
         <p>
-          <strong className="text-ink">Going by a different name in one group?</strong> Your profile also
-          lists every group you're in with a nickname field for each — set one and that group sees it
-          instead of your regular name, without changing anything anywhere else.
-        </p>
-        <p>
-          The sun/moon icon in the top corner (on every screen, including this one) switches between light
-          and dark mode. Your choice is remembered.
+          The base currency starts on whichever home currency is most common across your groups. Use the{' '}
+          <strong className="text-ink">quick-convert box</strong> for a one-off amount, or scroll the table
+          below it to see that base currency against everything else.
         </p>
       </>
     ),
@@ -241,12 +315,6 @@ export const HELP_SECTIONS = [
     title: 'A few common questions',
     body: (
       <>
-        <p>
-          <strong className="text-ink">Where can I just check today's exchange rate?</strong> The exchange
-          icon in the top nav opens a rates page — pick a currency, see it against everything else, or use
-          the quick-convert box for a one-off amount. Informational only; it doesn't touch any expense
-          you've already logged.
-        </p>
         <p>
           <strong className="text-ink">Can I edit or delete an expense?</strong> Tap it to expand — if you
           entered it or paid for it, you'll see "Edit" and "Delete this expense" right there, for any split

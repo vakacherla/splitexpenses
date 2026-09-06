@@ -117,7 +117,7 @@ export default function GroupSettingsModal({
         <div className="flex items-center justify-between">
           <h2 className="font-display text-xl text-ink">Group settings</h2>
           <div className="flex items-center gap-3">
-            <HelpLink to="getting-started" />
+            <HelpLink to="group-settings" />
             <button type="button" onClick={onClose} className="text-ink-soft hover:text-ink text-sm">
               Close
             </button>

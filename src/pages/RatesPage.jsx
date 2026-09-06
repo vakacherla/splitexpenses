@@ -71,7 +71,7 @@ export default function RatesPage() {
         </Link>
         <div className="flex items-center gap-2 mt-1">
           <h1 className="font-display text-2xl sm:text-3xl text-ink">Exchange rates</h1>
-          <HelpLink to="faq" />
+          <HelpLink to="rates" />
         </div>
         <p className="text-sm text-ink-soft mt-0.5">
           The same source this app uses when converting an expense — Frankfurter, built on European Central

@@ -41,7 +41,7 @@ const TAB_HELP_SECTION = {
   balances: 'balances',
   reports: 'reports',
   activity: 'activity',
-  members: 'getting-started',
+  members: 'members',
 }
 
 export default function GroupView() {
