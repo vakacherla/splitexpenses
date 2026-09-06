@@ -8,6 +8,8 @@ import EmptyState from '../components/EmptyState'
 import Avatar from '../components/Avatar'
 import GroupBanner from '../components/GroupBanner'
 import { accentFor } from '../components/GroupIcon'
+import CircleIcon from '../components/CircleIcon'
+import HelpLink from '../components/HelpLink'
 import { runSync } from '../lib/offlineQueue'
 import { getCachedDashboard, setCachedDashboard } from '../lib/offlineCache'
 import { pickGreetingTemplate } from '../lib/greetings'
@@ -213,10 +215,18 @@ export default function Dashboard() {
           {greetingTemplate.wm}
         </span>
         <div className="relative">
-          <span className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary-tint px-3 py-1 font-mono text-[11px] uppercase tracking-wide text-primary">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            {groups ? `${groups.length} group${groups.length === 1 ? '' : 's'}` : 'Your groups'}
-          </span>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary-tint px-3 py-1 font-mono text-[11px] uppercase tracking-wide text-primary">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              {groups ? `${groups.length} group${groups.length === 1 ? '' : 's'}` : 'Your groups'}
+            </span>
+            {circles && circles.length > 0 && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent-tint px-3 py-1 font-mono text-[11px] uppercase tracking-wide text-accent">
+                <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                {circles.length} circle{circles.length === 1 ? '' : 's'}
+              </span>
+            )}
+          </div>
           <h1 className="font-display text-3xl sm:text-[42px] leading-[1.1] tracking-tight text-ink">
             {greetingTitle}
           </h1>
@@ -257,28 +267,36 @@ export default function Dashboard() {
               Join with a code
             </button>
           </div>
-          <p className="mt-3 text-xs text-ink-soft">
-            Take trips with the same people often?{' '}
-            <button
-              onClick={() => {
-                setShowCreateCircle((v) => !v)
-                setShowJoinCircle(false)
-              }}
-              className="text-primary hover:underline"
-            >
-              Create a circle
-            </button>{' '}
-            ·{' '}
-            <button
-              onClick={() => {
-                setShowJoinCircle((v) => !v)
-                setShowCreateCircle(false)
-              }}
-              className="text-primary hover:underline"
-            >
-              Join a circle
-            </button>
-          </p>
+          <div className="mt-6 pt-5 border-t border-line/70">
+            <div className="flex items-center gap-1.5 mb-2.5">
+              <p className="text-sm font-semibold text-ink">Circles</p>
+              <HelpLink to="circles" />
+            </div>
+            <p className="text-sm text-ink-soft mb-3 max-w-md">
+              Take trips with the same people often? Join once, then create or join any trip inside it — no
+              new invite code each time.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => {
+                  setShowCreateCircle((v) => !v)
+                  setShowJoinCircle(false)
+                }}
+                className="rounded-full bg-accent text-on-primary px-5 py-2.5 text-sm font-semibold transition-colors hover:opacity-90"
+              >
+                ＋ New circle
+              </button>
+              <button
+                onClick={() => {
+                  setShowJoinCircle((v) => !v)
+                  setShowCreateCircle(false)
+                }}
+                className="rounded-full border border-line bg-paper-raised px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent"
+              >
+                Join a circle
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -394,6 +412,7 @@ export default function Dashboard() {
         <div className="mb-8 space-y-4">
           {circles.map((c) => {
             const trips = (groups ?? []).filter((g) => g.circle_id === c.id)
+            const accent = accentFor(c.id)
             return (
               <Link
                 key={c.id}
@@ -401,13 +420,21 @@ export default function Dashboard() {
                 className="block rounded-2xl border border-line bg-paper-raised p-5 hover:border-primary transition-colors"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <p className="font-display text-lg text-ink">{c.name}</p>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: `${accent}22`, color: accent }}
+                    >
+                      <CircleIcon id={c.id} />
+                    </div>
+                    <p className="font-display text-lg text-ink truncate">{c.name}</p>
+                  </div>
                   <span className="text-xs text-ink-soft shrink-0">
                     {trips.length} trip{trips.length === 1 ? '' : 's'} →
                   </span>
                 </div>
                 {trips.length > 0 && (
-                  <p className="mt-1 text-sm text-ink-soft truncate">{trips.map((t) => t.name).join(' · ')}</p>
+                  <p className="mt-2 text-sm text-ink-soft truncate">{trips.map((t) => t.name).join(' · ')}</p>
                 )}
               </Link>
             )

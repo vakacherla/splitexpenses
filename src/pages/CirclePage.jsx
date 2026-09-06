@@ -6,6 +6,9 @@ import CurrencySelect from '../components/CurrencySelect'
 import CircleMembersPanel from '../components/CircleMembersPanel'
 import LoadingScreen from '../components/LoadingScreen'
 import EmptyState from '../components/EmptyState'
+import CircleIcon from '../components/CircleIcon'
+import HelpLink from '../components/HelpLink'
+import { accentFor } from '../components/GroupIcon'
 
 export default function CirclePage() {
   const { circleId } = useParams()
@@ -141,8 +144,17 @@ export default function CirclePage() {
         <Link to="/dashboard" className="text-sm text-ink-soft hover:text-ink">
           ← Your groups
         </Link>
-        <h1 className="font-display text-2xl sm:text-3xl text-ink mt-1">{circle.name}</h1>
-        <p className="text-sm text-ink-soft mt-0.5">
+        <div className="flex items-center gap-3 mt-1">
+          <div
+            className="h-10 w-10 shrink-0 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: `${accentFor(circle.id)}22`, color: accentFor(circle.id) }}
+          >
+            <CircleIcon id={circle.id} className="h-5 w-5" />
+          </div>
+          <h1 className="font-display text-2xl sm:text-3xl text-ink">{circle.name}</h1>
+          <HelpLink to="circles" />
+        </div>
+        <p className="text-sm text-ink-soft mt-1.5">
           A circle — join once, then create or join any Trip inside it without a new invite.
         </p>
       </div>

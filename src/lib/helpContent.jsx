@@ -44,6 +44,43 @@ export const HELP_SECTIONS = [
     ),
   },
   {
+    id: 'circles',
+    title: 'Circles',
+    body: (
+      <>
+        <p>
+          A Circle sits above your Trips — join once with one invite code, then anyone in the Circle can
+          create or join any Trip inside it without a fresh invite each time. Each Trip still has its own
+          completely separate ledger and balances; nothing about money ever combines across a Circle.
+        </p>
+        <H>Creating a Trip inside a Circle</H>
+        <p>
+          Tap "+ New trip" on the Circle's page and give it a name and home currency. It starts with everyone
+          currently in the Circle already added — remove anyone who wasn't actually part of that specific trip
+          from its own Members tab afterward; that only affects this one Trip, never the Circle or any other
+          Trip.
+        </p>
+        <H>Seeing a Trip you haven't joined</H>
+        <p>
+          Every Trip inside a Circle you're in is listed on the Circle's page, even ones you're not part of
+          yet — tap "Join this trip" to add yourself. You won't see its ledger or balances until you do.
+        </p>
+        <H>Attaching an existing Trip</H>
+        <p>
+          Already have a Trip and want it organized into a Circle? From that Trip's Group settings, pick a
+          Circle you're in and tap "Attach" — or "Detach" to pull it back out. Either way, nobody already on
+          that Trip is added or removed; attaching just lets the Circle's other members see it and ask to
+          join.
+        </p>
+        <H>Who can do what</H>
+        <p>
+          Any Circle member can create a Trip inside it. Only the Circle's creator can remove someone from the
+          Circle itself — Circles don't have appointed managers the way a Trip does.
+        </p>
+      </>
+    ),
+  },
+  {
     id: 'adding-expense',
     title: 'Adding an expense',
     body: (
