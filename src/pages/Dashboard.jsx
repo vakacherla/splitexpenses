@@ -409,7 +409,9 @@ export default function Dashboard() {
       )}
 
       {circles && circles.length > 0 && (
-        <div className="mb-8 space-y-4">
+        <div className="mb-8">
+          <h2 className="font-display text-lg text-ink mb-3">Circles</h2>
+          <div className="space-y-4">
           {circles.map((c) => {
             const trips = (groups ?? []).filter((g) => g.circle_id === c.id)
             const accent = accentFor(c.id)
@@ -439,6 +441,7 @@ export default function Dashboard() {
               </Link>
             )
           })}
+          </div>
         </div>
       )}
 
@@ -467,7 +470,9 @@ export default function Dashboard() {
           />
         )
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div>
+          {circles && circles.length > 0 && <h2 className="font-display text-lg text-ink mb-3">Trips</h2>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {standaloneGroups.map((g, idx) => {
             const accent = accentFor(g.id)
             return (
@@ -520,6 +525,7 @@ export default function Dashboard() {
               </Link>
             )
           })}
+          </div>
         </div>
       )}
     </div>
