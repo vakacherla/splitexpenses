@@ -675,6 +675,13 @@ and #3 are now shipped (below); #4 remains, blocked on family review.
     headings; the "Trips" heading only appears when a Circle also exists
     on that Dashboard, so the far more common single-section case (no
     circles at all) stays exactly as uncluttered as before.
+  - ✅ **Fixed, same pass** — same reasoning applied one level up: the
+    Circles create/join actions were nested inside the greeting hero
+    card, separated from the Trip actions above them only by a thin
+    divider, reading as one visual unit rather than two distinct
+    actions. Circles now gets its own bordered card, giving it equal
+    visual billing rather than looking like an afterthought under the
+    greeting.
 
 ### Deliberately not doing — and why
 
