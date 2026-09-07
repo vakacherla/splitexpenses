@@ -106,7 +106,11 @@ export default function TripView() {
       }
 
       if (groupRes.error) {
-        setError(groupRes.error.message)
+        // Never surface the raw Postgres error here — a malformed id in
+        // the URL (bad UUID syntax) and a nonexistent/not-a-member id
+        // (RLS just hides the row, same as "not found") are both real
+        // ways a visitor lands here, and neither should show DB internals.
+        setError("This trip doesn't exist, or you don't have access to it.")
         setLoading(false)
         return
       }
