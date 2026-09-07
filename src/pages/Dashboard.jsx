@@ -267,36 +267,37 @@ export default function Dashboard() {
               Join with a code
             </button>
           </div>
-          <div className="mt-6 pt-5 border-t border-line/70">
-            <div className="flex items-center gap-1.5 mb-2.5">
-              <p className="text-sm font-semibold text-ink">Circles</p>
-              <HelpLink to="circles" />
-            </div>
-            <p className="text-sm text-ink-soft mb-3 max-w-md">
-              Take trips with the same people often? Join once, then create or join any trip inside it — no
-              new invite code each time.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() => {
-                  setShowCreateCircle((v) => !v)
-                  setShowJoinCircle(false)
-                }}
-                className="rounded-full bg-accent text-on-primary px-5 py-2.5 text-sm font-semibold transition-colors hover:opacity-90"
-              >
-                ＋ New circle
-              </button>
-              <button
-                onClick={() => {
-                  setShowJoinCircle((v) => !v)
-                  setShowCreateCircle(false)
-                }}
-                className="rounded-full border border-line bg-paper-raised px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent"
-              >
-                Join a circle
-              </button>
-            </div>
-          </div>
+        </div>
+      </div>
+
+      <div className="mb-9 rounded-2xl border border-line bg-paper-raised p-6 sm:p-7">
+        <div className="flex items-center gap-1.5 mb-2.5">
+          <p className="font-display text-lg text-ink">Circles</p>
+          <HelpLink to="circles" />
+        </div>
+        <p className="text-sm text-ink-soft mb-4 max-w-md">
+          Take trips with the same people often? Join once, then create or join any trip inside it — no new
+          invite code each time.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => {
+              setShowCreateCircle((v) => !v)
+              setShowJoinCircle(false)
+            }}
+            className="rounded-full bg-accent text-on-primary px-5 py-2.5 text-sm font-semibold transition-colors hover:opacity-90"
+          >
+            ＋ New circle
+          </button>
+          <button
+            onClick={() => {
+              setShowJoinCircle((v) => !v)
+              setShowCreateCircle(false)
+            }}
+            className="rounded-full border border-line bg-paper-raised px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent"
+          >
+            Join a circle
+          </button>
         </div>
       </div>
 
