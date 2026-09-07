@@ -96,16 +96,39 @@ a vendor's export button.
   forced to non-manager so ownership is the only thing granting them
   power in the new group; everyone else's role carries over exactly.
   Reachable from Group settings → "Duplicate this group," with an
-  editable name field defaulting to "<name> (copy)". Considered and
-  deliberately not doing: a literal "Group → Trip" rename. The
-  create-group placeholder itself ("Goa trip, Flat 4B, Family fund…")
-  and this app's own stated positioning ("built to work for any group,"
-  not just trips) are in real tension with narrowing the word
-  everywhere — a flat-share's expenses or an ongoing family fund isn't a
-  trip, and the rename would touch schema comments, RLS policy names,
-  every doc, and the UI for a label change alone. Trip-specific
-  *language* already shows up contextually where it fits (e.g. "Trip
-  dates," not "Group dates") without renaming the underlying concept.
+  editable name field defaulting to "<name> (copy)". ~~Considered and
+  deliberately not doing: a literal "Group → Trip" rename~~ — reversed
+  2026-09-07, see below.
+  - ✅ **Shipped, 2026-09-07** — the "Group" → "Trip" rename after all,
+    on explicit product direction: the product concept is now "a group
+    of people taking multiple trips together" (formalized by the Circles
+    feature below), so "Trip" reads correctly even for a flat-share or a
+    family fund — it's the per-ledger unit, not literally "a vacation."
+    Scoped as a pure UI/naming change, confirmed with the user up front:
+    **no database schema change** — `groups`, `group_members`, every RPC
+    (`join_group_by_code`, `admin_add_user_to_group`, etc.), and the
+    `group-banners` Storage bucket all keep their real names exactly as
+    they are, on purpose, to avoid an unnecessary and risky migration for
+    a label-only change. What did change: all user-facing text app-wide;
+    component/page files renamed for consistency
+    (`GroupView.jsx`→`TripView.jsx`, `GroupSettingsModal.jsx`→
+    `TripSettingsModal.jsx`, `MembersPanel.jsx`→`TripMembersPanel.jsx`,
+    `GroupBanner.jsx`→`TripBanner.jsx`, `GroupIcon.jsx`→`TripIcon.jsx`);
+    and the URL route from `/groups/:id` to `/trips/:id`, with the old
+    path kept as a redirect (`OldGroupLinkRedirect` in `App.jsx`) so
+    existing bookmarks and push-notification links don't break. Verified
+    with `npm run build`/`npm test` (98 pre-existing tests unchanged)
+    after the full sweep, plus manual regression against production
+    (see `TESTING.md`, also updated for the new wording/routes).
+    - ✅ **Fixed, found during that regression pass** — a real
+      pre-existing bug, unrelated to the rename itself: visiting a trip
+      URL with a malformed or nonexistent id (e.g. `/trips/49A047`)
+      surfaced the raw Postgres error text ("invalid input syntax for
+      type uuid...") directly on screen instead of a clean message.
+      `TripView.jsx` now shows "This trip doesn't exist, or you don't
+      have access to it." instead. The identical pattern exists on
+      `CirclePage.jsx` too (`setError(error.message)` in a few spots) —
+      flagged, not yet fixed, since it wasn't reproduced this pass.
 - ✅ **Shipped** — admin can add a user to a group directly. Real gap
   found in practice: creating an account and joining a group are two
   separate steps (self-service `join_group_by_code` only) — someone who
@@ -596,6 +619,62 @@ and #3 are now shipped (below); #4 remains, blocked on family review.
   correctly triggering the auto-rollback with zero rows left behind,
   and undo restoring the ledger to empty and marking the batch
   "Undone."
+
+- ✅ **Shipped, 2026-09-06/07 — Circles: a parent above Trip/Group.**
+  Real gap this fixes: the same group of people often takes more than
+  one trip together, and until now that meant a brand-new invite code
+  and a full re-invite every time (Duplicate helped with roster/currency
+  copying, but still made a fresh, separately-invited group each time).
+  A **Circle** (e.g. "Smith Family") is joined once via its own invite
+  code; from then on, any Circle member can create or join any Trip
+  inside it without a fresh invite. Membership is per-Trip, **inherited
+  from the Circle at creation time only** (a one-time copy, not a live
+  link) — removing someone from one Trip never touches the Circle or any
+  other Trip, and balances/settle-up stay always scoped per Trip, never
+  rolled up across a Circle. Fully backward-compatible: every existing
+  group keeps working completely unchanged (`circle_id is null`).
+  - New tables `circles`/`circle_members` plus a nullable
+    `groups.circle_id` (migration 031), `security definer stable` RLS
+    helpers (`is_circle_member`/`is_circle_manager`), and two companion
+    policies on `groups`/`group_members` letting a Circle member browse
+    (but not access the ledger of) sibling Trips they haven't joined,
+    and self-join one directly.
+  - RPCs (migrations 032-033): `join_circle_by_code`,
+    `create_trip_in_circle` (copies the Circle's current roster once),
+    self-service `attach_trip_to_circle`/`detach_trip_from_circle` for a
+    Trip's own owner/manager, and a super-admin-only
+    `admin_attach_group_to_circle` for organizing *any* existing trip
+    into *any* circle centrally (Admin → Trips → "Circle" button).
+  - New `CirclePage.jsx` (route `/circles/:id`), `CircleMembersPanel.jsx`,
+    and `CircleIcon.jsx` (a distinct hand-drawn glyph set — ring of
+    people / sun / tree / interlocking rings — so a Circle reads visually
+    distinct from a Trip). Dashboard shows Circles as their own labeled,
+    prominent section (not a small inline link) with real "Create a
+    Circle" / "Join a Circle" actions, plus a Circle count on the same
+    top badge as the Trip count.
+  - ✅ **Shipped, same pass** — one-time backfill (migration 034) for
+    the Activity tab's "Nothing yet" on any trip older than the feed
+    itself (migration 026 only ever logged forward from when it
+    shipped). Reconstructs expense/settlement/CSV-import/member-joined
+    events from data that's still there, in the exact live
+    `logActivity()` summary format; deliberately does **not** attempt
+    edits/deletions/removals, since nothing records *who* did those
+    historically and a wrong guess is worse than a gap.
+  - **Not yet built, queued for tomorrow** — an admin/super-admin way to
+    add a specific *user* directly into a Circle (the Circle-level
+    equivalent of the existing "Manage trips" → "Add to a trip…" control
+    on a user's row in Admin → Users). Today a super admin can attach an
+    entire existing *trip* to a circle, but there's no
+    `admin_add_user_to_circle`-style RPC or UI for adding one person to
+    a Circle outside of them using its invite code themselves. Surfaced
+    directly while regression-testing the rename above.
+  - ✅ **Fixed, same regression pass** — Circles and standalone Trips
+    rendered back-to-back on the Dashboard with no visual break between
+    them, so a Trip card could easily be mistaken for living inside the
+    Circle above it (or vice versa). Added "Circles" and "Trips" section
+    headings; the "Trips" heading only appears when a Circle also exists
+    on that Dashboard, so the far more common single-section case (no
+    circles at all) stays exactly as uncluttered as before.
 
 ### Deliberately not doing — and why
 
