@@ -683,6 +683,48 @@ and #3 are now shipped (below); #4 remains, blocked on family review.
     visual billing rather than looking like an afterthought under the
     greeting.
 
+- **Not yet built, surfaced 2026-09-13** — competitive review against
+  splitmyexpenses.com (UI walkthrough + their "Receipt upload" demo
+  video) while drafting the new logged-out HomePage. Four real, verified
+  gaps, in rough priority order:
+  1. **Shareable invite link, not just a code.** Today a Trip/Circle
+     only has a copyable `invite_code`
+     (`TripMembersPanel.jsx:17-40`) plus a manual "Join with a code" flow
+     (`Dashboard.jsx`) via `join_group_by_code`/`join_circle_by_code`.
+     Competitor sends a `https://...` link that drops the recipient
+     straight into the join flow. Low effort — a thin route wrapping the
+     existing RPCs with the code pre-filled from the URL, no schema
+     change.
+  2. **No date-range or member filter on Reports.** `ReportsPanel.jsx`
+     only breaks spend down by category and by person — no way to
+     narrow to a date range or a single member the way the competitor's
+     reports do. Contained addition, same component.
+  3. **Two split types we don't have: "Shares" and "Adjustment."**
+     Confirmed directly from their split-method tab strip (Equally /
+     Percent / Shares / Adjustment / Manual / Itemize) in the receipt-
+     upload demo video. "Shares" splits by relative weight (e.g. 2
+     shares vs. 1) instead of a flat percentage; "Adjustment" starts
+     from an equal split and lets you nudge individual amounts up/down
+     from there. Our four types (Equal/Percentage/Exact/Itemized,
+     `AddExpenseForm.jsx`) cover the same ground less directly for both
+     of these cases.
+  4. **Recurring expenses are still manual-only.** Already tracked above
+     as the "Duplicate" action — re-confirmed here as a real gap, not
+     just a nice-to-have: competitor has actual scheduled/automatic
+     recurring expenses (capped at 10 on their free tier, unlimited
+     paid), ours requires a person to duplicate-and-resave each time.
+
+  Explicitly **not** chasing: bank/credit-card linking for automatic
+  daily transaction import (their Unlimited-tier headline feature).
+  Same reasoning as the Splitwise/Venmo section above — that's a
+  payment-processor relationship and ongoing per-account cost, a
+  different company shape, not a "few hours" feature.
+
+  Also checked and ruled out as real gaps: AI expense summarization (no
+  evidence in their product beyond marketing copy), and fetching a
+  friend's name/photo from a payment app during invite (cosmetic, not
+  functional).
+
 ### Deliberately not doing — and why
 
 - **Auto-creating a Google Sheet in someone's Drive.** CSV export
