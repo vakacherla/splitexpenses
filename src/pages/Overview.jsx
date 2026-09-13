@@ -620,18 +620,14 @@ export default function Overview() {
               </div>
               <h3 className="mb-2.5 text-lg font-semibold text-ink">Everything, unlocked</h3>
               <div className="mb-1 flex items-baseline gap-2">
-                <span className="num font-display text-3xl font-semibold text-ink">
-                  {region === 'us' ? '$0' : '₹0'}
-                </span>
-                <span className="num font-mono text-sm text-ink-soft line-through">
+                <span className="num font-display text-2xl font-semibold text-ink-soft line-through decoration-2">
                   {region === 'us' ? '$24.99' : '₹999'}
                 </span>
-                <span className="text-[13px] text-ink-soft">/ year later</span>
+                <span className="text-[13px] text-ink-soft">/ year, someday</span>
               </div>
               <div className="mb-4.5 text-xs text-ink-soft">
-                {region === 'us'
-                  ? 'Free for accounts created during early access — locked in for the life of the account.'
-                  : "~60% below Splitwise Pro's ₹2,499/year in India. Free for accounts created during early access."}
+                Not active — no billing exists yet. Included free for as long as you're on an early-access account.
+                {region === 'in' && " Shown for reference against Splitwise Pro's ₹2,499/year in India."}
               </div>
               <ul className="mb-5 space-y-2.5 text-[13.5px]">
                 <li className="flex gap-2.5">
