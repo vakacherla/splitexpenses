@@ -657,20 +657,9 @@ export default function Overview() {
       </section>
 
       <div className="mx-auto max-w-5xl px-5 sm:px-8">
-        <div className="my-12 rounded-3xl bg-primary-dark px-8 py-11 text-center text-on-primary sm:py-12">
-          <h2 className="mb-2.5 font-display text-2xl font-medium sm:text-[28px]">
-            Start free. Keep early-access pricing for life.
-          </h2>
-          <p className="mb-5 text-[14.5px] text-on-primary/80">
-            Create a free account and add your first expense in under a minute.
-          </p>
-          <Link
-            to="/signup"
-            className="inline-block rounded-full bg-on-primary px-6 py-2.5 text-[15px] font-semibold text-primary-dark transition-opacity hover:opacity-90"
-          >
-            Create free account
-          </Link>
-        </div>
+        <p className="mt-10 mb-6 text-center font-display text-lg text-ink">
+          Start free. Keep early-access pricing for life.
+        </p>
         <div className="flex flex-wrap items-center justify-between gap-2.5 pb-10 text-xs text-ink-soft">
           <span>Split Expenses — shared expenses, any currency.</span>
           <span>
