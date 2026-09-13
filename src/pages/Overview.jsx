@@ -656,18 +656,20 @@ export default function Overview() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-5xl px-5 sm:px-8">
-        <p className="mt-10 mb-6 text-center font-display text-lg text-ink">
-          Start free. Keep early-access pricing for life.
-        </p>
-        <div className="flex flex-wrap items-center justify-between gap-2.5 pb-10 text-xs text-ink-soft">
-          <span>Split Expenses — shared expenses, any currency.</span>
-          <span>
-            Already have an account?{' '}
-            <Link to="/login" className="font-semibold text-primary hover:underline">
-              Sign in
-            </Link>
-          </span>
+      <div className="mx-auto max-w-5xl px-5 pb-12 sm:px-8">
+        <div className="rounded-3xl bg-primary-dark px-6 py-8 text-center sm:px-10">
+          <p className="font-display text-xl font-medium text-on-primary sm:text-2xl">
+            Start free. Keep early-access pricing for life.
+          </p>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 border-t border-on-primary/15 pt-5 text-xs text-on-primary/70">
+            <span>Split Expenses — shared expenses, any currency.</span>
+            <span>
+              Already have an account?{' '}
+              <Link to="/login" className="font-semibold text-on-primary hover:underline">
+                Sign in
+              </Link>
+            </span>
+          </div>
         </div>
       </div>
     </div>
