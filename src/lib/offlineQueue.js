@@ -177,6 +177,8 @@ async function applyExpenseCreate(op) {
     share_amount: s.share_amount,
     share_in_home: Math.round(s.share_amount * finalRate * 100) / 100,
     percentage: s.percentage,
+    share_units: s.share_units,
+    adjustment: s.adjustment,
   }))
   const { error: splitError } = await supabase.from('expense_splits').insert(splitRows)
   if (splitError) throw splitError
@@ -251,6 +253,8 @@ async function applyExpenseUpdate(op) {
     share_amount: s.share_amount,
     share_in_home: Math.round(s.share_amount * effectiveRate * 100) / 100,
     percentage: s.percentage,
+    share_units: s.share_units,
+    adjustment: s.adjustment,
   }))
   const { error: splitError } = await supabase.from('expense_splits').insert(splitRows)
   if (splitError) throw splitError

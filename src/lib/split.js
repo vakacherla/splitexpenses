@@ -44,6 +44,38 @@ export function splitByPercentages(total, percentages) {
   return cents.map((c) => c / 100)
 }
 
+// Splits `total` by relative share units (e.g. 2 shares vs. 1) rather than
+// percentages that must sum to 100 — friendlier for cases like "everyone
+// gets 1 share except the two kids, who get 0.5 each." Units are just
+// normalized to percentages and handed to splitByPercentages, so it gets
+// the same largest-remainder rounding guarantee for free. If every unit is
+// zero or negative (no valid weights), returns all zeros rather than
+// dividing by zero.
+export function splitByShares(total, shareUnits) {
+  const sum = shareUnits.reduce((s, u) => s + Math.max(u, 0), 0)
+  if (sum <= 0) return shareUnits.map(() => 0)
+  const percentages = shareUnits.map((u) => (Math.max(u, 0) / sum) * 100)
+  return splitByPercentages(total, percentages)
+}
+
+// Splits `total` starting from an equal share per participant, then applies
+// each person's manual adjustment delta (positive = pays more, negative =
+// pays less) on top. The *equal baseline itself* is computed on
+// `total - sum(adjustments)`, not on `total`, so that after adjustments are
+// added back the shares still sum to exactly `total` — e.g. one person
+// adjusted +$5 means the other N-1 people's baseline quietly absorbs that
+// $5 across them, rather than the total ballooning past the actual bill.
+// This is the same idea as splitting `total` into an "exact amount" per
+// person, but expressed as a friendlier delta-from-equal instead of typing
+// a full dollar figure for everyone.
+export function splitByAdjustments(total, adjustments) {
+  const n = adjustments.length
+  if (n <= 0) return []
+  const sumAdjustments = adjustments.reduce((s, a) => s + a, 0)
+  const baseline = splitEvenly(total - sumAdjustments, n)
+  return baseline.map((b, i) => Math.round((b + adjustments[i]) * 100) / 100)
+}
+
 // Divides `amount` across `participantIds` proportionally to each person's
 // `subtotals` share (falling back to an even split if nobody has any
 // subtotal yet), using the same largest-remainder method as

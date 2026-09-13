@@ -116,6 +116,16 @@ export const HELP_SECTIONS = [
           split proportionally by what each person actually ordered.
         </p>
         <p>
+          <strong className="text-ink">Shares</strong> splits by relative weight instead of a percentage that
+          has to add up to 100 — type "2" for someone who should pay double, "1" for everyone else, or
+          "0.5" for a kid who only owes half. Leave a box blank and it counts as 1 share, the same as
+          everyone else's default. <strong className="text-ink">Adjustment</strong> starts everyone at an
+          equal share, then applies whatever amount you type for a person on top of that — a positive number
+          means they pay more, negative means less, and the rest of the group's equal shares quietly absorb
+          the difference so the total still adds up exactly. Leave a box blank and it counts as no
+          adjustment (a plain equal share for that person).
+        </p>
+        <p>
           Tick <strong className="text-ink">"Save this as the default"</strong> (Equal or Percentage only) to
           pre-select that split next time anyone in the trip adds an expense.
         </p>

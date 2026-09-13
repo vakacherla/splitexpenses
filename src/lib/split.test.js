@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { splitEvenly, splitByPercentages, splitItemized } from './split'
+import {
+  splitEvenly,
+  splitByPercentages,
+  splitByShares,
+  splitByAdjustments,
+  splitItemized,
+} from './split'
 
 describe('splitEvenly', () => {
   it('splits an amount that divides cleanly', () => {
@@ -87,6 +93,88 @@ describe('splitByPercentages', () => {
     for (const pcts of cases) {
       for (const total of [10, 33.33, 99.99, 250]) {
         const shares = splitByPercentages(total, pcts)
+        const sum = Math.round(shares.reduce((a, b) => a + b, 0) * 100) / 100
+        expect(sum).toBe(Math.round(total * 100) / 100)
+      }
+    }
+  })
+})
+
+describe('splitByShares', () => {
+  it('splits evenly when share units are equal', () => {
+    expect(splitByShares(100, [1, 1])).toEqual([50, 50])
+  })
+
+  it('gives twice as much to someone with twice the share units', () => {
+    const shares = splitByShares(90, [2, 1])
+    expect(shares[0]).toBeCloseTo(60, 5)
+    expect(shares[1]).toBeCloseTo(30, 5)
+  })
+
+  it('handles fractional share units (e.g. a half-share for a kid)', () => {
+    const shares = splitByShares(100, [1, 1, 0.5])
+    const sum = Math.round(shares.reduce((a, b) => a + b, 0) * 100) / 100
+    expect(sum).toBe(100)
+    expect(shares[2]).toBeLessThan(shares[0])
+  })
+
+  it('sums to the total across a range of uneven share splits', () => {
+    const cases = [
+      [1, 1, 1],
+      [2, 1],
+      [3, 2, 1],
+      [1, 1, 1, 1, 1],
+    ]
+    for (const units of cases) {
+      for (const total of [10, 33.33, 99.99, 250]) {
+        const shares = splitByShares(total, units)
+        const sum = Math.round(shares.reduce((a, b) => a + b, 0) * 100) / 100
+        expect(sum).toBe(Math.round(total * 100) / 100)
+      }
+    }
+  })
+
+  it('returns all zeros rather than dividing by zero when no one has a valid share', () => {
+    expect(splitByShares(100, [0, 0])).toEqual([0, 0])
+    expect(splitByShares(100, [-1, -2])).toEqual([0, 0])
+  })
+})
+
+describe('splitByAdjustments', () => {
+  it('splits evenly when nobody has an adjustment', () => {
+    expect(splitByAdjustments(100, [0, 0, 0, 0])).toEqual([25, 25, 25, 25])
+  })
+
+  it('adds a positive adjustment on top of the equal baseline', () => {
+    // Baseline on (100 - 10) = 90 across 2 people = 45 each, then +10 for the first.
+    expect(splitByAdjustments(100, [10, 0])).toEqual([55, 45])
+  })
+
+  it('subtracts a negative adjustment from the equal baseline', () => {
+    // Baseline on (100 - -10) = 110 across 2 people = 55 each, then -10 for the first.
+    expect(splitByAdjustments(100, [-10, 0])).toEqual([45, 55])
+  })
+
+  it('still sums to exactly the total with multiple adjustments', () => {
+    const shares = splitByAdjustments(150, [20, -5, 0, -15])
+    const sum = Math.round(shares.reduce((a, b) => a + b, 0) * 100) / 100
+    expect(sum).toBe(150)
+  })
+
+  it('returns an empty array for zero participants', () => {
+    expect(splitByAdjustments(100, [])).toEqual([])
+  })
+
+  it('sums to the total across a range of uneven adjustments', () => {
+    const cases = [
+      [0, 0, 0],
+      [5, -5],
+      [10, -3, -7],
+      [1.5, -1.5, 0, 0],
+    ]
+    for (const adjustments of cases) {
+      for (const total of [10, 33.33, 99.99, 250]) {
+        const shares = splitByAdjustments(total, adjustments)
         const sum = Math.round(shares.reduce((a, b) => a + b, 0) * 100) / 100
         expect(sum).toBe(Math.round(total * 100) / 100)
       }

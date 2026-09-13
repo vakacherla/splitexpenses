@@ -4,7 +4,7 @@ import { formatMoney } from '../lib/fx'
 import { useLiveRate } from '../lib/useLiveRate'
 import { useOnlineStatus } from '../lib/useOnlineStatus'
 import { enqueue } from '../lib/offlineQueue'
-import { splitEvenly, splitByPercentages, splitItemized } from '../lib/split'
+import { splitEvenly, splitByPercentages, splitByShares, splitByAdjustments, splitItemized } from '../lib/split'
 import { logActivity, notifyGroup } from '../lib/activity'
 import { CATEGORIES } from '../lib/categories'
 import { validateDateInRange, MIN_TRIP_DATE, MAX_TRIP_DATE } from '../lib/tripDates'
@@ -16,6 +16,8 @@ const SPLIT_MODES = [
   { id: 'equal', label: 'Equal' },
   { id: 'percentage', label: 'Percentage' },
   { id: 'exact', label: 'Exact amounts' },
+  { id: 'shares', label: 'Shares' },
+  { id: 'adjustment', label: 'Adjustment' },
   { id: 'itemized', label: 'Itemized' },
 ]
 
@@ -67,6 +69,18 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
     }
     return {}
   })
+  const [shareUnits, setShareUnits] = useState(() => {
+    if (seed?.split_type === 'shares') {
+      return Object.fromEntries(seed.expense_splits.map((s) => [s.user_id, String(s.share_units ?? 1)]))
+    }
+    return {}
+  }) // user_id -> string, defaults to "1" per person once shares mode is selected
+  const [adjustments, setAdjustments] = useState(() => {
+    if (seed?.split_type === 'adjustment') {
+      return Object.fromEntries(seed.expense_splits.map((s) => [s.user_id, String(s.adjustment ?? 0)]))
+    }
+    return {}
+  }) // user_id -> string, defaults to "0" per person once adjustment mode is selected
   const [saveAsDefault, setSaveAsDefault] = useState(false)
   const [items, setItems] = useState(() => {
     if (seed?.split_type === 'itemized' && Array.isArray(seed.items)) {
@@ -145,6 +159,39 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
 
   const exactTotal = participantIds.reduce((sum, id) => sum + (parseFloat(exactShares[id]) || 0), 0)
   const exactMismatch = splitMode === 'exact' && Math.abs(exactTotal - parsedAmount) > 0.01
+
+  // Blank/invalid defaults to 1 share, not 0 — a share of 0 is meaningless
+  // (that's what unchecking someone from the split is for), so an
+  // untouched input should still contribute a normal, equal-weighted share
+  // rather than silently dropping out of the split.
+  const shareAmounts = useMemo(() => {
+    if (participantIds.length === 0) return {}
+    const units = participantIds.map((id) => parseFloat(shareUnits[id]) || 1)
+    const amounts = splitByShares(parsedAmount, units)
+    return Object.fromEntries(participantIds.map((id, i) => [id, amounts[i]]))
+  }, [parsedAmount, participantIds, shareUnits])
+  // Checks the actual computed output rather than re-deriving the blank
+  // -defaults-to-1 fallback separately — that keeps this correct by
+  // construction instead of needing to stay in sync with shareAmounts
+  // above. Only trips when every checked person has explicitly typed a
+  // negative unit (splitByShares clamps negatives to 0 internally), since
+  // a blank input already resolves to a normal 1-share weight.
+  const sharesAllZero =
+    splitMode === 'shares' && parsedAmount > 0 && Object.values(shareAmounts).every((v) => v === 0)
+
+  // Blank/invalid defaults to 0 — "no adjustment typed" should mean "this
+  // person stays at the equal baseline," not an arbitrary fallback.
+  const adjustmentAmounts = useMemo(() => {
+    if (participantIds.length === 0) return {}
+    const deltas = participantIds.map((id) => parseFloat(adjustments[id]) || 0)
+    const amounts = splitByAdjustments(parsedAmount, deltas)
+    return Object.fromEntries(participantIds.map((id, i) => [id, amounts[i]]))
+  }, [parsedAmount, participantIds, adjustments])
+  const adjustmentTotal = participantIds.reduce((sum, id) => sum + (parseFloat(adjustments[id]) || 0), 0)
+  // Warns rather than blocks: a negative baseline is unusual but not
+  // invalid — e.g. one person's adjustment legitimately covering more than
+  // the whole bill because everyone else already paid them back in cash.
+  const adjustmentBaselineNegative = splitMode === 'adjustment' && parsedAmount - adjustmentTotal < 0
 
   const itemizedShares = useMemo(() => {
     if (splitMode !== 'itemized' || participantIds.length === 0) return {}
@@ -373,15 +420,20 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
     if (percentageOutOfRange) return setError('Each person’s percentage must be between 0 and 100.')
     if (exactMismatch) return setError(`Exact shares add up to ${exactTotal.toFixed(2)}, not ${parsedAmount.toFixed(2)}.`)
     if (percentageMismatch) return setError(`Percentages add up to ${percentageTotal.toFixed(1)}%, not 100%.`)
+    if (sharesAllZero) return setError('At least one person needs a share greater than zero.')
 
     const shareSourceOriginal =
       splitMode === 'equal'
         ? equalShares
         : splitMode === 'percentage'
           ? percentageShareAmounts
-          : splitMode === 'itemized'
-            ? itemizedShares
-            : Object.fromEntries(participantIds.map((id) => [id, parseFloat(exactShares[id]) || 0]))
+          : splitMode === 'shares'
+            ? shareAmounts
+            : splitMode === 'adjustment'
+              ? adjustmentAmounts
+              : splitMode === 'itemized'
+                ? itemizedShares
+                : Object.fromEntries(participantIds.map((id) => [id, parseFloat(exactShares[id]) || 0]))
 
     const itemsPayload =
       splitMode === 'itemized'
@@ -396,6 +448,8 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
       user_id: userId,
       share_amount: shareSourceOriginal[userId] ?? 0,
       percentage: splitMode === 'percentage' ? parseFloat(percentageShares[userId]) || 0 : null,
+      share_units: splitMode === 'shares' ? parseFloat(shareUnits[userId]) || 1 : null,
+      adjustment: splitMode === 'adjustment' ? parseFloat(adjustments[userId]) || 0 : null,
     }))
 
     // Offline: the whole insert/update round trip needs a network call it
@@ -507,10 +561,34 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
       share_amount: s.share_amount,
       share_in_home: Math.round(s.share_amount * finalRate * 100) / 100,
       percentage: s.percentage,
+      share_units: s.share_units,
+      adjustment: s.adjustment,
     }))
 
     const { error: splitError } = await supabase.from('expense_splits').insert(splitRows)
     if (splitError) {
+      // The expense row is already committed at this point, so a failure
+      // here can't just be surfaced as an error — left alone, it's a
+      // phantom expense with nobody's share deducted, which silently
+      // corrupts every member's balance. Roll back to keep the two tables
+      // consistent: a brand-new expense gets deleted outright; an edit
+      // gets its previous splits (still in hand from the seed data)
+      // reinserted so it's back to its pre-edit state, not stranded with
+      // no splits at all.
+      if (editingExpense) {
+        const oldSplitRows = editingExpense.expense_splits.map((s) => ({
+          expense_id: expense.id,
+          user_id: s.user_id,
+          share_amount: s.share_amount,
+          share_in_home: s.share_in_home,
+          percentage: s.percentage,
+          share_units: s.share_units,
+          adjustment: s.adjustment,
+        }))
+        await supabase.from('expense_splits').insert(oldSplitRows)
+      } else {
+        await supabase.from('expenses').delete().eq('id', expense.id)
+      }
       setSaving(false)
       setError(splitError.message)
       return
@@ -897,6 +975,37 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
                         className="num w-24 text-right rounded-md border border-line bg-paper px-2 py-1 text-sm focus:border-primary outline-none shrink-0"
                       />
                     )}
+
+                    {checked && splitMode === 'shares' && (
+                      <div className="flex items-center gap-2 shrink-0">
+                        <input
+                          inputMode="decimal"
+                          value={shareUnits[m.user_id] ?? ''}
+                          onChange={(e) => setShareUnits((prev) => ({ ...prev, [m.user_id]: e.target.value }))}
+                          placeholder="1"
+                          className="num w-14 text-right rounded-md border border-line bg-paper px-2 py-1 text-sm focus:border-primary outline-none"
+                        />
+                        <span className="text-sm text-ink-soft">share{(parseFloat(shareUnits[m.user_id]) || 1) === 1 ? '' : 's'}</span>
+                        <span className="num text-xs text-ink-soft w-16 text-right">
+                          {(shareAmounts[m.user_id] ?? 0).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+
+                    {checked && splitMode === 'adjustment' && (
+                      <div className="flex items-center gap-2 shrink-0">
+                        <input
+                          inputMode="decimal"
+                          value={adjustments[m.user_id] ?? ''}
+                          onChange={(e) => setAdjustments((prev) => ({ ...prev, [m.user_id]: e.target.value }))}
+                          placeholder="0.00"
+                          className="num w-20 text-right rounded-md border border-line bg-paper px-2 py-1 text-sm focus:border-primary outline-none"
+                        />
+                        <span className="num text-xs text-ink-soft w-16 text-right">
+                          {(adjustmentAmounts[m.user_id] ?? 0).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
                   </li>
                 )
               })}
@@ -910,6 +1019,14 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
             {splitMode === 'percentage' && (
               <p className={`mt-1.5 text-xs ${percentageMismatch ? 'text-owe' : 'text-ink-soft'}`}>
                 {percentageTotal.toFixed(1)}% of 100% assigned
+              </p>
+            )}
+            {splitMode === 'shares' && sharesAllZero && (
+              <p className="mt-1.5 text-xs text-owe">At least one person needs a share greater than zero.</p>
+            )}
+            {splitMode === 'adjustment' && adjustmentBaselineNegative && (
+              <p className="mt-1.5 text-xs text-owe">
+                These adjustments add up to more than the total — the remaining split goes negative.
               </p>
             )}
 
