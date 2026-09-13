@@ -82,7 +82,7 @@ export default function TripView() {
           .eq('group_id', groupId),
         supabase
           .from('expenses')
-          .select('*, expense_splits(user_id, share_amount, share_in_home, percentage)')
+          .select('*, expense_splits(user_id, share_amount, share_in_home, percentage, share_units, adjustment)')
           .eq('group_id', groupId)
           // Explicit even though RLS already excludes deleted expenses for
           // regular members — an admin's own RLS bypass means this filter

@@ -4,7 +4,13 @@ import { formatMoney } from '../lib/fx'
 import { CATEGORY_COLORS } from '../lib/categories'
 import CategoryIcon from './CategoryIcon'
 
-const SPLIT_LABELS = { percentage: 'split by %', exact: 'custom split', itemized: 'itemized' }
+const SPLIT_LABELS = {
+  percentage: 'split by %',
+  exact: 'custom split',
+  itemized: 'itemized',
+  shares: 'split by shares',
+  adjustment: 'adjusted split',
+}
 
 export default function ExpenseRow({
   expense,
@@ -145,6 +151,19 @@ export default function ExpenseRow({
                   {formatMoney(s.share_amount, expense.currency)}
                   {expense.split_type === 'percentage' && s.percentage != null && (
                     <span className="text-ink-soft/70"> ({s.percentage}%)</span>
+                  )}
+                  {expense.split_type === 'shares' && s.share_units != null && (
+                    <span className="text-ink-soft/70">
+                      {' '}
+                      ({s.share_units} share{s.share_units === 1 ? '' : 's'})
+                    </span>
+                  )}
+                  {expense.split_type === 'adjustment' && s.adjustment != null && s.adjustment !== 0 && (
+                    <span className="text-ink-soft/70">
+                      {' '}
+                      ({s.adjustment > 0 ? '+' : ''}
+                      {formatMoney(s.adjustment, expense.currency)})
+                    </span>
                   )}
                 </span>
               </li>
