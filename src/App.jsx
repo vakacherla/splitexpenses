@@ -7,6 +7,7 @@ import AdminRoute from './components/AdminRoute'
 import LoadingScreen from './components/LoadingScreen'
 import Navbar from './components/Navbar'
 import SyncStatusBanner from './components/SyncStatusBanner'
+import Overview from './pages/Overview'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import ForgotPassword from './pages/ForgotPassword'
@@ -34,7 +35,8 @@ function AppShell({ children }) {
 function Root() {
   const { user, loading } = useAuth()
   if (loading) return <LoadingScreen />
-  return <Navigate to={user ? '/dashboard' : '/login'} replace />
+  if (user) return <Navigate to="/dashboard" replace />
+  return <Overview />
 }
 
 // Old /groups/:id links (bookmarks, shared links, push-notification
