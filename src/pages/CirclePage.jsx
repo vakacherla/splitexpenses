@@ -9,6 +9,7 @@ import LoadingScreen from '../components/LoadingScreen'
 import EmptyState from '../components/EmptyState'
 import CircleIcon from '../components/CircleIcon'
 import HelpLink from '../components/HelpLink'
+import TripBanner from '../components/TripBanner'
 import { accentFor } from '../components/TripIcon'
 
 export default function CirclePage() {
@@ -188,6 +189,13 @@ export default function CirclePage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
+      <TripBanner
+        name={circle.name}
+        bannerPath={circle.banner_path}
+        accent={accentFor(circle.id)}
+        bucket="circle-banners"
+        className="rounded-2xl mb-5 h-36 sm:h-44"
+      />
       <div className="mb-6">
         <Link to="/dashboard" className="text-sm text-ink-soft hover:text-ink">
           ← Your trips
@@ -333,6 +341,7 @@ export default function CirclePage() {
           canManage={canManage}
           onRename={handleRenameCircle}
           onArchiveCircle={handleArchiveCircle}
+          onBannerChanged={load}
           onClose={() => setShowSettings(false)}
         />
       )}

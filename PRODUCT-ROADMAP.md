@@ -715,6 +715,20 @@ and #3 are now shipped (below); #4 remains, blocked on family review.
       real bug in the first pass (the inline create didn't insert the
       creator into `circle_members`, so the immediate attach failed) —
       verified working end-to-end before shipping.
+    - **Added, same day — Circle cover-photo banner.** Same feature as
+      Trip banners (`024_group_banners.sql`), applied to Circles:
+      `circles.banner_path` plus a new `circle-banners` public storage
+      bucket (migration 040), write access scoped to
+      `is_circle_manager` instead of the ad hoc exists-query 024 used
+      for Trips. `TripBanner.jsx` took a `bucket` prop so both features
+      share one component instead of a duplicate. Shows on
+      `CirclePage.jsx` and the upload control in
+      `CircleSettingsModal.jsx`; deliberately not added to the
+      Dashboard's Circle list, which stays its existing compact-row
+      style rather than being redesigned into the Trip card grid.
+      Verified live end-to-end (upload → storage RLS → public URL →
+      render) since the browser automation here can't drive a native
+      file picker.
   - ✅ **Fixed, same regression pass** — Circles and standalone Trips
     rendered back-to-back on the Dashboard with no visual break between
     them, so a Trip card could easily be mistaken for living inside the

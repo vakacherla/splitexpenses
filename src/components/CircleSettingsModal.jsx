@@ -1,12 +1,19 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { supabase } from '../lib/supabaseClient'
+import { accentFor } from './TripIcon'
+import TripBanner from './TripBanner'
 import HelpLink from './HelpLink'
 
-// Trimmed copy of TripSettingsModal.jsx's shape — rename + danger zone
-// only. Circles have no banner, dates, duplicate, CSV imports, or
+// Trimmed copy of TripSettingsModal.jsx's shape — rename, banner, and
+// danger zone. Circles have no dates, duplicate, CSV imports, or
 // attach/detach-circle section (that last one is Trip-only, obviously).
-export default function CircleSettingsModal({ circle, canManage, onRename, onArchiveCircle, onClose }) {
+export default function CircleSettingsModal({ circle, canManage, onRename, onArchiveCircle, onBannerChanged, onClose }) {
   const [renaming, setRenaming] = useState(false)
   const [nameDraft, setNameDraft] = useState(circle.name)
+  const [bannerPath, setBannerPath] = useState(circle.banner_path ?? null)
+  const [uploadingBanner, setUploadingBanner] = useState(false)
+  const [bannerError, setBannerError] = useState('')
+  const bannerInputRef = useRef(null)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 
@@ -14,6 +21,29 @@ export default function CircleSettingsModal({ circle, canManage, onRename, onArc
     const trimmed = nameDraft.trim()
     if (trimmed && trimmed !== circle.name) onRename(trimmed)
     setRenaming(false)
+  }
+
+  async function handleBannerChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingBanner(true)
+    setBannerError('')
+    const ext = file.name.split('.').pop() || 'jpg'
+    const path = `${circle.id}/banner.${ext}`
+    const { error: uploadError } = await supabase.storage.from('circle-banners').upload(path, file, { upsert: true })
+    if (uploadError) {
+      setUploadingBanner(false)
+      setBannerError(uploadError.message)
+      return
+    }
+    const { error: updateError } = await supabase.from('circles').update({ banner_path: path }).eq('id', circle.id)
+    setUploadingBanner(false)
+    if (updateError) {
+      setBannerError(updateError.message)
+      return
+    }
+    setBannerPath(path)
+    onBannerChanged?.()
   }
 
   return (
@@ -27,6 +57,70 @@ export default function CircleSettingsModal({ circle, canManage, onRename, onArc
               Close
             </button>
           </div>
+        </div>
+
+        <div>
+          <TripBanner
+            name={circle.name}
+            bannerPath={bannerPath}
+            accent={accentFor(circle.id)}
+            bucket="circle-banners"
+            className="-mx-5 sm:-mx-6 h-28"
+          />
+          {canManage && (
+            <div className="mt-2">
+              <input
+                ref={bannerInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleBannerChange}
+              />
+              {bannerPath ? (
+                <div className="flex items-center justify-between rounded-xl border border-line bg-paper px-3.5 py-2.5">
+                  <span className="text-sm text-ink-soft truncate">
+                    {uploadingBanner ? 'Uploading…' : 'Cover photo set'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => bannerInputRef.current?.click()}
+                    disabled={uploadingBanner}
+                    className="text-xs font-medium text-primary hover:underline disabled:opacity-50 shrink-0 ml-2"
+                  >
+                    Change
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => bannerInputRef.current?.click()}
+                  disabled={uploadingBanner}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-line py-3 text-sm text-ink-soft hover:text-ink hover:border-primary transition-colors disabled:opacity-50"
+                >
+                  <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
+                    <path
+                      d="M4 6.5a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-7Z"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      strokeLinejoin="round"
+                    />
+                    <circle cx="7.5" cy="9" r="1.25" stroke="currentColor" strokeWidth="1.4" />
+                    <path d="M4 12.5 8 9l2.5 2.5L14 8l2 2" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+                  </svg>
+                  {uploadingBanner ? 'Uploading…' : 'Add a cover photo'}
+                </button>
+              )}
+              <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-ink">
+                <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5 shrink-0 mt-0.5 text-ink-soft" aria-hidden="true">
+                  <circle cx="10" cy="10" r="7.25" stroke="currentColor" strokeWidth="1.4" />
+                  <path d="M10 9v4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                  <circle cx="10" cy="6.75" r="0.9" fill="currentColor" />
+                </svg>
+                Landscape photos work best — square or portrait shots will get cropped to fit.
+              </p>
+            </div>
+          )}
+          {bannerError && <p className="mt-1 text-xs text-owe">{bannerError}</p>}
         </div>
 
         <div>
