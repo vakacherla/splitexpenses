@@ -697,6 +697,24 @@ and #3 are now shipped (below); #4 remains, blocked on family review.
       non-members is row-scoped, every ledger table stays keyed to
       actual `group_members`, and "Join this trip" already existed on
       `CirclePage.jsx`.
+    - **Fixed, same day, found via live E2E testing** — a second door to
+      the same membership-sync bug: `attach_trip_to_circle` /
+      `admin_attach_group_to_circle` only ever update `groups.circle_id`,
+      never `group_members`, so migration 036's insert-trigger never
+      fired for them — a Trip's *existing* roster silently stayed out of
+      a Circle it just attached to. Migration 039 adds a matching
+      `after update of circle_id on groups` trigger. A full permission-
+      boundary pass (manager-vs-creator-vs-stranger, self-join RLS,
+      add-by-email gating) was run live via `auth.uid()` impersonation
+      through the service-role connection — all ten cases passed.
+    - **Added, same day** — "+ Create new circle…" inline in
+      `TripSettingsModal.jsx`'s circle dropdown, so attaching a Trip to a
+      brand-new Circle no longer means leaving Trip Settings, creating
+      the Circle from the Dashboard, and coming back. Surfaced as a CX
+      observation while testing the attach flow above; found and fixed a
+      real bug in the first pass (the inline create didn't insert the
+      creator into `circle_members`, so the immediate attach failed) —
+      verified working end-to-end before shipping.
   - ✅ **Fixed, same regression pass** — Circles and standalone Trips
     rendered back-to-back on the Dashboard with no visual break between
     them, so a Trip card could easily be mistaken for living inside the

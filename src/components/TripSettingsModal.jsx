@@ -42,6 +42,8 @@ export default function TripSettingsModal({
   const [selectedCircleId, setSelectedCircleId] = useState('')
   const [circleBusy, setCircleBusy] = useState(false)
   const [circleError, setCircleError] = useState('')
+  const [creatingNewCircle, setCreatingNewCircle] = useState(false)
+  const [newCircleName, setNewCircleName] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -109,6 +111,43 @@ export default function TripSettingsModal({
       return
     }
     setSelectedCircleId('')
+    onCircleChanged?.()
+  }
+
+  async function handleCreateAndAttachCircle() {
+    const trimmed = newCircleName.trim()
+    if (!trimmed) return
+    setCircleBusy(true)
+    setCircleError('')
+    const { data: newCircle, error: createError } = await supabase
+      .from('circles')
+      .insert({ name: trimmed, created_by: currentUserId })
+      .select()
+      .single()
+    if (createError) {
+      setCircleBusy(false)
+      setCircleError(createError.message)
+      return
+    }
+    const { error: memberError } = await supabase
+      .from('circle_members')
+      .insert({ circle_id: newCircle.id, user_id: currentUserId })
+    if (memberError) {
+      setCircleBusy(false)
+      setCircleError(memberError.message)
+      return
+    }
+    const { error: attachError } = await supabase.rpc('attach_trip_to_circle', {
+      target_group_id: group.id,
+      target_circle_id: newCircle.id,
+    })
+    setCircleBusy(false)
+    if (attachError) {
+      setCircleError(attachError.message)
+      return
+    }
+    setCreatingNewCircle(false)
+    setNewCircleName('')
     onCircleChanged?.()
   }
 
@@ -389,19 +428,60 @@ export default function TripSettingsModal({
                   {circleBusy ? 'Removing…' : 'Detach'}
                 </button>
               </div>
-            ) : myCircles && myCircles.length > 0 ? (
+            ) : creatingNewCircle ? (
+              <div className="flex items-center gap-2">
+                <input
+                  autoFocus
+                  value={newCircleName}
+                  onChange={(e) => setNewCircleName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleCreateAndAttachCircle()
+                    if (e.key === 'Escape') {
+                      setCreatingNewCircle(false)
+                      setNewCircleName('')
+                    }
+                  }}
+                  placeholder="Smith Family, College Friends…"
+                  className="flex-1 text-sm rounded-lg border border-line bg-paper px-3 py-1.5 text-ink focus:border-primary outline-none"
+                />
+                <button
+                  onClick={handleCreateAndAttachCircle}
+                  disabled={!newCircleName.trim() || circleBusy}
+                  className="text-xs font-medium text-primary hover:underline disabled:opacity-50 shrink-0"
+                >
+                  {circleBusy ? 'Creating…' : 'Create & attach'}
+                </button>
+                <button
+                  onClick={() => {
+                    setCreatingNewCircle(false)
+                    setNewCircleName('')
+                  }}
+                  className="text-xs text-ink-soft hover:text-ink shrink-0"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
               <div className="flex items-center gap-2">
                 <select
                   value={selectedCircleId}
-                  onChange={(e) => setSelectedCircleId(e.target.value)}
+                  onChange={(e) => {
+                    if (e.target.value === '__new__') {
+                      setCreatingNewCircle(true)
+                      setSelectedCircleId('')
+                      return
+                    }
+                    setSelectedCircleId(e.target.value)
+                  }}
                   className="flex-1 text-sm rounded-lg border border-line bg-paper px-3 py-1.5 text-ink focus:border-primary outline-none"
                 >
                   <option value="">Attach to a circle…</option>
-                  {myCircles.map((c) => (
+                  {(myCircles ?? []).map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
                   ))}
+                  <option value="__new__">+ Create new circle…</option>
                 </select>
                 <button
                   onClick={handleAttachCircle}
@@ -411,8 +491,6 @@ export default function TripSettingsModal({
                   {circleBusy ? 'Attaching…' : 'Attach'}
                 </button>
               </div>
-            ) : (
-              <p className="text-xs text-ink-soft">You're not in any circles yet — create or join one from your dashboard.</p>
             )}
             <p className="mt-1.5 text-xs text-ink-soft">
               Organizing this trip into a circle lets everyone in that circle see it and join — it doesn't change
