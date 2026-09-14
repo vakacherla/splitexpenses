@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabaseClient'
 import ThemeToggle from '../components/ThemeToggle'
 import LoadingScreen from '../components/LoadingScreen'
+import HelpLink from '../components/HelpLink'
 
 // Reached by following the link in a "reset your password" email. Supabase
 // exchanges the link's code for a session automatically (supabaseClient's
@@ -12,7 +13,7 @@ import LoadingScreen from '../components/LoadingScreen'
 // concluding the link itself was invalid or expired, rather than flashing
 // that message on every load.
 export default function ResetPassword() {
-  const { user, loading } = useAuth()
+  const { user, loading, clearPasswordRecovery } = useAuth()
   const [graceExpired, setGraceExpired] = useState(false)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -39,6 +40,7 @@ export default function ResetPassword() {
       setError(error.message)
       return
     }
+    clearPasswordRecovery()
     navigate('/dashboard', { replace: true })
   }
 
@@ -48,9 +50,7 @@ export default function ResetPassword() {
     return (
       <div className="min-h-dvh bg-paper flex items-center justify-center px-4 py-12 relative">
         <div className="absolute top-4 right-4 flex items-center gap-3">
-          <Link to="/help" className="text-sm text-ink-soft hover:text-ink">
-            Help
-          </Link>
+          <HelpLink to="faq" label="Help" />
           <ThemeToggle />
         </div>
         <div className="w-full max-w-sm text-center bg-paper-raised border border-line rounded-2xl p-8 shadow-raised">

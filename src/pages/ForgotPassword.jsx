@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import ThemeToggle from '../components/ThemeToggle'
+import HelpLink from '../components/HelpLink'
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')
@@ -28,9 +29,7 @@ export default function ForgotPassword() {
     return (
       <div className="min-h-dvh bg-paper flex items-center justify-center px-4 py-12 relative">
         <div className="absolute top-4 right-4 flex items-center gap-3">
-          <Link to="/help" className="text-sm text-ink-soft hover:text-ink">
-            Help
-          </Link>
+          <HelpLink to="faq" label="Help" />
           <ThemeToggle />
         </div>
         <div className="w-full max-w-sm text-center bg-paper-raised border border-line rounded-2xl p-8 shadow-raised">

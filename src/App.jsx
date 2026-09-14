@@ -1,6 +1,7 @@
-import { Routes, Route, Navigate, useParams } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import { useAuth } from './context/AuthContext'
+import { shouldForceResetPassword } from './lib/authRecovery'
 import ConfigGate from './components/ConfigGate'
 import ProtectedRoute from './components/ProtectedRoute'
 import AdminRoute from './components/AdminRoute'
@@ -47,10 +48,26 @@ function OldGroupLinkRedirect() {
   return <Navigate to={`/trips/${groupId}`} replace />
 }
 
+// Guards against a password-recovery session (from a "reset your password"
+// email link) landing anywhere but the reset-password form — e.g. if
+// Supabase's redirect fell back to the site root instead of /reset-password,
+// Root() would otherwise treat the fresh session like a normal login and
+// send the user straight into the dashboard without ever setting a new
+// password.
+function RecoveryGuard({ children }) {
+  const { passwordRecovery } = useAuth()
+  const location = useLocation()
+  if (shouldForceResetPassword(passwordRecovery, location.pathname)) {
+    return <Navigate to="/reset-password" replace />
+  }
+  return children
+}
+
 export default function App() {
   return (
     <ConfigGate>
       <AppShell>
+        <RecoveryGuard>
         <Routes>
           <Route path="/" element={<Root />} />
           <Route path="/login" element={<Login />} />
@@ -124,6 +141,7 @@ export default function App() {
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </RecoveryGuard>
       </AppShell>
     </ConfigGate>
   )

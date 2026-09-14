@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import { nextPasswordRecoveryState } from '../lib/authRecovery'
 
 const AuthContext = createContext(null)
 
@@ -7,12 +8,19 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(undefined) // undefined = loading, null = signed out
   const [profile, setProfile] = useState(null)
   const [profileError, setProfileError] = useState('')
+  // Set when Supabase reports a PASSWORD_RECOVERY auth event (the session
+  // created by clicking a "reset your password" email link). Kept separate
+  // from `session` so the app can force the user to the reset-password form
+  // instead of treating this like a normal sign-in and routing them into the
+  // dashboard with a session they never set a password for.
+  const [passwordRecovery, setPasswordRecovery] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null))
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession)
+      setPasswordRecovery((current) => nextPasswordRecoveryState(event, current))
     })
     return () => sub.subscription.unsubscribe()
   }, [])
@@ -61,6 +69,8 @@ export function AuthProvider({ children }) {
     profile,
     profileError,
     loading: session === undefined,
+    passwordRecovery,
+    clearPasswordRecovery: () => setPasswordRecovery(false),
     signOut: () => supabase.auth.signOut(),
     // Lets any page (the Profile page, after a save) pull the shared
     // profile — display name, avatar — back in sync without a reload.
