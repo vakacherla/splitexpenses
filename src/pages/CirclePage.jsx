@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import CurrencySelect from '../components/CurrencySelect'
 import CircleMembersPanel from '../components/CircleMembersPanel'
+import CircleSettingsModal from '../components/CircleSettingsModal'
 import LoadingScreen from '../components/LoadingScreen'
 import EmptyState from '../components/EmptyState'
 import CircleIcon from '../components/CircleIcon'
@@ -27,6 +28,7 @@ export default function CirclePage() {
   const [newTripCurrency, setNewTripCurrency] = useState('USD')
   const [creatingTrip, setCreatingTrip] = useState(false)
   const [joiningTripId, setJoiningTripId] = useState(null)
+  const [showSettings, setShowSettings] = useState(false)
 
   const load = useCallback(async () => {
     setError('')
@@ -34,7 +36,7 @@ export default function CirclePage() {
       supabase.from('circles').select('*').eq('id', circleId).single(),
       supabase
         .from('circle_members')
-        .select('user_id, profiles(display_name, email, avatar_path, payment_provider, payment_handle)')
+        .select('user_id, is_manager, profiles(display_name, email, avatar_path, payment_provider, payment_handle)')
         .eq('circle_id', circleId),
       supabase
         .from('groups')
@@ -53,7 +55,7 @@ export default function CirclePage() {
     if (membersRes.error) {
       setError(membersRes.error.message)
     } else {
-      setMembers(membersRes.data.map((row) => ({ user_id: row.user_id, ...row.profiles })))
+      setMembers(membersRes.data.map((row) => ({ user_id: row.user_id, is_manager: row.is_manager, ...row.profiles })))
     }
 
     if (tripsRes.error) {
@@ -123,6 +125,50 @@ export default function CirclePage() {
     load()
   }
 
+  async function handleToggleManager(targetUserId, makeManager) {
+    setError('')
+    const { error } = await supabase
+      .from('circle_members')
+      .update({ is_manager: makeManager })
+      .eq('circle_id', circleId)
+      .eq('user_id', targetUserId)
+    if (error) {
+      setError(error.message)
+      return
+    }
+    load()
+  }
+
+  async function handleAddByEmail(email) {
+    const { error } = await supabase.rpc('add_circle_member_by_email', {
+      target_circle_id: circleId,
+      target_email: email,
+    })
+    if (error) return error.message
+    load()
+    return null
+  }
+
+  async function handleRenameCircle(newName) {
+    setError('')
+    const { error } = await supabase.from('circles').update({ name: newName }).eq('id', circleId)
+    if (error) {
+      setError(error.message)
+      return
+    }
+    load()
+  }
+
+  async function handleArchiveCircle() {
+    setError('')
+    const { error } = await supabase.from('circles').update({ archived_at: new Date().toISOString() }).eq('id', circleId)
+    if (error) {
+      setError(error.message)
+      return
+    }
+    navigate('/dashboard')
+  }
+
   if (loading) return <LoadingScreen label="Loading circle…" />
 
   if (error && !circle) {
@@ -136,7 +182,9 @@ export default function CirclePage() {
     )
   }
 
+  const membersMap = Object.fromEntries((members ?? []).map((m) => [m.user_id, m]))
   const isOwner = circle.created_by === user.id
+  const canManage = isOwner || Boolean(membersMap[user.id]?.is_manager)
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
@@ -153,6 +201,28 @@ export default function CirclePage() {
           </div>
           <h1 className="font-display text-2xl sm:text-3xl text-ink">{circle.name}</h1>
           <HelpLink to="circles" />
+          {canManage && (
+            <button
+              onClick={() => setShowSettings(true)}
+              aria-label="Circle settings"
+              title="Circle settings"
+              className="h-8 w-8 shrink-0 flex items-center justify-center rounded-full border border-line text-ink-soft hover:text-ink hover:border-primary transition-colors"
+            >
+              <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
+                <path
+                  d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                />
+                <path
+                  d="M10 3.5v1.6M10 14.9v1.6M16.5 10h-1.6M5.1 10H3.5M14.6 5.4l-1.13 1.13M6.53 13.47 5.4 14.6M14.6 14.6l-1.13-1.13M6.53 6.53 5.4 5.4"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          )}
         </div>
         <p className="text-sm text-ink-soft mt-1.5">
           A circle — join once, then create or join any Trip inside it without a new invite.
@@ -250,7 +320,20 @@ export default function CirclePage() {
           members={members}
           currentUserId={user.id}
           isOwner={isOwner}
+          canManage={canManage}
           onRemoveMember={handleRemoveMember}
+          onToggleManager={handleToggleManager}
+          onAddByEmail={handleAddByEmail}
+        />
+      )}
+
+      {showSettings && (
+        <CircleSettingsModal
+          circle={circle}
+          canManage={canManage}
+          onRename={handleRenameCircle}
+          onArchiveCircle={handleArchiveCircle}
+          onClose={() => setShowSettings(false)}
         />
       )}
     </div>

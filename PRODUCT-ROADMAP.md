@@ -660,14 +660,43 @@ and #3 are now shipped (below); #4 remains, blocked on family review.
     `logActivity()` summary format; deliberately does **not** attempt
     edits/deletions/removals, since nothing records *who* did those
     historically and a wrong guess is worse than a gap.
-  - **Not yet built, queued for tomorrow** — an admin/super-admin way to
-    add a specific *user* directly into a Circle (the Circle-level
-    equivalent of the existing "Manage trips" → "Add to a trip…" control
-    on a user's row in Admin → Users). Today a super admin can attach an
-    entire existing *trip* to a circle, but there's no
-    `admin_add_user_to_circle`-style RPC or UI for adding one person to
-    a Circle outside of them using its invite code themselves. Surfaced
-    directly while regression-testing the rename above.
+  - ✅ **Shipped, 2026-09-13 — Circle Settings + membership sync.** Two
+    real gaps this closes: (1) someone added to a Trip *after* it joined
+    a Circle — by invite code, direct member add, or the Trip's own
+    self-join — never landed in that Circle's `circle_members`, so they
+    couldn't see or join the Circle's other Trips (the "join once"
+    promise silently broke the moment membership grew organically
+    instead of via `create_trip_in_circle`'s one-time roster copy); (2)
+    the "not yet built" item just above — a self-service way to add
+    someone to a Circle directly, without them using the invite code.
+    - **Backfill + standing trigger** (migration 036): one-time catch-up
+      insert for every existing `trip_members` row missing its parent
+      Circle, plus an `after insert on group_members` trigger so it
+      never drifts again. Deliberately one-way — a `group_members`
+      delete never removes someone from the Circle, and Circle
+      membership never cascades into every sibling Trip.
+    - **Appointed Circle managers** (migration 037) — Circles had no
+      manager concept in v1 (creator-only). `is_circle_manager` now also
+      recognizes an appointed `circle_members.is_manager`, mirroring
+      `013_group_managers.sql` exactly (creator-only appointment, a
+      manager can remove a regular member but not another manager or
+      the creator).
+    - **`add_circle_member_by_email`** (migration 038) — self-service for
+      a Circle's creator/manager, not open search (deliberately, this
+      app is still pre-revenue/friends-testing). Modeled on
+      `admin_add_user_to_group`'s shape but gated on `is_circle_manager`
+      instead of super-admin.
+    - **New `CircleSettingsModal.jsx`** (rename, danger-zone
+      archive/delete — trimmed copy of `TripSettingsModal.jsx`'s
+      pattern) plus a manager toggle and "Add by email" form added to
+      `CircleMembersPanel.jsx`, wired up from a new gear icon on
+      `CirclePage.jsx` next to the Circle name.
+    - Confirmed via direct read of the existing code (not assumed) that
+      the RLS split this roadmap item originally also asked for was
+      already fully shipped in migration 031: Trip visibility for
+      non-members is row-scoped, every ledger table stays keyed to
+      actual `group_members`, and "Join this trip" already existed on
+      `CirclePage.jsx`.
   - ✅ **Fixed, same regression pass** — Circles and standalone Trips
     rendered back-to-back on the Dashboard with no visual break between
     them, so a Trip card could easily be mistaken for living inside the
