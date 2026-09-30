@@ -93,6 +93,17 @@ export function parseCSV(text) {
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
+// The "isn't a member" error reads the same whether someone typed a typo'd
+// email or, very plausibly, just their display name — the column header
+// says "(email)" but that's easy to miss in a spreadsheet. Naming the real
+// mistake (name vs. email) up front saves a re-upload to find out.
+function memberLookupError(value, context) {
+  const looksLikeEmail = value.includes('@')
+  return looksLikeEmail
+    ? `"${value}" isn't a member of this group`
+    : `"${value}" isn't a member of this group — ${context} needs their email address, not their name (e.g. name@example.com)`
+}
+
 function parseSplitBetween(raw) {
   // "email: amount; email2: amount2" — same "Name: amount" punctuation
   // csvExport.js uses for "Split between", with email instead of name.
@@ -159,7 +170,7 @@ export function validateImportRows(rows, { members, categories, currencies }) {
     }
     const payer = emailToMember.get(payerEmail.toLowerCase())
     if (!payer) {
-      return { rowNumber, raw: cols, error: `"${payerEmail}" isn't a member of this group` }
+      return { rowNumber, raw: cols, error: memberLookupError(payerEmail, '"Paid by"') }
     }
     const amount = Number(amountText)
     if (!Number.isFinite(amount) || amount <= 0) {
@@ -180,7 +191,7 @@ export function validateImportRows(rows, { members, categories, currencies }) {
     for (const part of splitParts) {
       const member = emailToMember.get(part.email.toLowerCase())
       if (!member) {
-        return { rowNumber, raw: cols, error: `"${part.email}" in the split isn't a member of this group` }
+        return { rowNumber, raw: cols, error: memberLookupError(part.email, '"Split between"') }
       }
       const shareAmount = Number(part.amountText)
       if (!Number.isFinite(shareAmount) || shareAmount <= 0) {
