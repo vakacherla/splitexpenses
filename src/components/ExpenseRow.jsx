@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { formatMoney } from '../lib/fx'
 import { CATEGORY_COLORS } from '../lib/categories'
+import { useOnlineStatus } from '../lib/useOnlineStatus'
 import CategoryIcon from './CategoryIcon'
 
 const SPLIT_LABELS = {
@@ -23,6 +24,7 @@ export default function ExpenseRow({
   onDuplicate,
   onAttached,
 }) {
+  const isOffline = !useOnlineStatus()
   const [open, setOpen] = useState(false)
   const [receiptUrl, setReceiptUrl] = useState(null)
   const [attaching, setAttaching] = useState(false)
@@ -49,24 +51,43 @@ export default function ExpenseRow({
   async function handleAttachReceipt(e) {
     const file = e.target.files?.[0]
     if (!file) return
+    // OFF-13: this was a dead click offline — the upload has no offline
+    // queue path (unlike add/edit/delete), so it needs its own explicit
+    // check rather than silently attempting a doomed upload.
+    if (isOffline) {
+      if (attachInputRef.current) attachInputRef.current.value = ''
+      setAttachError("You're offline — attach a receipt once you're back online.")
+      return
+    }
     setAttaching(true)
     setAttachError('')
-    const ext = file.name.split('.').pop() || 'jpg'
-    const path = `${expense.group_id}/${expense.id}.${ext}`
-    const { error: uploadError } = await supabase.storage.from('receipts').upload(path, file, { upsert: true })
-    if (uploadError) {
+    try {
+      const ext = file.name.split('.').pop() || 'jpg'
+      const path = `${expense.group_id}/${expense.id}.${ext}`
+      const { error: uploadError } = await supabase.storage.from('receipts').upload(path, file, { upsert: true })
+      if (uploadError) {
+        setAttachError(uploadError.message)
+        return
+      }
+      const { error: updateError } = await supabase
+        .from('expenses')
+        .update({ receipt_path: path })
+        .eq('id', expense.id)
+      if (updateError) {
+        setAttachError(updateError.message)
+        return
+      }
+      if (attachInputRef.current) attachInputRef.current.value = ''
+      onAttached?.()
+    } catch (err) {
+      // Belt-and-suspenders: a real network drop mid-upload (rather than
+      // being offline before it starts) can reject instead of resolving
+      // with {error}, which used to leave the spinner stuck forever with
+      // no feedback — the same "dead click" symptom OFF-13 reported.
+      setAttachError(err.message || "Couldn't attach that — check your connection and try again.")
+    } finally {
       setAttaching(false)
-      setAttachError(uploadError.message)
-      return
     }
-    const { error: updateError } = await supabase.from('expenses').update({ receipt_path: path }).eq('id', expense.id)
-    setAttaching(false)
-    if (updateError) {
-      setAttachError(updateError.message)
-      return
-    }
-    if (attachInputRef.current) attachInputRef.current.value = ''
-    onAttached?.()
   }
 
   return (

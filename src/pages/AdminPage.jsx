@@ -93,6 +93,7 @@ export default function AdminPage() {
   const [reports, setReports] = useState(null)
   const [trash, setTrash] = useState(null)
   const [users, setUsers] = useState(null)
+  const [usersFilter, setUsersFilter] = useState('all') // 'all' | 'active' — AT-04
   const [groups, setGroups] = useState(null)
   const [requests, setRequests] = useState(null)
   const [settlementsList, setSettlementsList] = useState(null)
@@ -185,12 +186,14 @@ export default function AdminPage() {
       setError(failures.join('; '))
       return
     }
+    const activeUserIds = new Set((splitsRes.data ?? []).map((s) => s.user_id))
     setOverview({
       groups: groupsCount.count ?? 0,
       users: usersCount.count ?? 0,
       expenses: expensesCount.count ?? 0,
       settlements: settlementsCount.count ?? 0,
-      activeUsers: new Set((splitsRes.data ?? []).map((s) => s.user_id)).size,
+      activeUsers: activeUserIds.size,
+      activeUserIds,
     })
   }
 
@@ -568,7 +571,10 @@ export default function AdminPage() {
         {TABS.map((t) => (
           <button
             key={t.id}
-            onClick={() => setTab(t.id)}
+            onClick={() => {
+              setTab(t.id)
+              if (t.id === 'users') setUsersFilter('all')
+            }}
             className={`px-3.5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
               tab === t.id ? 'border-primary text-ink' : 'border-transparent text-ink-soft hover:text-ink'
             }`}
@@ -587,14 +593,19 @@ export default function AdminPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
               { label: 'Trips', value: overview.groups, tab: 'groups' },
-              { label: 'Users', value: overview.users, tab: 'users' },
-              { label: 'Active users', value: overview.activeUsers, tab: 'users' },
+              { label: 'Users', value: overview.users, tab: 'users', usersFilter: 'all' },
+              { label: 'Active users', value: overview.activeUsers, tab: 'users', usersFilter: 'active' },
               { label: 'Expenses logged', value: overview.expenses, tab: 'reports' },
               { label: 'Settlements recorded', value: overview.settlements, tab: 'settlements' },
             ].map((stat) => (
               <button
                 key={stat.label}
-                onClick={() => setTab(stat.tab)}
+                onClick={() => {
+                  setTab(stat.tab)
+                  // AT-04: this tile used to land on the Users tab with no
+                  // filter applied at all — same list either way.
+                  if (stat.usersFilter) setUsersFilter(stat.usersFilter)
+                }}
                 className="text-left rounded-xl border border-line bg-paper-raised px-4 py-4 hover:border-primary transition-colors"
               >
                 <div
@@ -614,8 +625,20 @@ export default function AdminPage() {
         (users === null ? (
           <SkeletonRows count={5} />
         ) : (
-          <ul className="divide-y divide-line border-y border-line">
-            {users.map((u) => (
+          <>
+            {usersFilter === 'active' && (
+              <p className="mb-3 text-sm text-ink-soft">
+                Showing active users only.{' '}
+                <button onClick={() => setUsersFilter('all')} className="text-primary hover:underline">
+                  Show everyone
+                </button>
+              </p>
+            )}
+            <ul className="divide-y divide-line border-y border-line">
+            {(usersFilter === 'active' && overview
+              ? users.filter((u) => overview.activeUserIds.has(u.id))
+              : users
+            ).map((u) => (
               <li key={u.id} className="py-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
@@ -768,7 +791,8 @@ export default function AdminPage() {
                 )}
               </li>
             ))}
-          </ul>
+            </ul>
+          </>
         ))}
 
       {tab === 'groups' &&

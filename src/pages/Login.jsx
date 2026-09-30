@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
+import { useAuth } from '../context/AuthContext'
 import ThemeToggle from '../components/ThemeToggle'
 
 export default function Login() {
@@ -10,6 +11,13 @@ export default function Login() {
   const [busy, setBusy] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
+  const { user } = useAuth()
+
+  // AUTH-19: visiting /login while already signed in used to render a
+  // second, pointless login form instead of taking the user where they
+  // already are — this mirrors the same "already have a session" redirect
+  // Root() does for "/".
+  if (user) return <Navigate to="/dashboard" replace />
 
   async function handleSubmit(e) {
     e.preventDefault()

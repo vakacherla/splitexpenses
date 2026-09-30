@@ -47,6 +47,7 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
   const [currency, setCurrency] = useState(seed?.currency ?? group.home_currency)
   const [paidBy, setPaidBy] = useState(seed?.paid_by ?? currentUserId)
   const [date, setDate] = useState(editingExpense?.expense_date ?? (() => new Date().toISOString().slice(0, 10)))
+  const isFutureDate = date > new Date().toISOString().slice(0, 10)
   const [note, setNote] = useState(editingExpense?.note ?? '')
   const [participantIds, setParticipantIds] = useState(() => {
     if (seed) return seed.expense_splits.map((s) => s.user_id)
@@ -133,13 +134,21 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
   const itemizedTotal = Math.round((itemsTotal + taxNum + tipNum) * 100) / 100
 
   const parsedAmount = splitMode === 'itemized' ? itemizedTotal : parseFloat(amount) || 0
-  const homeEquivalent = rate ? parsedAmount * rate : null
+  // EXP-24: a huge typed amount (e.g. 999999999.99) froze the page — every
+  // split-preview calc below re-runs on each keystroke, so an absurd value
+  // was getting fed through all of them live, on top of formatMoney's
+  // Intl.NumberFormat call for the FX conversion banner. Rather than chase
+  // exactly which one choked the renderer, short-circuit all of them the
+  // moment the amount is out of bounds and show the error immediately
+  // instead of waiting for submit to reject it.
+  const amountTooLarge = isAmountTooLarge(parsedAmount)
+  const homeEquivalent = rate && !amountTooLarge ? parsedAmount * rate : null
 
   const equalShares = useMemo(() => {
-    if (participantIds.length === 0) return {}
+    if (participantIds.length === 0 || amountTooLarge) return {}
     const shares = splitEvenly(parsedAmount, participantIds.length)
     return Object.fromEntries(participantIds.map((id, i) => [id, shares[i]]))
-  }, [parsedAmount, participantIds])
+  }, [parsedAmount, participantIds, amountTooLarge])
 
   const percentageTotal = participantIds.reduce((sum, id) => sum + (parseFloat(percentageShares[id]) || 0), 0)
   const percentageMismatch = splitMode === 'percentage' && Math.abs(percentageTotal - 100) > 0.5
@@ -151,25 +160,29 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
     })
 
   const percentageShareAmounts = useMemo(() => {
-    if (participantIds.length === 0) return {}
+    if (participantIds.length === 0 || amountTooLarge) return {}
     const pcts = participantIds.map((id) => parseFloat(percentageShares[id]) || 0)
     const amounts = splitByPercentages(parsedAmount, pcts)
     return Object.fromEntries(participantIds.map((id, i) => [id, amounts[i]]))
-  }, [parsedAmount, participantIds, percentageShares])
+  }, [parsedAmount, participantIds, percentageShares, amountTooLarge])
 
   const exactTotal = participantIds.reduce((sum, id) => sum + (parseFloat(exactShares[id]) || 0), 0)
-  const exactMismatch = splitMode === 'exact' && Math.abs(exactTotal - parsedAmount) > 0.01
+  // EXP-07: comparing with `> 0.01` let a mismatch of exactly one cent
+  // (e.g. $49.99 vs $50.00) through, since 0.01 is not > 0.01. Round both
+  // sides to whole cents and compare those instead — sidesteps float
+  // rounding entirely rather than picking a smaller-but-still-fuzzy epsilon.
+  const exactMismatch = splitMode === 'exact' && Math.round(exactTotal * 100) !== Math.round(parsedAmount * 100)
 
   // Blank/invalid defaults to 1 share, not 0 — a share of 0 is meaningless
   // (that's what unchecking someone from the split is for), so an
   // untouched input should still contribute a normal, equal-weighted share
   // rather than silently dropping out of the split.
   const shareAmounts = useMemo(() => {
-    if (participantIds.length === 0) return {}
+    if (participantIds.length === 0 || amountTooLarge) return {}
     const units = participantIds.map((id) => parseFloat(shareUnits[id]) || 1)
     const amounts = splitByShares(parsedAmount, units)
     return Object.fromEntries(participantIds.map((id, i) => [id, amounts[i]]))
-  }, [parsedAmount, participantIds, shareUnits])
+  }, [parsedAmount, participantIds, shareUnits, amountTooLarge])
   // Checks the actual computed output rather than re-deriving the blank
   // -defaults-to-1 fallback separately — that keeps this correct by
   // construction instead of needing to stay in sync with shareAmounts
@@ -182,11 +195,11 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
   // Blank/invalid defaults to 0 — "no adjustment typed" should mean "this
   // person stays at the equal baseline," not an arbitrary fallback.
   const adjustmentAmounts = useMemo(() => {
-    if (participantIds.length === 0) return {}
+    if (participantIds.length === 0 || amountTooLarge) return {}
     const deltas = participantIds.map((id) => parseFloat(adjustments[id]) || 0)
     const amounts = splitByAdjustments(parsedAmount, deltas)
     return Object.fromEntries(participantIds.map((id, i) => [id, amounts[i]]))
-  }, [parsedAmount, participantIds, adjustments])
+  }, [parsedAmount, participantIds, adjustments, amountTooLarge])
   const adjustmentTotal = participantIds.reduce((sum, id) => sum + (parseFloat(adjustments[id]) || 0), 0)
   // Warns rather than blocks: a negative baseline is unusual but not
   // invalid — e.g. one person's adjustment legitimately covering more than
@@ -356,7 +369,18 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
         : []
       setParticipantIds(parsedParticipants.length > 0 ? parsedParticipants : memberIds)
     } catch (err) {
-      setParseError(err.message || "Couldn't parse that — you can still fill this in by hand.")
+      // SENT-08: a request that never reaches the server (offline, or the
+      // connectivity drops mid-typing before `isOffline` catches up — e.g.
+      // some offline-simulation methods don't fire the browser's online/
+      // offline events) surfaces as a generic network failure, not an AI
+      // response — "couldn't parse that" wrongly implies the text itself
+      // was the problem, when it was never sent anywhere.
+      const looksOffline = isOffline || /fetch|network/i.test(err.message ?? '')
+      setParseError(
+        looksOffline
+          ? "You're offline — this needs a connection. Fill it in by hand for now, or try again once you're back online."
+          : err.message || "Couldn't parse that — you can still fill this in by hand."
+      )
     } finally {
       setParsingText(false)
     }
@@ -371,26 +395,36 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
   async function handleAttachReceiptInEdit(e) {
     const file = e.target.files?.[0]
     if (!file) return
+    // OFF-13: same offline guard as ExpenseRow's inline attach — the
+    // upload has no offline queue path, so it needs its own explicit check.
+    if (isOffline) {
+      setAttachReceiptError("You're offline — attach a receipt once you're back online.")
+      return
+    }
     setAttachingReceipt(true)
     setAttachReceiptError('')
-    const ext = file.name.split('.').pop() || 'jpg'
-    const path = `${group.id}/${editingExpense.id}.${ext}`
-    const { error: uploadError } = await supabase.storage.from('receipts').upload(path, file, { upsert: true })
-    if (uploadError) {
+    try {
+      const ext = file.name.split('.').pop() || 'jpg'
+      const path = `${group.id}/${editingExpense.id}.${ext}`
+      const { error: uploadError } = await supabase.storage.from('receipts').upload(path, file, { upsert: true })
+      if (uploadError) {
+        setAttachReceiptError(uploadError.message)
+        return
+      }
+      const { error: updateError } = await supabase
+        .from('expenses')
+        .update({ receipt_path: path })
+        .eq('id', editingExpense.id)
+      if (updateError) {
+        setAttachReceiptError(updateError.message)
+        return
+      }
+      setEditReceiptPath(path)
+    } catch (err) {
+      setAttachReceiptError(err.message || "Couldn't attach that — check your connection and try again.")
+    } finally {
       setAttachingReceipt(false)
-      setAttachReceiptError(uploadError.message)
-      return
     }
-    const { error: updateError } = await supabase
-      .from('expenses')
-      .update({ receipt_path: path })
-      .eq('id', editingExpense.id)
-    setAttachingReceipt(false)
-    if (updateError) {
-      setAttachReceiptError(updateError.message)
-      return
-    }
-    setEditReceiptPath(path)
   }
 
   async function handleSubmit(e) {
@@ -840,6 +874,9 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
                   className="num w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-ink text-lg focus:border-primary outline-none"
                 />
               )}
+              {amountTooLarge && (
+                <p className="text-xs text-owe mt-1">Amount can't be more than {MAX_AMOUNT.toLocaleString()}.</p>
+              )}
             </div>
             <div>
               <label className="block text-sm text-ink-soft mb-1.5">Currency</label>
@@ -903,6 +940,10 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
                 max={MAX_TRIP_DATE}
                 className="rounded-lg border border-line bg-paper px-3.5 py-2.5 text-ink focus:border-primary outline-none"
               />
+              {/* EXP-29: warn rather than block — a few days ahead is a real
+                  case (booked in advance, entered from a later timezone),
+                  just unusual enough to be worth a nudge if it's a typo. */}
+              {isFutureDate && <p className="mt-1 text-xs text-owe">This date is in the future.</p>}
             </div>
           </div>
 

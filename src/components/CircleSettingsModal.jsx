@@ -26,6 +26,14 @@ export default function CircleSettingsModal({ circle, canManage, onRename, onArc
   async function handleBannerChange(e) {
     const file = e.target.files?.[0]
     if (!file) return
+    // TRIP-18: accept="image/*" is just a picker hint — a PDF chosen via
+    // "All Files" sailed straight through to storage and rendered as a
+    // broken image. Check the real MIME type before ever uploading.
+    if (!file.type.startsWith('image/')) {
+      e.target.value = ''
+      setBannerError('Please choose an image file.')
+      return
+    }
     setUploadingBanner(true)
     setBannerError('')
     const ext = file.name.split('.').pop() || 'jpg'

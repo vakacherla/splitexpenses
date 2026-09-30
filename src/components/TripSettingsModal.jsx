@@ -167,10 +167,16 @@ export default function TripSettingsModal({
     if (!confirm('Undo this import? Every expense it created will be removed from the ledger.')) return
     setUndoingBatchId(batchId)
     setUndoError('')
-    const { error: expenseError } = await supabase
+    // .select() matters here: if RLS blocks the update (e.g. a manager
+    // undoing an import they didn't create themselves), Postgres/PostgREST
+    // matches zero rows and returns no error at all, so without it a
+    // permission failure looks identical to success and silently no-ops —
+    // same reasoning as the expense/settlement delete handlers.
+    const { data: undoneExpenses, error: expenseError } = await supabase
       .from('expenses')
       .update({ deleted_at: new Date().toISOString() })
       .eq('import_batch_id', batchId)
+      .select('id')
     const { data, error: batchError } = await supabase
       .from('import_batches')
       .update({ undone_at: new Date().toISOString() })
@@ -180,6 +186,10 @@ export default function TripSettingsModal({
     setUndoingBatchId(null)
     if (expenseError || batchError) {
       setUndoError((expenseError ?? batchError).message)
+      return
+    }
+    if (!undoneExpenses || undoneExpenses.length === 0) {
+      setUndoError("You don't have permission to undo this import.")
       return
     }
     setImportBatches((prev) => prev.map((b) => (b.id === batchId ? { ...b, undone_at: data?.undone_at ?? new Date().toISOString() } : b)))
@@ -202,6 +212,14 @@ export default function TripSettingsModal({
   async function handleBannerChange(e) {
     const file = e.target.files?.[0]
     if (!file) return
+    // TRIP-18: accept="image/*" is just a picker hint — a PDF chosen via
+    // "All Files" sailed straight through to storage and rendered as a
+    // broken image. Check the real MIME type before ever uploading.
+    if (!file.type.startsWith('image/')) {
+      e.target.value = ''
+      setBannerError('Please choose an image file.')
+      return
+    }
     setUploadingBanner(true)
     setBannerError('')
     const ext = file.name.split('.').pop() || 'jpg'

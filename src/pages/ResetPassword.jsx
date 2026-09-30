@@ -13,7 +13,7 @@ import HelpLink from '../components/HelpLink'
 // concluding the link itself was invalid or expired, rather than flashing
 // that message on every load.
 export default function ResetPassword() {
-  const { user, loading, clearPasswordRecovery } = useAuth()
+  const { loading, passwordRecovery, clearPasswordRecovery } = useAuth()
   const [graceExpired, setGraceExpired] = useState(false)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -44,9 +44,15 @@ export default function ResetPassword() {
     navigate('/dashboard', { replace: true })
   }
 
-  if (loading || (!user && !graceExpired)) return <LoadingScreen />
+  if (loading || (!passwordRecovery && !graceExpired)) return <LoadingScreen />
 
-  if (!user) {
+  // AUTH-16: checking `user` alone let an ordinary signed-in session (from
+  // another tab, say) render a submittable password form on a direct visit
+  // to /reset-password with no recovery link at all — `user` is truthy for
+  // any session, recovery or not. `passwordRecovery` is the flag AuthContext
+  // sets specifically from a PASSWORD_RECOVERY auth event, so it's the one
+  // that actually answers "did a real recovery link bring them here."
+  if (!passwordRecovery) {
     return (
       <div className="min-h-dvh bg-paper flex items-center justify-center px-4 py-12 relative">
         <div className="absolute top-4 right-4 flex items-center gap-3">
