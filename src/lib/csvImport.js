@@ -27,7 +27,17 @@ export const IMPORT_HEADER = [
 
 export function buildImportTemplate() {
   const example = [
-    '2026-01-15',
+    // The leading `'` isn't part of the date — Excel and Google Sheets
+    // both auto-detect a bare "2026-01-15"-looking cell as a real Date
+    // and silently redisplay it in the system's locale format (e.g.
+    // 1/15/2026 or 15-01-2026) the moment the file is opened, even
+    // though the underlying CSV text was already correct. A user who
+    // then types their own rows to match what they *see* ends up
+    // exporting a format import rejects. A leading apostrophe is the
+    // standard CSV convention both apps honor to force the cell to stay
+    // plain text — it's stripped below in case it survives back into
+    // the uploaded file.
+    "'2026-01-15",
     'Dinner at the ghat',
     'Food',
     'a@example.com',
@@ -151,9 +161,13 @@ export function validateImportRows(rows, { members, categories, currencies }) {
       return { rowNumber, raw: cols, error: `Expected ${IMPORT_HEADER.length} columns, found ${cols.length}` }
     }
 
-    const [dateText, description, category, payerEmail, amountText, currency, splitText, note] = cols.map((c) =>
+    const [dateTextRaw, description, category, payerEmail, amountText, currency, splitText, note] = cols.map((c) =>
       c.trim()
     )
+    // Strip the text-forcing apostrophe the template seeds (see
+    // buildImportTemplate) in case it survived a round trip through a
+    // spreadsheet app instead of being hidden by it.
+    const dateText = dateTextRaw.replace(/^'/, '')
 
     if (!DATE_RE.test(dateText) || Number.isNaN(new Date(dateText).getTime())) {
       return { rowNumber, raw: cols, error: `Invalid date "${dateText}" — expected YYYY-MM-DD` }

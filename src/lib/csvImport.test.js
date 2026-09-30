@@ -57,6 +57,22 @@ describe('buildImportTemplate', () => {
     expect(parsed[0]).toEqual(IMPORT_HEADER)
     expect(parsed.length).toBe(2)
   })
+
+  // Regression test for the Excel/Sheets date-reformatting trap: those
+  // apps auto-detect a bare date-looking cell and redisplay it in the
+  // system locale, silently corrupting the example the moment a user
+  // opens the downloaded file — the raw CSV text alone isn't enough
+  // proof, the *parsed* example row has to actually validate clean.
+  it('example row parses and validates with no errors', () => {
+    const parsed = parseCSV(buildImportTemplate())
+    const result = validateImportRows(parsed, {
+      members: MEMBERS,
+      categories: CATEGORIES,
+      currencies: CURRENCIES,
+    })
+    expect(result.hasErrors).toBe(false)
+    expect(result.rows[0].expense_date).toBe('2026-01-15')
+  })
 })
 
 function validRow() {
