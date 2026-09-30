@@ -263,9 +263,17 @@ export default function TripView() {
       enqueue({ type: 'settlement.delete', entityId: id, groupId: group.id, payload: { actorName, summary } })
       return
     }
-    const { error } = await supabase.from('settlements').delete().eq('id', id)
+    // .select() matters here: if RLS blocks the delete, Postgres/PostgREST
+    // matches zero rows and returns no error at all, so without it a
+    // permission failure looks identical to success and silently no-ops —
+    // same reasoning as the expense-delete handler above.
+    const { data, error } = await supabase.from('settlements').delete().eq('id', id).select('id')
     if (error) {
       setError(error.message)
+      return
+    }
+    if (!data || data.length === 0) {
+      setError("You don't have permission to undo this payment.")
       return
     }
     logActivity({ groupId: group.id, actorId: user.id, actorName, eventType: 'settlement_deleted', summary, entityId: id })

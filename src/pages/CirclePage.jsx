@@ -47,7 +47,11 @@ export default function CirclePage() {
     ])
 
     if (circleRes.error) {
-      setError(circleRes.error.message)
+      // Never surface the raw Postgres error here — a malformed id in
+      // the URL (bad UUID syntax) and a nonexistent/not-a-member id
+      // (RLS just hides the row, same as "not found") are both real
+      // ways a visitor lands here, and neither should show DB internals.
+      setError("This circle doesn't exist, or you don't have access to it.")
       setLoading(false)
       return
     }
