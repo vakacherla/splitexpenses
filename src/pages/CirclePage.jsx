@@ -11,6 +11,7 @@ import CircleIcon from '../components/CircleIcon'
 import HelpLink from '../components/HelpLink'
 import TripBanner from '../components/TripBanner'
 import { accentFor } from '../components/TripIcon'
+import { friendlyError } from '../lib/errors'
 
 export default function CirclePage() {
   const { circleId } = useParams()
@@ -57,14 +58,22 @@ export default function CirclePage() {
     }
     setCircle(circleRes.data)
 
+    // Each of these failing independently used to fail silently, or leak a
+    // raw Postgres error straight to the screen — same fix as TripView's
+    // load() for the equivalent members/expenses/settlements failures.
+    const failures = [
+      membersRes.error && `members (${friendlyError(membersRes.error)})`,
+      tripsRes.error && `trips (${friendlyError(tripsRes.error)})`,
+    ].filter(Boolean)
+    setError(failures.length > 0 ? `Couldn't load: ${failures.join(', ')}` : '')
+
     if (membersRes.error) {
-      setError(membersRes.error.message)
+      setMembers([])
     } else {
       setMembers(membersRes.data.map((row) => ({ user_id: row.user_id, is_manager: row.is_manager, ...row.profiles })))
     }
 
     if (tripsRes.error) {
-      setError(tripsRes.error.message)
       setTrips([])
     } else {
       setTrips(tripsRes.data)
@@ -99,7 +108,7 @@ export default function CirclePage() {
     })
     setCreatingTrip(false)
     if (error) {
-      setError(error.message)
+      setError(friendlyError(error))
       return
     }
     navigate(`/trips/${data.id}`)
@@ -111,7 +120,7 @@ export default function CirclePage() {
     const { error } = await supabase.from('group_members').insert({ group_id: tripId, user_id: user.id })
     setJoiningTripId(null)
     if (error) {
-      setError(error.message)
+      setError(friendlyError(error))
       return
     }
     navigate(`/trips/${tripId}`)
@@ -124,7 +133,7 @@ export default function CirclePage() {
     setError('')
     const { error } = await supabase.from('circle_members').delete().eq('circle_id', circleId).eq('user_id', targetUserId)
     if (error) {
-      setError(error.message)
+      setError(friendlyError(error))
       return
     }
     load()
@@ -138,7 +147,7 @@ export default function CirclePage() {
       .eq('circle_id', circleId)
       .eq('user_id', targetUserId)
     if (error) {
-      setError(error.message)
+      setError(friendlyError(error))
       return
     }
     load()
@@ -149,7 +158,7 @@ export default function CirclePage() {
       target_circle_id: circleId,
       target_email: email,
     })
-    if (error) return error.message
+    if (error) return friendlyError(error)
     load()
     return null
   }
@@ -158,7 +167,7 @@ export default function CirclePage() {
     setError('')
     const { error } = await supabase.from('circles').update({ name: newName }).eq('id', circleId)
     if (error) {
-      setError(error.message)
+      setError(friendlyError(error))
       return
     }
     load()
@@ -168,7 +177,7 @@ export default function CirclePage() {
     setError('')
     const { error } = await supabase.from('circles').update({ archived_at: new Date().toISOString() }).eq('id', circleId)
     if (error) {
-      setError(error.message)
+      setError(friendlyError(error))
       return
     }
     navigate('/dashboard')
