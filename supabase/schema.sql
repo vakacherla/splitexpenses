@@ -413,6 +413,7 @@ create policy "profiles: update own" on public.profiles
 create policy "groups: members can view" on public.groups
   for select using (
     (archived_at is null and (public.is_group_member(id) or created_by = auth.uid()))
+    or public.is_group_manager(id)
     or public.is_platform_admin()
   );
 

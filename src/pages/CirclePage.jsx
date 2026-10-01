@@ -42,7 +42,7 @@ export default function CirclePage() {
         .eq('circle_id', circleId),
       supabase
         .from('groups')
-        .select('id, name, home_currency, created_at')
+        .select('id, name, home_currency, created_at, archived_at')
         .eq('circle_id', circleId)
         .order('created_at', { ascending: false }),
     ])
@@ -76,8 +76,15 @@ export default function CirclePage() {
     if (tripsRes.error) {
       setTrips([])
     } else {
-      setTrips(tripsRes.data)
-      const tripIds = tripsRes.data.map((t) => t.id)
+      // Same defensive client-side filter Dashboard.jsx's own trip list
+      // already uses, for the same reason: migration 044 lets a trip's
+      // own creator/manager still see its `groups` row via RLS once it's
+      // archived (so the archive action itself can succeed), which would
+      // otherwise leak that one archived trip back into this list for
+      // whoever manages it, with no way to tell it's not an active trip.
+      const activeTrips = tripsRes.data.filter((t) => !t.archived_at)
+      setTrips(activeTrips)
+      const tripIds = activeTrips.map((t) => t.id)
       if (tripIds.length > 0) {
         const { data: myMemberships } = await supabase
           .from('group_members')
