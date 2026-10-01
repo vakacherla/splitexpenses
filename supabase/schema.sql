@@ -482,16 +482,48 @@ create policy "group_members: manager can remove a regular member" on public.gro
   );
 
 -- expenses
+-- The `deleted_at is null` branch only governs what a regular member sees
+-- in normal browsing (the app also filters deleted_at itself when loading
+-- the ledger, so this isn't the only thing hiding deleted rows). The second
+-- branch exists because Postgres enforces this SELECT policy against the
+-- *post-update* row during an UPDATE too, even with no RETURNING clause:
+-- live testing found a member's own soft-delete of their own expense
+-- (literally just setting deleted_at) rejected with "new row violates row-
+-- level security policy", despite the "members can edit" USING/WITH CHECK
+-- both plainly passing. Root cause, confirmed by reproducing it directly in
+-- SQL: once deleted_at is set, the row falls out of the first branch and
+-- out of is_platform_admin() too (for a non-admin), so Postgres treats the
+-- update itself as producing a row the actor isn't allowed to see — and
+-- blocks it, independent of the UPDATE policy's own WITH CHECK. Letting the
+-- same people who can edit the row also still "see" it after deletion
+-- removes that trap.
 create policy "expenses: members can view" on public.expenses
   for select using (
-    (deleted_at is null and public.is_group_member(group_id)) or public.is_platform_admin()
+    (
+      public.is_group_member(group_id)
+      and (
+        deleted_at is null
+        or created_by = auth.uid()
+        or paid_by = auth.uid()
+        or public.is_group_manager(group_id)
+      )
+    )
+    or public.is_platform_admin()
   );
 
 create policy "expenses: members can add" on public.expenses
   for insert with check (public.is_group_member(group_id) and auth.uid() = created_by);
 
+-- WITH CHECK spelled out explicitly (identical to USING) rather than
+-- relying on Postgres defaulting it when omitted — not the actual fix for
+-- the soft-delete bug above (see "members can view"), but harmless and
+-- removes one source of ambiguity while we were in here.
 create policy "expenses: members can edit" on public.expenses
   for update using (
+    public.is_group_member(group_id)
+    and (created_by = auth.uid() or paid_by = auth.uid() or public.is_group_manager(group_id))
+  )
+  with check (
     public.is_group_member(group_id)
     and (created_by = auth.uid() or paid_by = auth.uid() or public.is_group_manager(group_id))
   );
