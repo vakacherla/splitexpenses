@@ -220,8 +220,8 @@ export default function TripView() {
     [expenses, groupPending, group]
   )
   const displaySettlements = useMemo(
-    () => mergeQueueIntoSettlements(settlements, groupPending),
-    [settlements, groupPending]
+    () => (group ? mergeQueueIntoSettlements(settlements, groupPending, group.home_currency) : settlements),
+    [settlements, groupPending, group]
   )
 
   const filteredExpenses = useMemo(() => {

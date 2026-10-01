@@ -112,13 +112,20 @@ export function mergeQueueIntoExpenses(expenses, pendingOps, homeCurrency) {
   return result
 }
 
-export function mergeQueueIntoSettlements(settlements, pendingOps) {
+export function mergeQueueIntoSettlements(settlements, pendingOps, homeCurrency) {
   let result = settlements
 
   for (const op of pendingOps) {
     if (op.type === 'settlement.create') {
       if (result.some((s) => s.id === op.entityId)) continue
       const { payload } = op
+      // Same reasoning as estimateHomeAmounts above: a pending create has
+      // no server-confirmed amount_in_home yet. computeNetBalances sums
+      // amount_in_home across every settlement unconditionally, so leaving
+      // this undefined (as opposed to expenses' explicit null) used to
+      // poison the whole trip's balance display with NaN for as long as
+      // the op stayed queued.
+      const rate = peekCachedRate(payload.currency, homeCurrency)
       result = [
         {
           id: op.entityId,
@@ -127,6 +134,7 @@ export function mergeQueueIntoSettlements(settlements, pendingOps) {
           to_user: payload.to_user,
           currency: payload.currency,
           amount: payload.amount,
+          amount_in_home: rate != null ? Math.round(payload.amount * rate * 100) / 100 : null,
           note: payload.note,
           created_by: payload.created_by,
           created_at: op.createdAt,
