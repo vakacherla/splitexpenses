@@ -4,7 +4,7 @@ import { formatMoney } from '../lib/fx'
 import { useLiveRate } from '../lib/useLiveRate'
 import { useOnlineStatus } from '../lib/useOnlineStatus'
 import { enqueue } from '../lib/offlineQueue'
-import { splitEvenly, splitByPercentages, splitByShares, splitByAdjustments, splitItemized } from '../lib/split'
+import { splitEvenly, splitByPercentages, splitByShares, splitByAdjustments, splitItemized, isPercentageTotalOff, isExactTotalOff } from '../lib/split'
 import { logActivity, notifyGroup } from '../lib/activity'
 import { CATEGORIES } from '../lib/categories'
 import { validateDateInRange, validateExpenseDateAgainstTrip, MIN_TRIP_DATE, MAX_TRIP_DATE } from '../lib/tripDates'
@@ -152,7 +152,7 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
   }, [parsedAmount, participantIds, amountTooLarge])
 
   const percentageTotal = participantIds.reduce((sum, id) => sum + (parseFloat(percentageShares[id]) || 0), 0)
-  const percentageMismatch = splitMode === 'percentage' && Math.abs(percentageTotal - 100) > 0.5
+  const percentageMismatch = splitMode === 'percentage' && isPercentageTotalOff(percentageTotal)
   const percentageOutOfRange =
     splitMode === 'percentage' &&
     participantIds.some((id) => {
@@ -172,7 +172,7 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
   // (e.g. $49.99 vs $50.00) through, since 0.01 is not > 0.01. Round both
   // sides to whole cents and compare those instead — sidesteps float
   // rounding entirely rather than picking a smaller-but-still-fuzzy epsilon.
-  const exactMismatch = splitMode === 'exact' && Math.round(exactTotal * 100) !== Math.round(parsedAmount * 100)
+  const exactMismatch = splitMode === 'exact' && isExactTotalOff(exactTotal, parsedAmount)
 
   // Blank/invalid defaults to 1 share, not 0 — a share of 0 is meaningless
   // (that's what unchecking someone from the split is for), so an

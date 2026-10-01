@@ -135,3 +135,17 @@ export function splitItemized(items, participantIds, tax = 0, tip = 0) {
 
   return { shares, total: grandTotal }
 }
+
+// Total of the percentage inputs is allowed to drift by up to half a
+// percentage point from 100 (so 33.3 x 3 doesn't block a save); splitByPercentages
+// then distributes the rounding. Anything further off is rejected.
+export function isPercentageTotalOff(percentageTotal) {
+  return Math.abs(percentageTotal - 100) > 0.5
+}
+
+// Exact shares must match the expense total to the cent. Both sides are
+// rounded to whole cents first so a one-cent gap (e.g. 49.99 vs 50.00) is
+// caught and float noise is not (EXP-07).
+export function isExactTotalOff(exactTotal, amount) {
+  return Math.round(exactTotal * 100) !== Math.round(amount * 100)
+}

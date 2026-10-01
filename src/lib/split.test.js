@@ -5,6 +5,8 @@ import {
   splitByShares,
   splitByAdjustments,
   splitItemized,
+  isPercentageTotalOff,
+  isExactTotalOff,
 } from './split'
 
 describe('splitEvenly', () => {
@@ -259,5 +261,48 @@ describe('splitItemized', () => {
     )
     const sum = Math.round(Object.values(shares).reduce((s, v) => s + v, 0) * 100) / 100
     expect(sum).toBe(total)
+  })
+})
+
+describe('isPercentageTotalOff', () => {
+  it('accepts exactly 100', () => {
+    expect(isPercentageTotalOff(100)).toBe(false)
+  })
+
+  it('accepts 99.99 (33.33 x 3) so the float boundary does not block a save', () => {
+    expect(isPercentageTotalOff(33.33 * 3)).toBe(false)
+  })
+
+  it('accepts a total within half a point of 100 on either side', () => {
+    expect(isPercentageTotalOff(99.5)).toBe(false)
+    expect(isPercentageTotalOff(100.5)).toBe(false)
+  })
+
+  it('rejects a total more than half a point away', () => {
+    expect(isPercentageTotalOff(99.4)).toBe(true)
+    expect(isPercentageTotalOff(100.6)).toBe(true)
+  })
+
+  it('rejects the 30% case from the manual run', () => {
+    expect(isPercentageTotalOff(30)).toBe(true)
+  })
+})
+
+describe('isExactTotalOff', () => {
+  it('accepts an exact match', () => {
+    expect(isExactTotalOff(50, 50)).toBe(false)
+  })
+
+  it('rejects a one-cent gap (49.99 vs 50.00), the EXP-07 bug', () => {
+    expect(isExactTotalOff(49.99, 50)).toBe(true)
+    expect(isExactTotalOff(50.01, 50)).toBe(true)
+  })
+
+  it('ignores float noise below a cent', () => {
+    expect(isExactTotalOff(0.1 + 0.2, 0.3)).toBe(false)
+  })
+
+  it('rejects a larger gap', () => {
+    expect(isExactTotalOff(40, 50)).toBe(true)
   })
 })

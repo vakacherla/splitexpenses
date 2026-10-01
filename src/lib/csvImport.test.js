@@ -262,3 +262,35 @@ describe('validateImportRows', () => {
     expect(rows).toHaveLength(MAX_IMPORT_ROWS)
   })
 })
+
+describe('amount and line-ending edge cases', () => {
+  it('rejects an amount with a thousands separator rather than misreading it (CSV-06)', () => {
+    const row = validRow()
+    row[4] = '1,234.56'
+    const { hasErrors, rows } = validate([row])
+    expect(hasErrors).toBe(true)
+    expect(rows[0].error).toMatch(/Invalid amount/)
+  })
+
+  it('accepts the same amount written without the separator', () => {
+    const row = validRow()
+    row[4] = '1234.56'
+    row[6] = 'a@example.com: 1234.56'
+    const { rows } = validate([row])
+    expect(rows[0].amount).toBe(1234.56)
+  })
+
+  it('parses CRLF line endings the same as LF (CSV-07)', () => {
+    const lf = 'a,b\n1,2\n3,4\n'
+    expect(parseCSV(lf.replace(/\n/g, '\r\n'))).toEqual(parseCSV(lf))
+  })
+
+  it('parses lone CR line endings the same as LF', () => {
+    const lf = 'a,b\n1,2\n'
+    expect(parseCSV(lf.replace(/\n/g, '\r'))).toEqual(parseCSV(lf))
+  })
+
+  it('does not strip a literal BOM itself: the browser decoder in ImportCsvModal does', () => {
+    expect(parseCSV('\uFEFFa,b\n1,2')[0][0]).toBe('\uFEFFa')
+  })
+})
