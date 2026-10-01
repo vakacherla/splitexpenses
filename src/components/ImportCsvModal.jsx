@@ -102,7 +102,7 @@ export default function ImportCsvModal({ group, members, currentUserId, onImport
         if (!navigator.onLine) throw new Error('offline')
 
         const row = validRows[i]
-        const rate = await getRate(row.currency, group.home_currency)
+        const rate = await getRate(row.currency, group.home_currency, row.expense_date)
         const amountInHome = Math.round(row.amount * rate * 100) / 100
 
         const { data: expense, error: expenseError } = await supabase

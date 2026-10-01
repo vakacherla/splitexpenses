@@ -141,14 +141,19 @@ function removeOp(opId) {
   write(cachedQueue.filter((op) => op.opId !== opId))
 }
 
-async function resolveRate(currency, homeCurrency) {
+// `date`, when given, resolves that day's historical rate instead of
+// today's — matters for an expense queued offline with a backdated date,
+// same as the online add/edit path in AddExpenseForm. Settlements don't
+// pass one: a payment is recorded as of right now, not a past date, so
+// "today's rate" is already the correct rate for those.
+async function resolveRate(currency, homeCurrency, date) {
   if (currency === homeCurrency) return 1
-  return getRate(currency, homeCurrency)
+  return getRate(currency, homeCurrency, date)
 }
 
 async function applyExpenseCreate(op) {
   const { payload } = op
-  const finalRate = await resolveRate(payload.currency, payload.homeCurrency)
+  const finalRate = await resolveRate(payload.currency, payload.homeCurrency, payload.expense_date)
   const amountInHome = Math.round(payload.amount * finalRate * 100) / 100
 
   const { error: expenseError } = await supabase.from('expenses').insert({
@@ -206,7 +211,7 @@ async function applyExpenseUpdate(op) {
   const { payload } = op
   const { data: current, error: fetchError } = await supabase
     .from('expenses')
-    .select('deleted_at, updated_at, currency, amount')
+    .select('deleted_at, updated_at, currency, amount, expense_date')
     .eq('id', op.entityId)
     .single()
   if (fetchError || !current) {
@@ -217,8 +222,10 @@ async function applyExpenseUpdate(op) {
   }
 
   const rateChanged =
-    payload.currency !== current.currency || Math.abs(payload.amount - current.amount) > 0.005
-  const finalRate = rateChanged ? await resolveRate(payload.currency, payload.homeCurrency) : null
+    payload.currency !== current.currency ||
+    payload.expense_date !== current.expense_date ||
+    Math.abs(payload.amount - current.amount) > 0.005
+  const finalRate = rateChanged ? await resolveRate(payload.currency, payload.homeCurrency, payload.expense_date) : null
 
   const { data: updatedRow, error: updateError } = await supabase
     .from('expenses')

@@ -5,6 +5,14 @@
 const API_BASE = 'https://api.frankfurter.dev/v1'
 const rateCache = new Map() // `${from}_${to}` -> { rate, date }
 const CACHE_KEY = 'ledger_fx_cache_v1'
+// Separate, unpersisted cache for historical (backdated) lookups, keyed by
+// the specific date asked for. Kept apart from rateCache above so every
+// existing "give me the current rate" caller (CSV import, the rates page,
+// the offline-optimistic-display peek) is untouched by this — a historical
+// rate for a specific past day never goes stale, but it's also only ever
+// useful for that one day, so there's no reason to persist it across
+// sessions the way "today's rate" is.
+const historicalRateCache = new Map() // `${from}_${to}_${date}` -> rate
 
 function loadPersistedCache() {
   try {
@@ -54,11 +62,33 @@ export async function fetchSupportedCurrencies() {
 }
 
 // Returns the multiplier such that `amount * rate` converts `from` -> `to`.
-export async function getRate(from, to) {
+//
+// `date` (optional, YYYY-MM-DD) is the day the conversion should reflect —
+// an expense dated last week should convert at last week's rate, not
+// today's, since the two can differ meaningfully even over a few days.
+// Omitted, or today/in the future (a rate for tomorrow doesn't exist yet),
+// this falls back to the existing "latest rate" behavior unchanged.
+export async function getRate(from, to, date) {
   if (from === to) return 1
+  const today = new Date().toISOString().slice(0, 10)
+  const isHistorical = !!date && date < today
+
+  if (isHistorical) {
+    const historicalKey = `${from}_${to}_${date}`
+    const cachedHistorical = historicalRateCache.get(historicalKey)
+    if (cachedHistorical !== undefined) return cachedHistorical
+
+    const res = await fetch(`${API_BASE}/${date}?base=${from}&symbols=${to}`)
+    if (!res.ok) throw new Error(`Could not fetch the ${date} exchange rate for ${from} → ${to}`)
+    const data = await res.json()
+    const rate = data.rates?.[to]
+    if (typeof rate !== 'number') throw new Error(`No rate available for ${from} → ${to} on ${date}`)
+    historicalRateCache.set(historicalKey, rate)
+    return rate
+  }
+
   const key = `${from}_${to}`
   const cached = rateCache.get(key)
-  const today = new Date().toISOString().slice(0, 10)
   if (cached && cached.date === today) return cached.rate
 
   const res = await fetch(`${API_BASE}/latest?base=${from}&symbols=${to}`)
@@ -87,8 +117,8 @@ export function peekCachedRate(from, to) {
   return rateCache.get(`${from}_${to}`)?.rate ?? null
 }
 
-export async function convert(amount, from, to) {
-  const rate = await getRate(from, to)
+export async function convert(amount, from, to, date) {
+  const rate = await getRate(from, to, date)
   return amount * rate
 }
 

@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { validateTripDates, validateDateInRange, MIN_TRIP_YEAR, MAX_TRIP_YEAR } from './tripDates'
+import {
+  validateTripDates,
+  validateDateInRange,
+  validateExpenseDateAgainstTrip,
+  MIN_TRIP_YEAR,
+  MAX_TRIP_YEAR,
+} from './tripDates'
 
 describe('validateTripDates', () => {
   it('allows neither date set', () => {
@@ -162,5 +168,41 @@ describe('validateDateInRange', () => {
   it('defaults the label to "Date" when none is given', () => {
     const result = validateDateInRange('9999-01-01')
     expect(result.error).toMatch(/^Date must be between/)
+  })
+})
+
+describe('validateExpenseDateAgainstTrip', () => {
+  it('allows any date when the trip has no start date set', () => {
+    expect(validateExpenseDateAgainstTrip('2020-01-01', null)).toEqual({ valid: true, error: null })
+    expect(validateExpenseDateAgainstTrip('2020-01-01', '')).toEqual({ valid: true, error: null })
+  })
+
+  it('allows an unset expense date regardless of trip start', () => {
+    expect(validateExpenseDateAgainstTrip(null, '2026-09-10')).toEqual({ valid: true, error: null })
+    expect(validateExpenseDateAgainstTrip('', '2026-09-10')).toEqual({ valid: true, error: null })
+  })
+
+  it('allows an expense date on the trip start date exactly', () => {
+    expect(validateExpenseDateAgainstTrip('2026-09-10', '2026-09-10')).toEqual({ valid: true, error: null })
+  })
+
+  it('allows an expense date after the trip start date', () => {
+    expect(validateExpenseDateAgainstTrip('2026-09-15', '2026-09-10')).toEqual({ valid: true, error: null })
+  })
+
+  it('rejects an expense date one day before the trip start date', () => {
+    const result = validateExpenseDateAgainstTrip('2026-09-09', '2026-09-10')
+    expect(result.valid).toBe(false)
+    expect(result.error).toMatch(/before the trip's start date/)
+  })
+
+  it('rejects an expense date well before the trip start date', () => {
+    const result = validateExpenseDateAgainstTrip('2026-01-01', '2026-09-10')
+    expect(result.valid).toBe(false)
+  })
+
+  it('rejects across a year boundary', () => {
+    const result = validateExpenseDateAgainstTrip('2025-12-31', '2026-01-01')
+    expect(result.valid).toBe(false)
   })
 })

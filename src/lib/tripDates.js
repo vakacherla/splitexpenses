@@ -25,6 +25,18 @@ export function validateDateInRange(dateStr, label = 'Date') {
   return { valid: true, error: null }
 }
 
+// An expense dated before the trip itself started has no real historical
+// context — there was no trip yet for it to have happened on. Caught here,
+// at entry, rather than left to surface later as a confusing "no exchange
+// rate for that date" error from the FX lookup.
+export function validateExpenseDateAgainstTrip(dateStr, tripStartDate) {
+  if (!dateStr || !tripStartDate) return { valid: true, error: null }
+  if (dateStr < tripStartDate) {
+    return { valid: false, error: `This date is before the trip's start date (${tripStartDate}).` }
+  }
+  return { valid: true, error: null }
+}
+
 export function validateTripDates(startDate, endDate) {
   for (const [label, date] of [
     ['Start date', startDate],

@@ -7,7 +7,7 @@ import { enqueue } from '../lib/offlineQueue'
 import { splitEvenly, splitByPercentages, splitByShares, splitByAdjustments, splitItemized } from '../lib/split'
 import { logActivity, notifyGroup } from '../lib/activity'
 import { CATEGORIES } from '../lib/categories'
-import { validateDateInRange, MIN_TRIP_DATE, MAX_TRIP_DATE } from '../lib/tripDates'
+import { validateDateInRange, validateExpenseDateAgainstTrip, MIN_TRIP_DATE, MAX_TRIP_DATE } from '../lib/tripDates'
 import { MAX_AMOUNT, isAmountTooLarge } from '../lib/amountBounds'
 import CurrencySelect from './CurrencySelect'
 import HelpLink from './HelpLink'
@@ -48,6 +48,7 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
   const [paidBy, setPaidBy] = useState(seed?.paid_by ?? currentUserId)
   const [date, setDate] = useState(editingExpense?.expense_date ?? (() => new Date().toISOString().slice(0, 10)))
   const isFutureDate = date > new Date().toISOString().slice(0, 10)
+  const tripDateCheck = validateExpenseDateAgainstTrip(date, group.start_date)
   const [note, setNote] = useState(editingExpense?.note ?? '')
   const [participantIds, setParticipantIds] = useState(() => {
     if (seed) return seed.expense_splits.map((s) => s.user_id)
@@ -122,7 +123,7 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
-  const { rate, loading: rateLoading, error: rateError } = useLiveRate(currency, group.home_currency)
+  const { rate, loading: rateLoading, error: rateError } = useLiveRate(currency, group.home_currency, { date })
   const isOffline = !useOnlineStatus()
 
   const taxNum = parseFloat(tax) || 0
@@ -434,6 +435,7 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
     if (!description.trim()) return setError('Give the expense a short description.')
     const dateCheck = validateDateInRange(date, 'Date')
     if (!dateCheck.valid) return setError(dateCheck.error)
+    if (!tripDateCheck.valid) return setError(tripDateCheck.error)
     if (taxNum < 0) return setError('Tax cannot be negative.')
     if (tipNum < 0) return setError('Tip cannot be negative.')
     if (splitMode === 'itemized') {
@@ -532,14 +534,19 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
       return
     }
 
-    // Only the amount and currency actually determine whether a fresh
+    // Only amount, currency, and date actually determine whether a fresh
     // exchange rate is needed — fixing a typo in the description or
     // reassigning the split shouldn't silently shift amount_in_home just
-    // because today's rate happens to differ from the day this was
-    // entered. That's the same "locked-in historical rate" principle the
-    // add flow already relies on, just also honored on the way back out.
+    // because the rate for this expense's date happens to differ from
+    // whatever was locked in before. Date matters here now too: since the
+    // rate is resolved per-date (today's for a today-dated expense, that
+    // day's historical rate for a backdated one), correcting the date to a
+    // different day means the previously-locked rate no longer applies.
     const rateChanged =
-      !editingExpense || currency !== editingExpense.currency || Math.abs(parsedAmount - editingExpense.amount) > 0.005
+      !editingExpense ||
+      currency !== editingExpense.currency ||
+      date !== editingExpense.expense_date ||
+      Math.abs(parsedAmount - editingExpense.amount) > 0.005
     if (rateChanged && !rate) return setError('Still fetching the exchange rate — try again in a moment.')
 
     setSaving(true)
@@ -904,14 +911,14 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
               </div>
               <p className="text-xs text-ink-soft text-right">
                 {isOffline && !rate ? (
-                  "We'll fetch today's rate once you're back online"
+                  "We'll fetch the rate once you're back online"
                 ) : rateError ? (
                   <span className="text-owe">Rate unavailable</span>
                 ) : rate ? (
                   <>
                     1 {currency} = {rate.toFixed(4)} {group.home_currency}
                     <br />
-                    today's rate
+                    {isFutureDate || date === new Date().toISOString().slice(0, 10) ? "today's rate" : `rate for ${date}`}
                   </>
                 ) : (
                   'fetching rate…'
@@ -941,7 +948,7 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                min={MIN_TRIP_DATE}
+                min={group.start_date ?? MIN_TRIP_DATE}
                 max={MAX_TRIP_DATE}
                 className="rounded-lg border border-line bg-paper px-3.5 py-2.5 text-ink focus:border-primary outline-none"
               />
@@ -949,6 +956,7 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
                   case (booked in advance, entered from a later timezone),
                   just unusual enough to be worth a nudge if it's a typo. */}
               {isFutureDate && <p className="mt-1 text-xs text-owe">This date is in the future.</p>}
+              {!tripDateCheck.valid && <p className="mt-1 text-xs text-owe">{tripDateCheck.error}</p>}
             </div>
           </div>
 

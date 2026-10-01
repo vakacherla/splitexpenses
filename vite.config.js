@@ -6,6 +6,17 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     host: true,
+    // .claude/launch.json tells the preview harness to expect this dev
+    // server on 5183 (chosen to dodge an unrelated Docker process that
+    // permanently squats 5173 on this machine), but nothing was actually
+    // telling Vite itself to listen there — `npm run dev` is plain `vite`,
+    // so it just took its own default (5173, then auto-incremented to
+    // 5174 once it found that busy). The harness's proxy, pointed at 5183,
+    // found nothing listening and hung indefinitely ("Policy check in
+    // progress"). strictPort means a future port conflict here fails
+    // loudly at startup instead of silently drifting again.
+    port: 5183,
+    strictPort: true,
     // Vite 8's default Host-header allowlist (anti DNS-rebinding) only
     // accepts localhost/127.0.0.1/the configured host — it 403s anything
     // else. Claude Code's browser-pane preview reaches the dev server

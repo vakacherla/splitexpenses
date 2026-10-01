@@ -3,8 +3,10 @@ import { getRate } from './fx'
 
 // Debounced live exchange-rate lookup: `from` -> `to`, such that
 // `amount * rate` gives the converted amount. Returns 1 immediately when
-// the currencies match, without hitting the network.
-export function useLiveRate(from, to, { debounceMs = 300 } = {}) {
+// the currencies match, without hitting the network. `date` (optional),
+// when it's in the past, fetches that day's historical rate instead of
+// today's — see getRate in fx.js.
+export function useLiveRate(from, to, { date, debounceMs = 300 } = {}) {
   const [rate, setRate] = useState(from === to ? 1 : null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -22,7 +24,7 @@ export function useLiveRate(from, to, { debounceMs = 300 } = {}) {
     setError('')
 
     const handle = setTimeout(() => {
-      getRate(from, to)
+      getRate(from, to, date)
         .then((r) => {
           if (!cancelled) setRate(r)
         })
@@ -38,7 +40,7 @@ export function useLiveRate(from, to, { debounceMs = 300 } = {}) {
       cancelled = true
       clearTimeout(handle)
     }
-  }, [from, to, debounceMs])
+  }, [from, to, date, debounceMs])
 
   return { rate, loading, error }
 }
