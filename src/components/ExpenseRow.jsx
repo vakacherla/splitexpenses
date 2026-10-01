@@ -19,6 +19,7 @@ export default function ExpenseRow({
   currentUserId,
   homeCurrency,
   isMember,
+  canManage,
   onEdit,
   onDelete,
   onDuplicate,
@@ -30,7 +31,10 @@ export default function ExpenseRow({
   const [attaching, setAttaching] = useState(false)
   const [attachError, setAttachError] = useState('')
   const attachInputRef = useRef(null)
-  const canEdit = expense.created_by === currentUserId || expense.paid_by === currentUserId
+  // Matches the "expenses: members can edit" RLS policy exactly: the
+  // creator, the payer, or the trip's creator/manager (group-level
+  // cleanup power, e.g. removing a duplicate someone else entered).
+  const canEdit = expense.created_by === currentUserId || expense.paid_by === currentUserId || Boolean(canManage)
   const payerName = expense.paid_by === currentUserId ? 'You' : membersMap[expense.paid_by]?.display_name ?? '—'
   const dateLabel = new Date(expense.expense_date + 'T00:00:00').toLocaleDateString(undefined, {
     month: 'short',

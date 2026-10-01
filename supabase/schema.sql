@@ -491,7 +491,10 @@ create policy "expenses: members can add" on public.expenses
   for insert with check (public.is_group_member(group_id) and auth.uid() = created_by);
 
 create policy "expenses: members can edit" on public.expenses
-  for update using (public.is_group_member(group_id));
+  for update using (
+    public.is_group_member(group_id)
+    and (created_by = auth.uid() or paid_by = auth.uid() or public.is_group_manager(group_id))
+  );
 
 -- No member-level delete policy anymore — "delete" from the Ledger is
 -- now an UPDATE (setting deleted_at), already covered by "members can

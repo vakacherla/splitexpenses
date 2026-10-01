@@ -23,6 +23,7 @@ import { logActivity } from '../lib/activity'
 import { useOnlineStatus } from '../lib/useOnlineStatus'
 import { useOfflineQueue, useIsSyncing, enqueue, runSync } from '../lib/offlineQueue'
 import { getCachedGroup, setCachedGroup, mergeQueueIntoExpenses, mergeQueueIntoSettlements } from '../lib/offlineCache'
+import { friendlyError } from '../lib/errors'
 
 const ReportsPanel = lazy(() => import('../components/ReportsPanel'))
 
@@ -245,9 +246,22 @@ export default function TripView() {
     }
     // Soft-delete — recoverable by the platform admin (Admin → Trash),
     // same reasoning as archiving a group instead of removing it outright.
-    const { error } = await supabase.from('expenses').update({ deleted_at: new Date().toISOString() }).eq('id', id)
+    // .select() matters here: if RLS blocks the update, Postgres/PostgREST
+    // matches zero rows and returns no error at all, so without it a
+    // permission failure looks identical to success and silently no-ops.
+    const { data, error } = await supabase
+      .from('expenses')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id)
+      .select('id')
     if (error) {
-      setError(error.message)
+      setError(friendlyError(error))
+      return
+    }
+    if (!data || data.length === 0) {
+      setError(
+        "You don't have permission to delete this expense — only the person who created it, the payer, or a trip organizer can."
+      )
       return
     }
     logActivity({ groupId: group.id, actorId: user.id, actorName, eventType: 'expense_deleted', summary, entityId: id })
@@ -269,7 +283,7 @@ export default function TripView() {
     // same reasoning as the expense-delete handler above.
     const { data, error } = await supabase.from('settlements').delete().eq('id', id).select('id')
     if (error) {
-      setError(error.message)
+      setError(friendlyError(error))
       return
     }
     if (!data || data.length === 0) {
@@ -319,7 +333,7 @@ export default function TripView() {
   async function handleRenameTrip(newName) {
     const { error } = await supabase.from('groups').update({ name: newName }).eq('id', group.id)
     if (error) {
-      setError(error.message)
+      setError(friendlyError(error))
       return
     }
     load()
@@ -331,7 +345,7 @@ export default function TripView() {
       .update({ start_date: startDate, end_date: endDate })
       .eq('id', group.id)
     if (error) {
-      setError(error.message)
+      setError(friendlyError(error))
       return
     }
     load()
@@ -371,7 +385,7 @@ export default function TripView() {
       return
     const { error } = await supabase.from('group_members').delete().eq('group_id', group.id).eq('user_id', memberId)
     if (error) {
-      setError(error.message)
+      setError(friendlyError(error))
       return
     }
     logActivity({
@@ -391,7 +405,7 @@ export default function TripView() {
     // platform admin. See Admin → Trips → Archived.
     const { error } = await supabase.from('groups').update({ archived_at: new Date().toISOString() }).eq('id', group.id)
     if (error) {
-      setError(error.message)
+      setError(friendlyError(error))
       return
     }
     navigate('/dashboard')
@@ -406,7 +420,7 @@ export default function TripView() {
     })
     setDuplicatingGroup(false)
     if (error) {
-      setError(error.message)
+      setError(friendlyError(error))
       return
     }
     setShowSettings(false)
@@ -420,7 +434,7 @@ export default function TripView() {
       .eq('group_id', group.id)
       .eq('user_id', memberId)
     if (error) {
-      setError(error.message)
+      setError(friendlyError(error))
       return
     }
     load()
@@ -572,6 +586,7 @@ export default function TripView() {
                   currentUserId={user.id}
                   homeCurrency={group.home_currency}
                   isMember={isMember}
+                  canManage={canManage}
                   onEdit={setEditingExpense}
                   onDelete={handleDeleteExpense}
                   onDuplicate={setDuplicatingExpense}

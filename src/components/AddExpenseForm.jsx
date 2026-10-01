@@ -621,7 +621,12 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
         }))
         await supabase.from('expense_splits').insert(oldSplitRows)
       } else {
-        await supabase.from('expenses').delete().eq('id', expense.id)
+        // A real DELETE is blocked by RLS for regular members (only a
+        // platform admin can hard-delete — see migration 014), so a plain
+        // .delete() here silently no-ops and leaves the phantom expense
+        // behind. Soft-delete instead: the creator's own UPDATE policy
+        // always covers a row they just inserted themselves.
+        await supabase.from('expenses').update({ deleted_at: new Date().toISOString() }).eq('id', expense.id)
       }
       setSaving(false)
       setError(splitError.message)
