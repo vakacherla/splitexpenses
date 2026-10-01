@@ -8,6 +8,54 @@ describes the session that just ended — for what happened before that,
 `git log` and `PRODUCT-ROADMAP.md`'s own "Shipped" entries are the
 record, not this file's history.
 
+## Latest cloud session (2026-10-01): picked up from the desktop session
+
+Branch `claude/modest-edison-7pxp1w`, pushed, no PR, nothing merged to `main`
+(`main` auto-deploys to production). This session's environment could not reach
+the live app, Supabase or the exchange-rate API (both returned no HTTP response),
+so nothing here was verified live.
+
+**Code**
+- `CirclePage.jsx`: every DB error now goes through `friendlyError()` instead of
+  showing raw Postgres text. This closes the follow-up bug listed below under
+  "What a fresh session should probably do first".
+- `split.js`: the percentage-total and exact-total checks moved out of
+  `AddExpenseForm.jsx` into `isPercentageTotalOff` and `isExactTotalOff` so they
+  can be unit-tested. Behavior is unchanged.
+- 17 new unit tests (163 to 180 passing): percentage and exact-split validation
+  (EXP-04, EXP-07), CSV thousands separator and CRLF/CR handling (CSV-06/07),
+  offline sync conflicts when an expense was deleted elsewhere or no longer
+  exists (OFF-08), and add-then-edit-offline collapsing into one create (OFF-15).
+  The sync tests are in the new `src/lib/offlineSync.test.js`, which stubs the
+  Supabase client, activity and fx modules.
+
+**Findings, not fixed**
+- No zero-decimal currency handling in `split.js`: 100 JPY split 3 ways gives
+  33.34 / 33.33 / 33.33, i.e. fractional yen. The test sheet's EXP-26 says "no
+  fractional yen anywhere", which likely only held for amounts that divide evenly.
+  Decide whether to fix it or accept it.
+- `parseCSV` does not strip a UTF-8 BOM. The browser's `File.text()` in
+  `ImportCsvModal.jsx` does it, which is why CSV-07 passed live. A test pins this
+  down; if the import ever reads the file another way, a BOM would break the header.
+- The percentage-split check tolerates a total within 0.5 of 100, so 99.6% saves.
+
+**Test sheet** ("Split Expenses E2E test cases — 2026-09-29", tab Cases)
+- Fixed a stray blank line in `A41` (TRIP-21's section) so it reads "2. Trips".
+- Added column G, "Unit-test coverage", with notes on 28 rows saying which unit
+  test covers the logic and what it does not cover. It is not a live check, and
+  no statuses or Evidence notes were changed.
+- Not yet done in the sheet: flip EXP-28 from "FAIL (fixed 2026-10-01)" to PASS
+  (its note already records the live re-check); update CIRC-12's note, since
+  commit `1059afb` fixed the misleading "Viewing as admin" banner it mentions.
+- Lesson: after a sheet write, read back the Ref column next to the cells written.
+  A row-count slip put the first batch of column G notes one row too low.
+
+**Still not run (88 rows NOT RUN or BLOCKED)**: these need the live app, a second
+test account, a real device, inbox access, fault injection or a 30-day wait, or are
+destructive and skipped by the production policy. They need a desktop session or a
+cloud session with outbound network allowed in the environment settings before it
+starts. Supply test credentials through the environment's secrets, not in chat.
+
 ## What this is
 
 **Split Expenses** — a multi-currency trip/group expense-splitting web
@@ -125,13 +173,14 @@ straight into a Circle without them using its invite code themselves.
 
 ## Current state
 
-- **34 migrations** (`002` through `034`), all applied to the live
-  database as of this session ending (031-034 are new this session:
-  Circles schema, Circle RPCs, attach/detach RPCs, activity backfill)
+- **Migrations `002` through `043`** exist in `supabase/migrations`. The notes
+  below describe the earlier Circles session, when `031`-`034` were new; later
+  migrations (`035`-`043`) cover circle membership sync and add-by-email, circle
+  banners, and the expense edit/delete RLS fixes.
 - **Edge Functions unchanged this session** — same six as before
   (`admin-users`, `receipt-scan`, `parse-expense-text`, `remind`,
   `trip-reminders-cron`, `notify-group`), all still deployed live
-- **110 automated unit tests** (`npm test`), all passing — 12 of those
+- **180 automated unit tests** (`npm test`), all passing as of the latest cloud session (110 when this section was written) — 12 of those
   were silently never running in a sandbox with no `.env`
   (`offlineQueue.test.js`'s whole file failed to import because
   `supabaseClient.js` throws on an empty URL); fixed by adding a local
@@ -210,14 +259,14 @@ through a batch, they report pass/fail) unless the environment's
 network policy has been widened to allow real browser automation — see
 lesson 1 above.
 
-**Build the queued Circle feature**: admin ability to add a specific
-user directly into a Circle (see "New functionality identified" above)
-— the user explicitly asked to pick this up next.
+**Queued Circle feature, done since**: adding a user directly into a Circle
+shipped in migration `038_add_circle_member_by_email.sql` (plus an Admin page
+hook and a `CirclePage` handler).
 
-**Fix the known follow-up bug**: `CirclePage.jsx`'s raw-error-leak
-(same pattern as the `TripView.jsx` fix this session, not yet applied
-there) — a `spawn_task` suggestion for it already exists from this
-session (title: "Fix raw DB error leaking on CirclePage").
+**`CirclePage.jsx` raw-error leak, done since**: fixed in the latest cloud
+session by routing errors through `friendlyError()`.
+
+**Decide**: the JPY zero-decimal split gap (see the latest cloud session above).
 
 Also still outstanding from earlier sessions, untouched this one:
 whether the Shared Fund BRD got a family verdict (blocked on that, not
