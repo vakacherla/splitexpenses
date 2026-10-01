@@ -30,7 +30,7 @@ export default function ImportCsvModal({ group, members, currentUserId, onImport
   const [result, setResult] = useState(null) // { batchId, count }
   const [submitError, setSubmitError] = useState('')
 
-  const memberEmails = members.map((m) => ({ user_id: m.user_id, email: m.email }))
+  const memberEmails = members.map((m) => ({ user_id: m.user_id, email: m.email, display_name: m.display_name }))
 
   async function handleFile(f) {
     setFile(f)

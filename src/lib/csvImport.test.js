@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { parseCSV, validateImportRows, buildImportTemplate, IMPORT_HEADER, MAX_IMPORT_ROWS } from './csvImport'
+import { expensesToCSV } from './csvExport'
 
 const MEMBERS = [
-  { user_id: 'u1', email: 'a@example.com' },
-  { user_id: 'u2', email: 'b@example.com' },
+  { user_id: 'u1', email: 'a@example.com', display_name: 'Alice' },
+  { user_id: 'u2', email: 'b@example.com', display_name: 'Bob' },
 ]
 const CATEGORIES = ['Food', 'Lodging', 'Misc']
 const CURRENCIES = new Set(['USD', 'INR'])
@@ -72,6 +73,58 @@ describe('buildImportTemplate', () => {
     })
     expect(result.hasErrors).toBe(false)
     expect(result.rows[0].expense_date).toBe('2026-01-15')
+  })
+})
+
+// CSV-01: exporting a trip and re-importing that exact file used to fail
+// outright on a header mismatch (export and import were never meant to be
+// the same file). The importer now recognizes the export's own shape too.
+describe('validateImportRows — accepts the app\'s own export format', () => {
+  const membersMap = { u1: { display_name: 'Alice' }, u2: { display_name: 'Bob' } }
+
+  it('round-trips a real export: same expense, matched by name instead of email', () => {
+    const expenses = [
+      {
+        expense_date: '2026-01-15',
+        description: 'Dinner',
+        category: 'Food',
+        paid_by: 'u1',
+        amount: 100,
+        currency: 'USD',
+        amount_in_home: 100,
+        expense_splits: [
+          { user_id: 'u1', share_amount: 50 },
+          { user_id: 'u2', share_amount: 50 },
+        ],
+        note: null,
+      },
+    ]
+    const csv = expensesToCSV(expenses, membersMap, 'USD')
+    const parsed = parseCSV(csv)
+    const result = validateImportRows(parsed, { members: MEMBERS, categories: CATEGORIES, currencies: CURRENCIES })
+    expect(result.hasErrors).toBe(false)
+    expect(result.rows[0].paid_by).toBe('u1')
+    expect(result.rows[0].splits).toHaveLength(2)
+  })
+
+  it('rejects a name that matches more than one member in this group', () => {
+    const dupeMembers = [
+      { user_id: 'u1', email: 'a@example.com', display_name: 'Sam' },
+      { user_id: 'u2', email: 'b@example.com', display_name: 'Sam' },
+    ]
+    const header = ['Date', 'Description', 'Category', 'Paid by', 'Amount', 'Currency', 'Amount (USD)', 'Split between', 'Note']
+    const row = ['2026-01-15', 'Dinner', 'Food', 'Sam', '100', 'USD', '100', 'Sam: 100', '']
+    const result = validateImportRows([header, row], { members: dupeMembers, categories: CATEGORIES, currencies: CURRENCIES })
+    expect(result.hasErrors).toBe(true)
+    expect(result.rows[0].error).toMatch(/matches more than one member/)
+  })
+
+  it('still rejects a name typo as "not a member" (not as an email-vs-name hint)', () => {
+    const header = ['Date', 'Description', 'Category', 'Paid by', 'Amount', 'Currency', 'Amount (USD)', 'Split between', 'Note']
+    const row = ['2026-01-15', 'Dinner', 'Food', 'Alicee', '100', 'USD', '100', 'Alicee: 100', '']
+    const result = validateImportRows([header, row], { members: MEMBERS, categories: CATEGORIES, currencies: CURRENCIES })
+    expect(result.hasErrors).toBe(true)
+    expect(result.rows[0].error).toBe('"Alicee" isn\'t a member of this group')
   })
 })
 
