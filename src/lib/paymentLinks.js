@@ -13,12 +13,17 @@ export const PAYMENT_PROVIDERS = [
 // `amount` should already be in whatever currency the payer is sending —
 // callers pass the settlement's own currency/amount, not the group's home
 // currency, since that's what actually gets typed into the payment app.
-export function buildPaymentLink(provider, handle, amount, currency, note) {
+//
+// `payeeName` is UPI-only: the spec requires `pn` (payee name), and some
+// apps — BHIM in particular, being NPCI's own reference client — enforce
+// that strictly and silently reject a link missing it. GPay/PhonePe
+// happen to tolerate the omission, which is how this went unnoticed.
+export function buildPaymentLink(provider, handle, amount, currency, note, payeeName) {
   if (!provider || !handle) return null
   const amt = Number(amount).toFixed(2)
 
   if (provider === 'upi') {
-    const params = new URLSearchParams({ pa: handle, am: amt, cu: currency })
+    const params = new URLSearchParams({ pa: handle, pn: payeeName || handle, am: amt, cu: currency })
     if (note) params.set('tn', note)
     return `upi://pay?${params.toString()}`
   }

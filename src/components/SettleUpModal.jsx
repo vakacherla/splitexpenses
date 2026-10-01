@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
 import { supabase } from '../lib/supabaseClient'
 import { formatMoney } from '../lib/fx'
 import { useLiveRate } from '../lib/useLiveRate'
@@ -39,7 +40,14 @@ export default function SettleUpModal({ group, suggestion, membersMap, currentUs
   const isPayer = suggestion.from === currentUserId
   const paymentLink =
     isPayer && recipient?.payment_provider && recipient?.payment_handle && parsedAmount > 0
-      ? buildPaymentLink(recipient.payment_provider, recipient.payment_handle, parsedAmount, currency, note || group.name)
+      ? buildPaymentLink(
+          recipient.payment_provider,
+          recipient.payment_handle,
+          parsedAmount,
+          currency,
+          note || group.name,
+          recipient.display_name
+        )
       : null
 
   async function copyHandle() {
@@ -198,6 +206,21 @@ export default function SettleUpModal({ group, suggestion, membersMap, currentUs
             >
               Pay {formatMoney(parsedAmount, currency)} via {paymentProviderLabel(recipient.payment_provider)}
             </a>
+            {/* Not every payment app registers itself to catch this kind of
+                link — bank apps especially, and there's no way to detect
+                whether one actually opened. A QR of the exact same URI
+                sidesteps that entirely: it's scannable by every UPI app's
+                own camera/scanner regardless of which one (if any) claimed
+                the upi:// scheme on this device, and lets the payer choose
+                instead of the OS silently picking one for them. Generated
+                client-side — the payment URI (amount, payee ID) never
+                leaves the device via a third-party QR API. */}
+            <div className="flex flex-col items-center gap-1.5 py-1">
+              <div className="rounded-lg bg-white p-2">
+                <QRCodeSVG value={paymentLink} size={128} />
+              </div>
+              <p className="text-xs text-ink-soft">Or scan with your payment app</p>
+            </div>
             {/* Not every payment app registers itself to catch this kind of
                 link — bank apps especially, and there's no way to detect
                 whether one actually opened. This is the fallback: read or
