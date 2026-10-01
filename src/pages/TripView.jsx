@@ -47,7 +47,7 @@ const TAB_HELP_SECTION = {
 
 export default function TripView() {
   const { groupId } = useParams()
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const navigate = useNavigate()
   const [group, setGroup] = useState(null)
   const [circleName, setCircleName] = useState(null)
@@ -485,7 +485,9 @@ export default function TripView() {
         <p className="text-sm text-ink-soft mt-0.5">Home currency: {group.home_currency}</p>
         {!isMember && (
           <p className="text-xs text-accent mt-2 border border-accent/30 bg-accent-tint rounded-full inline-block px-3 py-1">
-            Viewing as admin — you're not a member of this trip
+            {profile?.is_admin
+              ? "Viewing as admin — you're not a member of this trip"
+              : "You're not a member of this trip — join to see the ledger"}
           </p>
         )}
         {stale && (
