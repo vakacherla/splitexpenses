@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { nextPasswordRecoveryState } from '../lib/authRecovery'
+import { setCurrentUserId } from '../lib/offlineQueue'
 
 const AuthContext = createContext(null)
 
@@ -60,6 +61,14 @@ export function AuthProvider({ children }) {
     })
     return () => sub.subscription.unsubscribe()
   }, [])
+
+  // OFF-16 / AUTH-07: lets the offline write queue scope itself to
+  // whoever's actually signed in right now, rather than being one shared,
+  // unlabeled bucket anyone on this device can see or sync into.
+  useEffect(() => {
+    if (session === undefined) return // still loading the initial session
+    setCurrentUserId(session?.user?.id ?? null)
+  }, [session])
 
   useEffect(() => {
     if (!session?.user) {

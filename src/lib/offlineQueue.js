@@ -37,14 +37,33 @@ function readFromStorage() {
   }
 }
 
+// OFF-16 / AUTH-07: the queue is one shared bucket in localStorage, not
+// namespaced per browser profile — a shared or borrowed device can have
+// more than one person sign in over its lifetime. Every op is tagged with
+// the `userId` that was signed in at enqueue time, and every *read* path
+// below (the reactive hook, per-group listing, and sync itself) filters
+// down to whoever's currently signed in — so B signing in after A queued
+// something offline sees and syncs none of A's pending ops; they just sit
+// untouched in storage until A is the one signed in again. An op with no
+// `userId` at all is a pre-this-fix leftover (nothing upgraded it
+// retroactively) and stays visible to anyone, same as it always was,
+// rather than becoming silently stuck forever.
+let currentUserId = null
+
+function filterForCurrentUser(queue) {
+  return queue.filter((op) => op.userId === undefined || op.userId === currentUserId)
+}
+
 // `useSyncExternalStore` requires a stable (===) snapshot reference when
 // nothing has changed, or React re-renders every subscriber on every tick —
 // this in-memory cache is what makes `getQueue()` safe to use as a
 // `getSnapshot`, on top of also avoiding a JSON round-trip on every read.
 let cachedQueue = readFromStorage()
+let cachedUserQueue = filterForCurrentUser(cachedQueue)
 
 function write(queue) {
   cachedQueue = queue
+  cachedUserQueue = filterForCurrentUser(queue)
   try {
     localStorage.setItem(QUEUE_KEY, JSON.stringify(queue))
   } catch {
@@ -54,12 +73,33 @@ function write(queue) {
   listeners.forEach((l) => l())
 }
 
+// Test-only: re-syncs the in-memory cache from (presumably just-cleared)
+// localStorage. `getQueue()` now returns a derived, filtered snapshot
+// rather than the same array reference as the internal cache, so a test's
+// old `getQueue().length = 0` trick no longer actually resets anything.
+export function __resetQueueForTests() {
+  currentUserId = null
+  cachedQueue = readFromStorage()
+  cachedUserQueue = filterForCurrentUser(cachedQueue)
+}
+
+// Called from AuthContext whenever the signed-in user changes (including
+// to/from signed-out). Re-syncs immediately in case switching in revealed
+// ops this user queued earlier and never got to send.
+export function setCurrentUserId(userId) {
+  if (userId === currentUserId) return
+  currentUserId = userId
+  cachedUserQueue = filterForCurrentUser(cachedQueue)
+  listeners.forEach((l) => l())
+  runSync()
+}
+
 export function getQueue() {
-  return cachedQueue
+  return cachedUserQueue
 }
 
 export function listPending(groupId) {
-  return cachedQueue.filter((op) => op.groupId === groupId)
+  return cachedUserQueue.filter((op) => op.groupId === groupId)
 }
 
 export function subscribe(callback) {
@@ -88,7 +128,13 @@ function findUnsyncedCreate(queue, type, entityId) {
 }
 
 export function enqueue(op) {
-  const queue = cachedQueue
+  // Collapsing only ever considers this user's own unsynced ops — another
+  // user's leftover queued create from a previous session on this device
+  // should never be silently merged into or deleted by this one, even on
+  // the off chance of an entityId collision (client-generated UUIDs, so
+  // not actually possible in practice, but scoping this is the correct
+  // invariant regardless of how unlikely the collision is).
+  const queue = cachedUserQueue
   const entry = {
     opId: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
@@ -97,12 +143,13 @@ export function enqueue(op) {
     lastError: null,
     expectedUpdatedAt: null,
     ...op,
+    userId: currentUserId,
   }
 
   if (entry.type === 'expense.delete' || entry.type === 'settlement.delete') {
     const create = findUnsyncedCreate(queue, entry.type, entry.entityId)
     if (create) {
-      write(queue.filter((o) => o.opId !== create.opId))
+      write(cachedQueue.filter((o) => o.opId !== create.opId))
       return
     }
   }
@@ -111,7 +158,7 @@ export function enqueue(op) {
     const create = findUnsyncedCreate(queue, entry.type, entry.entityId)
     if (create) {
       write(
-        queue.map((o) =>
+        cachedQueue.map((o) =>
           o.opId === create.opId ? { ...o, payload: { ...o.payload, ...entry.payload } } : o
         )
       )
@@ -119,7 +166,7 @@ export function enqueue(op) {
     }
   }
 
-  write([...queue, entry])
+  write([...cachedQueue, entry])
 }
 
 export function discardOp(opId) {
@@ -387,8 +434,12 @@ export async function runSync() {
     // what makes strict FIFO safe without a dependency graph. New ops
     // can't arrive mid-run: enqueue() only ever fires while genuinely
     // offline, and this function only runs while `navigator.onLine`, so
-    // the two never overlap for the same op.
-    const toProcess = cachedQueue.filter((o) => o.status !== 'failed')
+    // the two never overlap for the same op. Scoped to the current user's
+    // own ops (see filterForCurrentUser above) — someone else's leftover
+    // queued op from an earlier session on this device sits untouched
+    // until they're the one signed in, rather than silently applying
+    // under whoever happens to reconnect first.
+    const toProcess = cachedUserQueue.filter((o) => o.status !== 'failed')
     for (const op of toProcess) {
       const applier = APPLIERS[op.type]
       try {

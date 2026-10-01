@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { enqueue, getQueue, discardOp } from './offlineQueue'
+import { enqueue, getQueue, discardOp, setCurrentUserId, __resetQueueForTests } from './offlineQueue'
 import { mergeQueueIntoExpenses, mergeQueueIntoSettlements } from './offlineCache'
 
 function baseExpensePayload(overrides = {}) {
@@ -29,7 +29,7 @@ beforeEach(() => {
   localStorage.clear()
   // Force the module's in-memory cache back in sync with cleared storage —
   // it's a snapshot taken once at import time, not re-read per call.
-  getQueue().length = 0
+  __resetQueueForTests()
 })
 
 describe('offlineQueue enqueue ordering', () => {
@@ -150,5 +150,53 @@ describe('mergeQueueIntoSettlements', () => {
     enqueue({ type: 'settlement.delete', entityId: 's1', groupId: 'g1', payload: {} })
     const merged = mergeQueueIntoSettlements(fetched, getQueue())
     expect(merged).toHaveLength(0)
+  })
+})
+
+// OFF-16 / AUTH-07: the queue is one shared localStorage bucket across
+// whoever signs into this browser, not reset on sign-out — these guard
+// against a second person's session seeing, syncing, or collapsing into
+// the first person's still-queued ops.
+describe('offlineQueue per-user scoping', () => {
+  it("does not show one user's pending op to a different signed-in user", () => {
+    setCurrentUserId('alice')
+    enqueue({ type: 'expense.create', entityId: 'a', groupId: 'g1', payload: baseExpensePayload() })
+    expect(getQueue()).toHaveLength(1)
+
+    setCurrentUserId('bob')
+    expect(getQueue()).toHaveLength(0)
+
+    setCurrentUserId('alice')
+    expect(getQueue()).toHaveLength(1)
+  })
+
+  it("does not let a second user's delete collapse into the first user's unsynced create", () => {
+    setCurrentUserId('alice')
+    enqueue({ type: 'expense.create', entityId: 'a', groupId: 'g1', payload: baseExpensePayload() })
+
+    setCurrentUserId('bob')
+    // Same entityId would never really happen (client-generated UUIDs),
+    // but the point is this must never reach back into alice's op even if
+    // it somehow did.
+    enqueue({ type: 'expense.delete', entityId: 'a', groupId: 'g1', payload: {} })
+    expect(getQueue()).toHaveLength(1) // bob's own delete, queued independently
+    expect(getQueue()[0].userId).toBe('bob')
+
+    setCurrentUserId('alice')
+    expect(getQueue()).toHaveLength(1) // alice's create, untouched by bob's delete
+    expect(getQueue()[0].type).toBe('expense.create')
+  })
+
+  it('keeps a legacy op with no userId (queued before this fix shipped) visible to anyone, not permanently stuck', () => {
+    setCurrentUserId('alice')
+    enqueue({ type: 'expense.create', entityId: 'legacy', groupId: 'g1', payload: baseExpensePayload() })
+    // Simulate a pre-fix entry by stripping the userId this version stamps.
+    const raw = JSON.parse(localStorage.getItem('ledger_write_queue_v1'))
+    delete raw[0].userId
+    localStorage.setItem('ledger_write_queue_v1', JSON.stringify(raw))
+    __resetQueueForTests()
+
+    setCurrentUserId('someone-else-entirely')
+    expect(getQueue()).toHaveLength(1)
   })
 })
