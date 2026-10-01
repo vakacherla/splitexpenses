@@ -905,7 +905,11 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
                   {rateLoading && !rate
                     ? '…'
                     : homeEquivalent !== null
-                      ? formatMoney(homeEquivalent, group.home_currency)
+                      ? // `getRate` happily returns today's already-cached rate
+                        // offline, with no way to tell that apart from a fresh
+                        // live fetch — so this component is the one place that
+                        // can mark it, rather than trusting it looks "live".
+                        `${isOffline ? '~' : ''}${formatMoney(homeEquivalent, group.home_currency)}`
                       : '—'}
                 </p>
               </div>
@@ -918,7 +922,13 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
                   <>
                     1 {currency} = {rate.toFixed(4)} {group.home_currency}
                     <br />
-                    {isFutureDate || date === new Date().toISOString().slice(0, 10) ? "today's rate" : `rate for ${date}`}
+                    {isOffline ? (
+                      <span className="text-owe">offline — estimate from the last known rate</span>
+                    ) : isFutureDate || date === new Date().toISOString().slice(0, 10) ? (
+                      "today's rate"
+                    ) : (
+                      `rate for ${date}`
+                    )}
                   </>
                 ) : (
                   'fetching rate…'

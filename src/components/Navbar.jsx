@@ -1,13 +1,29 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useOfflineQueue } from '../lib/offlineQueue'
 import ThemeToggle from './ThemeToggle'
 import Avatar from './Avatar'
 
 export default function Navbar() {
   const { user, profile, signOut } = useAuth()
   const navigate = useNavigate()
+  const pendingOps = useOfflineQueue()
 
   async function handleSignOut() {
+    // OFF-16: signing out used to happen silently even with unsynced
+    // offline changes sitting in the write queue — easy to lose track of
+    // on a shared or borrowed device. The queue itself isn't scoped to a
+    // particular user (still true after this), so this warning is the
+    // honest version of what actually happens next, not a promise that
+    // only this account's data is at risk.
+    if (pendingOps.length > 0) {
+      const changeWord = pendingOps.length === 1 ? 'change' : 'changes'
+      const confirmed = confirm(
+        `You have ${pendingOps.length} unsynced ${changeWord} saved on this device. ` +
+          `They'll stay queued and sync automatically the next time someone's signed in here with a connection — sign out anyway?`
+      )
+      if (!confirmed) return
+    }
     await signOut()
     navigate('/login')
   }
