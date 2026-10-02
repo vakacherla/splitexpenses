@@ -238,7 +238,7 @@ FAIL severity: **P0: 5** (signup broken, malformed circle route leaks DB error, 
 | AU-01 | Non-admin sees no "Admin" link in the nav | P0 | PASS | Verified live 2026-10-01 — see Appendix E. |
 | AU-02 | Admin → Users lists every account platform-wide | P0 | PASS | Full user list loads (18 users seen). |
 | AU-03 | Suspend a user | P0 | PASS | Verified live 2026-10-02 (SU session, throwaway `E2E Verify`): Suspend shows "suspended" badge; persisted after reload. |
-| AU-04 | Suspend a user with an active session | P1 | NOT RUN | Destructive; skipped per production policy. |
+| AU-04 | Suspend a user with an active session | P1 | FAIL | Run live 2026-10-02 with the owner-created throwaway account `ThrowAway` (live session in Chrome) while an SU suspended it from Admin. Result: the live session was NOT cut off. It could still create a circle, and a page reload still showed the dashboard. Only a fresh sign-in was refused ("User is banned"). Cause: `admin-users` suspend only sets the Supabase auth ban (`ban_duration`); existing access tokens stay valid until they expire (about 1 hour) and no RLS policy checks the ban. See Appendix U. |
 | AU-05 | Unsuspend a user | P1 | PASS | Verified live 2026-10-02: Unsuspend restored the user; persisted after reload. |
 | AU-06 | Delete a user with no history | P0 | PASS | Verified live 2026-10-02: deleted throwaway user `E2E Verify` (no history); gone from Users after reload, no error. |
 | AU-07 | Delete a user whose only history is soft-deleted expenses | P0 | NOT RUN | Destructive; skipped per production policy. |
@@ -672,3 +672,6 @@ Migration 046 (`group_members` BEFORE DELETE trigger, same formula as computeNet
 Test data cleanup (owner OK): archived `E2E-TEST two-user`, `circ08 trip A/B` and `E2E-TEST two-user circle`.
 Unreproduced: recording a payment from the Chrome (Jayashree) session sat on "Saving..."; the same flow completed immediately in the other browser. Suspected backgrounded-tab throttling, not an app bug.
 AU-04 still needs a throwaway account with a live session; `E2E-TEST Payer` has no known password. Option: owner signs up a fresh @example.com account in a private window (email confirmation is off) and keeps it open while an admin suspends it.
+
+## Appendix U — AU-04: suspension does not end a live session (2026-10-02)
+Not fixed yet; options (owner to choose): (A) on suspend also delete the user's rows in `auth.sessions` via a SECURITY DEFINER function so refresh stops (cuts access when the current access token expires, up to ~1h); (B) A plus a RESTRICTIVE RLS policy on every public table that denies all access while `auth.users.banned_until > now()` (immediate cut-off; broader change, needs careful per-table testing and a stable cached lookup for performance). Recommended: B. Throwaway `ThrowAway` (vakacherla@comcast.net) is left suspended for the post-fix re-test and has a test circle `ThrowAway circle`; the owner can delete the account afterwards.
