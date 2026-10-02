@@ -50,6 +50,8 @@ export default function TripView() {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
   const [group, setGroup] = useState(null)
+  const isAdminRef = useRef(false)
+  isAdminRef.current = !!profile?.is_admin
   const [circleName, setCircleName] = useState(null)
   const [members, setMembers] = useState([])
   const [expenses, setExpenses] = useState([])
@@ -111,6 +113,16 @@ export default function TripView() {
         // the URL (bad UUID syntax) and a nonexistent/not-a-member id
         // (RLS just hides the row, same as "not found") are both real
         // ways a visitor lands here, and neither should show DB internals.
+        setError("This trip doesn't exist, or you don't have access to it.")
+        setLoading(false)
+        return
+      }
+
+      // Migration 044 lets a trip's creator/manager still SELECT it once
+      // archived (needed for the archive UPDATE itself), which also makes a
+      // deleted trip reachable by direct link and writable (TRIP-22). Treat
+      // it as gone for everyone but platform admins.
+      if (groupRes.data.archived_at && !isAdminRef.current) {
         setError("This trip doesn't exist, or you don't have access to it.")
         setLoading(false)
         return
