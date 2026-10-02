@@ -50,8 +50,7 @@ export default function TripView() {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
   const [group, setGroup] = useState(null)
-  const isAdminRef = useRef(false)
-  isAdminRef.current = !!profile?.is_admin
+  const isAdmin = !!profile?.is_admin
   const [circleName, setCircleName] = useState(null)
   const [members, setMembers] = useState([])
   const [expenses, setExpenses] = useState([])
@@ -122,7 +121,7 @@ export default function TripView() {
       // archived (needed for the archive UPDATE itself), which also makes a
       // deleted trip reachable by direct link and writable (TRIP-22). Treat
       // it as gone for everyone but platform admins.
-      if (groupRes.data.archived_at && !isAdminRef.current) {
+      if (groupRes.data.archived_at && !isAdmin) {
         setError("This trip doesn't exist, or you don't have access to it.")
         setLoading(false)
         return
@@ -182,7 +181,7 @@ export default function TripView() {
       }
       setLoading(false)
     }
-  }, [groupId])
+  }, [groupId, isAdmin])
 
   useEffect(() => {
     load()

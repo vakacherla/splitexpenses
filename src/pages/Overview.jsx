@@ -176,21 +176,22 @@ export default function Overview() {
         <nav className="flex items-center justify-between py-5">
           <div className="flex items-center gap-2.5">
             <img src="/icon.svg" alt="" className="h-7 w-7 rounded-lg" />
-            <span className="font-display text-lg font-semibold text-ink">Split Expenses</span>
+            <span className="font-display text-base font-semibold whitespace-nowrap text-ink sm:text-lg">Split Expenses</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2.5 sm:gap-4">
             <Link to="/help" className="hidden text-sm font-medium text-ink-soft hover:text-ink sm:inline">
               Help
             </Link>
             <ThemeToggle />
-            <Link to="/login" className="hidden text-sm font-medium text-ink-soft hover:text-ink sm:inline">
+            <Link to="/login" className="text-sm font-medium whitespace-nowrap text-ink-soft hover:text-ink">
               Sign in
             </Link>
             <Link
               to="/signup"
-              className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-on-primary transition-colors hover:bg-primary-dark"
+              className="rounded-full bg-primary px-3.5 py-2 text-sm font-semibold whitespace-nowrap text-on-primary transition-colors hover:bg-primary-dark sm:px-4"
             >
-              Create free account
+              <span className="sm:hidden">Sign up</span>
+              <span className="hidden sm:inline">Create free account</span>
             </Link>
           </div>
         </nav>
