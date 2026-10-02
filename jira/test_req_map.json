@@ -1,0 +1,783 @@
+{
+"AUTH-01": [
+"REQ-AUTH-01"
+],
+"AUTH-02": [
+"REQ-AUTH-01"
+],
+"AUTH-10": [
+"REQ-AUTH-01",
+"REQ-AUTH-11"
+],
+"AUTH-03": [
+"REQ-AUTH-02"
+],
+"AUTH-04": [
+"REQ-AUTH-02"
+],
+"AUTH-05": [
+"REQ-AUTH-03"
+],
+"AUTH-06": [
+"REQ-AUTH-03"
+],
+"AUTH-07": [
+"REQ-AUTH-03"
+],
+"AUTH-12": [
+"REQ-AUTH-04"
+],
+"AUTH-13": [
+"REQ-AUTH-04"
+],
+"AUTH-14": [
+"REQ-AUTH-04"
+],
+"AUTH-15": [
+"REQ-AUTH-04"
+],
+"AUTH-16": [
+"REQ-AUTH-04"
+],
+"AUTH-08": [
+"REQ-AUTH-05"
+],
+"AUTH-09": [
+"REQ-AUTH-05",
+"REQ-ADM-01"
+],
+"AUTH-19": [
+"REQ-AUTH-05"
+],
+"AUTH-20": [
+"REQ-AUTH-05"
+],
+"AUTH-17": [
+"REQ-AUTH-06",
+"REQ-TRIP-11"
+],
+"AUTH-18": [
+"REQ-AUTH-06"
+],
+"CIRC-13": [
+"REQ-AUTH-06"
+],
+"AU-03": [
+"REQ-AUTH-07",
+"REQ-ADM-02"
+],
+"AU-04": [
+"REQ-AUTH-07",
+"REQ-ADM-02"
+],
+"AU-05": [
+"REQ-AUTH-07",
+"REQ-ADM-02"
+],
+"SUSP-01": [
+"REQ-AUTH-07"
+],
+"CAP-01": [
+"REQ-AUTH-08"
+],
+"SIGN-01": [
+"REQ-AUTH-09"
+],
+"SIGN-02": [
+"REQ-AUTH-09"
+],
+"AI-01": [
+"REQ-AUTH-10"
+],
+"AUTH-11": [
+"REQ-AUTH-11"
+],
+"TRIP-01": [
+"REQ-TRIP-01"
+],
+"TRIP-03": [
+"REQ-TRIP-01"
+],
+"TRIP-07": [
+"REQ-TRIP-01"
+],
+"TRIP-02": [
+"REQ-TRIP-01"
+],
+"REC-08": [
+"REQ-TRIP-01"
+],
+"TRIP-04": [
+"REQ-TRIP-02"
+],
+"TRIP-05": [
+"REQ-TRIP-02"
+],
+"TRIP-06": [
+"REQ-TRIP-02"
+],
+"TRIP-08": [
+"REQ-TRIP-03"
+],
+"TRIP-09": [
+"REQ-TRIP-03"
+],
+"TRIP-10": [
+"REQ-TRIP-03"
+],
+"TRIP-11": [
+"REQ-TRIP-03",
+"REQ-TRIP-04"
+],
+"TRIP-12": [
+"REQ-TRIP-03"
+],
+"TRIP-15": [
+"REQ-TRIP-04",
+"REQ-TRIP-05"
+],
+"TRIP-13": [
+"REQ-TRIP-05"
+],
+"TRIP-14": [
+"REQ-TRIP-05"
+],
+"TRIP-16": [
+"REQ-TRIP-06"
+],
+"TRIP-17": [
+"REQ-TRIP-06"
+],
+"TRIP-18": [
+"REQ-TRIP-06"
+],
+"TRIP-19": [
+"REQ-TRIP-06"
+],
+"TRIP-20": [
+"REQ-TRIP-07"
+],
+"TRIP-21": [
+"REQ-TRIP-07"
+],
+"ACT-05": [
+"REQ-TRIP-07",
+"REQ-ACT-01",
+"REQ-ACT-02"
+],
+"TRIP-22": [
+"REQ-TRIP-08",
+"REQ-SEC-06"
+],
+"AT-07": [
+"REQ-TRIP-08",
+"REQ-ADM-08"
+],
+"AT-08": [
+"REQ-TRIP-08",
+"REQ-ADM-08"
+],
+"TRIP-23": [
+"REQ-TRIP-09"
+],
+"SEC-06": [
+"REQ-TRIP-09",
+"REQ-SEC-04"
+],
+"TRIP-24": [
+"REQ-TRIP-10"
+],
+"TRIP-25": [
+"REQ-TRIP-10"
+],
+"FEAT-04": [
+"REQ-TRIP-12"
+],
+"CIRC-01": [
+"REQ-CIRC-01"
+],
+"CIRC-02": [
+"REQ-CIRC-01"
+],
+"CIRC-03": [
+"REQ-CIRC-02"
+],
+"CIRC-04": [
+"REQ-CIRC-03"
+],
+"CIRC-05": [
+"REQ-CIRC-03"
+],
+"CIRC-06": [
+"REQ-CIRC-03"
+],
+"CIRC-07": [
+"REQ-CIRC-04"
+],
+"CIRC-08": [
+"REQ-CIRC-05"
+],
+"CIRC-09": [
+"REQ-CIRC-06"
+],
+"CIRC-10": [
+"REQ-CIRC-06"
+],
+"CIRC-11": [
+"REQ-CIRC-07"
+],
+"CIRC-14": [
+"REQ-CIRC-07"
+],
+"CIRC-12": [
+"REQ-CIRC-08"
+],
+"REC-10": [
+"REQ-CIRC-09"
+],
+"EXP-01": [
+"REQ-EXP-01"
+],
+"EXP-02": [
+"REQ-EXP-01"
+],
+"EXP-26": [
+"REQ-EXP-01"
+],
+"EXP-27": [
+"REQ-EXP-01"
+],
+"EXP-09": [
+"REQ-EXP-01"
+],
+"EXP-03": [
+"REQ-EXP-02"
+],
+"EXP-04": [
+"REQ-EXP-02"
+],
+"EXP-05": [
+"REQ-EXP-02"
+],
+"EXP-06": [
+"REQ-EXP-02"
+],
+"EXP-07": [
+"REQ-EXP-02"
+],
+"EXP-08": [
+"REQ-EXP-02"
+],
+"EXP-18": [
+"REQ-EXP-02"
+],
+"EXP-19": [
+"REQ-EXP-02"
+],
+"EXP-20": [
+"REQ-EXP-02"
+],
+"EXP-21": [
+"REQ-EXP-02"
+],
+"EXP-22": [
+"REQ-EXP-02"
+],
+"REC-01": [
+"REQ-EXP-02"
+],
+"REC-02": [
+"REQ-EXP-02"
+],
+"EXP-10": [
+"REQ-EXP-02"
+],
+"EXP-37": [
+"REQ-EXP-02"
+],
+"EXP-23": [
+"REQ-EXP-03"
+],
+"EXP-24": [
+"REQ-EXP-03"
+],
+"EXP-25": [
+"REQ-EXP-03"
+],
+"EXP-29": [
+"REQ-EXP-03"
+],
+"EXP-28": [
+"REQ-EXP-04"
+],
+"EXP-12": [
+"REQ-EXP-05",
+"REQ-SEC-06"
+],
+"EXP-13": [
+"REQ-EXP-05"
+],
+"EXP-14": [
+"REQ-EXP-05"
+],
+"EXP-15": [
+"REQ-EXP-05"
+],
+"EXP-16": [
+"REQ-EXP-05"
+],
+"EXP-17": [
+"REQ-EXP-05"
+],
+"EXP-11": [
+"REQ-EXP-06"
+],
+"ATR-01": [
+"REQ-EXP-06",
+"REQ-ADM-09"
+],
+"ATR-04": [
+"REQ-EXP-06",
+"REQ-ADM-09"
+],
+"EXP-30": [
+"REQ-EXP-07"
+],
+"EXP-31": [
+"REQ-EXP-07"
+],
+"EXP-32": [
+"REQ-EXP-07"
+],
+"EXP-33": [
+"REQ-EXP-07"
+],
+"EXP-34": [
+"REQ-EXP-08"
+],
+"EXP-35": [
+"REQ-EXP-08"
+],
+"EXP-36": [
+"REQ-EXP-08"
+],
+"EXP-38": [
+"REQ-EXP-09"
+],
+"EXP-39": [
+"REQ-EXP-09"
+],
+"SENT-01": [
+"REQ-EXP-10"
+],
+"SENT-02": [
+"REQ-EXP-10"
+],
+"SENT-03": [
+"REQ-EXP-10"
+],
+"SENT-04": [
+"REQ-EXP-10"
+],
+"SENT-05": [
+"REQ-EXP-10"
+],
+"SENT-06": [
+"REQ-EXP-10"
+],
+"SENT-07": [
+"REQ-EXP-10"
+],
+"SENT-08": [
+"REQ-EXP-10"
+],
+"FEAT-01": [
+"REQ-EXP-11"
+],
+"FEAT-02": [
+"REQ-EXP-11"
+],
+"FEAT-03": [
+"REQ-EXP-11"
+],
+"REC-11": [
+"REQ-EXP-12"
+],
+"REC-03": [
+"REQ-EXP-15"
+],
+"REC-04": [
+"REQ-EXP-15"
+],
+"REC-05": [
+"REQ-EXP-15"
+],
+"REC-06": [
+"REQ-EXP-15"
+],
+"REC-07": [
+"REQ-EXP-15"
+],
+"REC-09": [
+"REQ-EXP-15"
+],
+"REC-12": [
+"REQ-EXP-15"
+],
+"REC-13": [
+"REQ-EXP-15"
+],
+"RES-09": [
+"REQ-EXP-16"
+],
+"BAL-01": [
+"REQ-BAL-01"
+],
+"BAL-02": [
+"REQ-BAL-02"
+],
+"BAL-08": [
+"REQ-BAL-02"
+],
+"BAL-03": [
+"REQ-BAL-03"
+],
+"BAL-04": [
+"REQ-BAL-03"
+],
+"BAL-05": [
+"REQ-BAL-03"
+],
+"BAL-06": [
+"REQ-BAL-03"
+],
+"BAL-07": [
+"REQ-BAL-04"
+],
+"BAL-09": [
+"REQ-BAL-05"
+],
+"BAL-10": [
+"REQ-BAL-05"
+],
+"BAL-11": [
+"REQ-BAL-06",
+"REQ-ACT-03",
+"REQ-ACT-05"
+],
+"BAL-12": [
+"REQ-BAL-06"
+],
+"BAL-13": [
+"REQ-BAL-06"
+],
+"BAL-14": [
+"REQ-BAL-06"
+],
+"BAL-15": [
+"REQ-BAL-06"
+],
+"BAL-16": [
+"REQ-BAL-06"
+],
+"RES-10": [
+"REQ-BAL-07"
+],
+"RES-11": [
+"REQ-BAL-07"
+],
+"REP-01": [
+"REQ-REP-01"
+],
+"REP-02": [
+"REQ-REP-01"
+],
+"REP-03": [
+"REQ-REP-01"
+],
+"REP-04": [
+"REQ-REP-01"
+],
+"REP-05": [
+"REQ-REP-01"
+],
+"CSV-14": [
+"REQ-REP-02",
+"REQ-REP-03"
+],
+"CSV-15": [
+"REQ-REP-02",
+"REQ-REP-05"
+],
+"CSV-01": [
+"REQ-REP-03",
+"REQ-REP-04"
+],
+"CSV-02": [
+"REQ-REP-03"
+],
+"CSV-03": [
+"REQ-REP-03"
+],
+"CSV-04": [
+"REQ-REP-03"
+],
+"CSV-05": [
+"REQ-REP-03"
+],
+"CSV-06": [
+"REQ-REP-03"
+],
+"CSV-07": [
+"REQ-REP-03"
+],
+"CSV-08": [
+"REQ-REP-03"
+],
+"CSV-09": [
+"REQ-REP-03"
+],
+"CSV-10": [
+"REQ-REP-03"
+],
+"CSV-11": [
+"REQ-REP-03"
+],
+"CSV-12": [
+"REQ-REP-03"
+],
+"CSV-13": [
+"REQ-REP-03"
+],
+"REP-06": [
+"REQ-REP-05"
+],
+"ACT-01": [
+"REQ-ACT-01"
+],
+"ACT-02": [
+"REQ-ACT-01"
+],
+"ACT-03": [
+"REQ-ACT-01"
+],
+"ACT-04": [
+"REQ-ACT-01"
+],
+"ACT-08": [
+"REQ-ACT-01"
+],
+"ACT-09": [
+"REQ-ACT-01"
+],
+"ACT-06": [
+"REQ-ACT-03"
+],
+"ACT-07": [
+"REQ-ACT-04"
+],
+"OFF-01": [
+"REQ-OFF-01",
+"REQ-OFF-02"
+],
+"OFF-02": [
+"REQ-OFF-01"
+],
+"OFF-03": [
+"REQ-OFF-01"
+],
+"OFF-04": [
+"REQ-OFF-01"
+],
+"OFF-05": [
+"REQ-OFF-01"
+],
+"OFF-06": [
+"REQ-OFF-01",
+"REQ-OFF-03"
+],
+"OFF-07": [
+"REQ-OFF-01"
+],
+"OFF-08": [
+"REQ-OFF-01",
+"REQ-OFF-03"
+],
+"OFF-09": [
+"REQ-OFF-01"
+],
+"OFF-10": [
+"REQ-OFF-01"
+],
+"OFF-11": [
+"REQ-OFF-01",
+"REQ-OFF-02"
+],
+"OFF-12": [
+"REQ-OFF-01",
+"REQ-OFF-02"
+],
+"OFF-13": [
+"REQ-OFF-01"
+],
+"OFF-14": [
+"REQ-OFF-01"
+],
+"OFF-15": [
+"REQ-OFF-01"
+],
+"OFF-16": [
+"REQ-OFF-04"
+],
+"INST-01": [
+"REQ-OFF-05"
+],
+"INST-02": [
+"REQ-OFF-05"
+],
+"AU-01": [
+"REQ-ADM-01"
+],
+"AU-02": [
+"REQ-ADM-02"
+],
+"AU-06": [
+"REQ-ADM-02"
+],
+"AU-07": [
+"REQ-ADM-02"
+],
+"AU-08": [
+"REQ-ADM-02"
+],
+"AU-09": [
+"REQ-ADM-03"
+],
+"AU-10": [
+"REQ-ADM-03"
+],
+"AU-11": [
+"REQ-ADM-03"
+],
+"AU-12": [
+"REQ-ADM-03"
+],
+"AU-13": [
+"REQ-ADM-04"
+],
+"AU-14": [
+"REQ-ADM-04"
+],
+"AU-15": [
+"REQ-ADM-04"
+],
+"AU-16": [
+"REQ-ADM-04",
+"REQ-SEC-02"
+],
+"AU-17": [
+"REQ-ADM-04"
+],
+"AU-18": [
+"REQ-ADM-04"
+],
+"AU-19": [
+"REQ-ADM-04",
+"REQ-SEC-02"
+],
+"AT-01": [
+"REQ-ADM-05"
+],
+"AT-02": [
+"REQ-ADM-05"
+],
+"AT-03": [
+"REQ-ADM-06"
+],
+"AT-04": [
+"REQ-ADM-06"
+],
+"AT-05": [
+"REQ-ADM-07"
+],
+"AT-06": [
+"REQ-ADM-08"
+],
+"AT-09": [
+"REQ-ADM-08",
+"REQ-ADM-09"
+],
+"AT-10": [
+"REQ-ADM-08"
+],
+"AT-11": [
+"REQ-ADM-08"
+],
+"ATR-02": [
+"REQ-ADM-09"
+],
+"ATR-03": [
+"REQ-ADM-09",
+"REQ-ADM-09"
+],
+"ATR-05": [
+"REQ-ADM-09"
+],
+"TOUR-01": [
+"REQ-ONB-01"
+],
+"TOUR-02": [
+"REQ-ONB-01"
+],
+"NAV-01": [
+"REQ-ONB-02"
+],
+"NAV-02": [
+"REQ-ONB-02"
+],
+"RES-02": [
+"REQ-ONB-02"
+],
+"RES-03": [
+"REQ-ONB-02"
+],
+"RES-04": [
+"REQ-ONB-02"
+],
+"RES-01": [
+"REQ-ONB-02"
+],
+"NAV-03": [
+"REQ-ONB-03"
+],
+"RES-05": [
+"REQ-ONB-04"
+],
+"RES-06": [
+"REQ-ONB-04"
+],
+"RES-07": [
+"REQ-ONB-04"
+],
+"RES-08": [
+"REQ-ONB-04"
+],
+"SEC-01": [
+"REQ-SEC-01"
+],
+"SEC-04": [
+"REQ-SEC-01"
+],
+"SEC-02": [
+"REQ-SEC-02"
+],
+"SEC-03": [
+"REQ-SEC-02"
+],
+"SEC-05": [
+"REQ-SEC-03"
+],
+"SEC-07": [
+"REQ-SEC-05"
+]
+}

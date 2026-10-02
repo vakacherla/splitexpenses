@@ -71,7 +71,7 @@ Status key: **S** Shipped, **Q** Planned quick win, **P** Parked, **B** Blocked,
 
 | ID | Requirement | St | Tests | Bugs | Source |
 |---|---|---|---|---|---|
-| REQ-TRIP-01 | Create a trip with a home currency; dashboard shows first name and trip/circle counts. | S | TRIP-01, TRIP-03, TRIP-07 | | |
+| REQ-TRIP-01 | Create a trip with a home currency; dashboard shows first name and trip/circle counts. | S | TRIP-01, TRIP-03, TRIP-07, TRIP-02, REC-08 | | |
 | REQ-TRIP-02 | Join a trip with an invite code; wrong codes give a clear message; codes are case-insensitive. | S | TRIP-04..06 | | |
 | REQ-TRIP-03 | Creator can promote and demote managers; managers cannot promote or remove other managers or the creator (enforced in the database). | S | TRIP-08..12 | | Migration 013 |
 | REQ-TRIP-04 | Regular members see no settings, promote or remove controls. | S | TRIP-11, TRIP-15 | | |
@@ -102,8 +102,8 @@ Status key: **S** Shipped, **Q** Planned quick win, **P** Parked, **B** Blocked,
 
 | ID | Requirement | St | Tests | Bugs | Source |
 |---|---|---|---|---|---|
-| REQ-EXP-01 | Add an expense in the home or any of 30 currencies with a locked-in rate. | S | EXP-01, EXP-02, EXP-26, EXP-27 | | |
-| REQ-EXP-02 | Six split types: equal, percentage, exact, shares, adjustment, itemized (with proportional tax and tip); every invalid sum is blocked with a clear message. | S | EXP-03..08, EXP-18..22, REC-01, REC-02 | DEF-011 | |
+| REQ-EXP-01 | Add an expense in the home or any of 30 currencies with a locked-in rate. | S | EXP-01, EXP-02, EXP-26, EXP-27, EXP-09 | | |
+| REQ-EXP-02 | Six split types: equal, percentage, exact, shares, adjustment, itemized (with proportional tax and tip); every invalid sum is blocked with a clear message. | S | EXP-03..08, EXP-18..22, REC-01, REC-02, EXP-10, EXP-37 | DEF-011 | |
 | REQ-EXP-03 | Amount, description and date validation (zero, negative, over 10,000,000, empty, future date warns). | S | EXP-23..25, EXP-29 | DEF-003, DEF-012 | |
 | REQ-EXP-04 | A backdated expense uses the historical rate for its date; an expense before the trip start is rejected. | S | EXP-28 | DEF-016 | Commit a823ab2 |
 | REQ-EXP-05 | Edit an expense; edit never changes the locked rate unless amount or currency changes. | S | EXP-12..17 | DEF-014 | Migrations 017, 043 |
@@ -116,7 +116,7 @@ Status key: **S** Shipped, **Q** Planned quick win, **P** Parked, **B** Blocked,
 | REQ-EXP-12 | Exchange rate and its date are shown in the UI. | S | REC-11 | | |
 | REQ-EXP-13 | Calculator in the amount field (operator row, safe parser, live result). | Q | none yet | | `brief-amount-calculator.md` |
 | REQ-EXP-14 | Automatic recurring expenses (scheduled). | P | none yet | | See REQ-GRO-04 |
-| REQ-EXP-15 | Multiple payers, tags, reimbursable flag, comment threads, per-person export, voice input. | N | REC-03..09, REC-12, REC-13 | | Not planned; testers to decide |
+| REQ-EXP-15 | Multiple payers, tags, reimbursable flag, comment threads, per-person export, voice input. | N | REC-03..07, REC-09, REC-12, REC-13 | | Not planned; testers to decide |
 | REQ-EXP-16 | A phantom expense must never appear when the network drops during save (atomic save). | B | RES-09 | DEF-026 | Needs an atomic-save migration |
 
 ### EP-05 Balances and settling up
@@ -184,7 +184,7 @@ Status key: **S** Shipped, **Q** Planned quick win, **P** Parked, **B** Blocked,
 | ID | Requirement | St | Tests | Bugs | Source |
 |---|---|---|---|---|---|
 | REQ-ONB-01 | First-run welcome tour of four illustrated cards (Trip first, then Circle, then start); "show every time" option; replay from Help and Dashboard. | S | TOUR-01, TOUR-02 | DEF-034 | Roadmap feedback item 3 |
-| REQ-ONB-02 | Top menu on desktop and bottom tabs on phones (Trips, Circles, Rates, Help, Profile). | S | NAV-01, NAV-02, RES-02..04 | DEF-020 | Commit 4d23709 |
+| REQ-ONB-02 | Top menu on desktop and bottom tabs on phones (Trips, Circles, Rates, Help, Profile). | S | NAV-01, NAV-02, RES-02..04, RES-01 | DEF-020 | Commit 4d23709 |
 | REQ-ONB-03 | Breadcrumbs on trip and circle pages; "Where do I start?" strip on Overview. | S | NAV-03 | | |
 | REQ-ONB-04 | Help page; light and dark theme with persistence. | S | RES-05..08 | | |
 

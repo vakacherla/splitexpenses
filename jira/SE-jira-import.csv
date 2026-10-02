@@ -1,0 +1,657 @@
+title,description,type,priority,status,assignee_email
+"[EP-01] Accounts, access and abuse protection",Epic EP-01. 11 requirements. Source: BRD.md section 4.,epic,medium,todo,
+[EP-02] Trips,Epic EP-02. 12 requirements. Source: BRD.md section 4.,epic,medium,todo,
+[EP-03] Circles,Epic EP-03. 9 requirements. Source: BRD.md section 4.,epic,medium,todo,
+[EP-04] Expenses and splits,Epic EP-04. 16 requirements. Source: BRD.md section 4.,epic,medium,todo,
+[EP-05] Balances and settling up,Epic EP-05. 9 requirements. Source: BRD.md section 4.,epic,medium,todo,
+[EP-06] Reports and data portability,Epic EP-06. 6 requirements. Source: BRD.md section 4.,epic,medium,todo,
+[EP-07] Activity and notifications,Epic EP-07. 5 requirements. Source: BRD.md section 4.,epic,medium,todo,
+"[EP-08] Offline, PWA and install",Epic EP-08. 5 requirements. Source: BRD.md section 4.,epic,medium,todo,
+[EP-09] Platform admin,Epic EP-09. 10 requirements. Source: BRD.md section 4.,epic,medium,todo,
+[EP-10] Onboarding and navigation,Epic EP-10. 4 requirements. Source: BRD.md section 4.,epic,medium,todo,
+[EP-11] Security and data integrity,Epic EP-11. 6 requirements. Source: BRD.md section 4.,epic,medium,todo,
+"[EP-12] Growth (parked, in priority order; none started)",Epic EP-12. 4 requirements. Source: BRD.md section 4.,epic,medium,todo,
+[EP-13] Shared Fund mode,Epic EP-13. 1 requirements. Source: BRD.md section 4.,epic,medium,todo,
+[REQ-AUTH-01] As a new user I can sign up with email and password and land on the dashboard.,"Epic: EP-01 Accounts, access and abuse protection
+Status: Shipped
+Requirement: As a new user I can sign up with email and password and land on the dashboard.
+Test cases: AUTH-01, AUTH-02 (not run), AUTH-10
+Bugs: DEF-001
+Source: Auth",story,medium,done,
+"[REQ-AUTH-02] As a user I can sign in, and wrong credentials give a clear message.","Epic: EP-01 Accounts, access and abuse protection
+Status: Shipped
+Requirement: As a user I can sign in, and wrong credentials give a clear message.
+Test cases: AUTH-03, AUTH-04 (not run)
+Source: Auth",story,medium,done,
+"[REQ-AUTH-03] As a user I can sign out, and Back never shows cached private pages.","Epic: EP-01 Accounts, access and abuse protection
+Status: Shipped
+Requirement: As a user I can sign out, and Back never shows cached private pages.
+Test cases: AUTH-05, AUTH-06 (blocked), AUTH-07 (blocked)
+Source: Offline queue scoped per user",story,medium,done,
+[REQ-AUTH-04] As a user I can reset a forgotten password by email link; with no recovery link the page says the link expired,"Epic: EP-01 Accounts, access and abuse protection
+Status: Shipped
+Requirement: As a user I can reset a forgotten password by email link; with no recovery link the page says the link expired.
+Test cases: AUTH-12..16
+Bugs: DEF-006
+Source: Auth",story,medium,done,
+[REQ-AUTH-05] Logged-out visitors are redirected to Login; signed-in users visiting /login go to the dashboard; non-admins a,"Epic: EP-01 Accounts, access and abuse protection
+Status: Shipped
+Requirement: Logged-out visitors are redirected to Login; signed-in users visiting /login go to the dashboard; non-admins are kept out of /admin.
+Test cases: AUTH-08, AUTH-09, AUTH-19, AUTH-20
+Bugs: DEF-005, DEF-027
+Source: Routing",story,medium,done,
+[REQ-AUTH-06] Old /groups/&lt;id&gt; links redirect to /trips/&lt;id&gt;; malformed ids give a friendly not-found.,"Epic: EP-01 Accounts, access and abuse protection
+Status: Shipped
+Requirement: Old /groups/&lt;id&gt; links redirect to /trips/&lt;id&gt;; malformed ids give a friendly not-found.
+Test cases: AUTH-17, AUTH-18, CIRC-13
+Bugs: DEF-002, DEF-032
+Source: Roadmap Now",story,medium,done,
+"[REQ-AUTH-07] A suspended user cannot sign in, loses a live session within 60 seconds, sees a clear screen and a mailto link","Epic: EP-01 Accounts, access and abuse protection
+Status: Shipped
+Requirement: A suspended user cannot sign in, loses a live session within 60 seconds, sees a clear screen and a mailto link to the administrator, and cannot read or write data.
+Test cases: AU-03, AU-04, AU-05, SUSP-01
+Bugs: DEF-024
+Source: Migration 047",story,medium,done,
+"[REQ-AUTH-08] Sign-in, sign-up and forgot-password are protected by Cloudflare Turnstile.","Epic: EP-01 Accounts, access and abuse protection
+Status: Shipped
+Requirement: Sign-in, sign-up and forgot-password are protected by Cloudflare Turnstile.
+Test cases: CAP-01
+Source: Appendix V",story,medium,done,
+"[REQ-AUTH-09] Throwaway-email domains (64 listed) cannot sign up, in the form and at the database.","Epic: EP-01 Accounts, access and abuse protection
+Status: Shipped
+Requirement: Throwaway-email domains (64 listed) cannot sign up, in the form and at the database.
+Test cases: SIGN-01 (not run), SIGN-02 (not run)
+Source: Migration 048",story,medium,done,
+"[REQ-AUTH-10] AI features are capped per user per day (receipt scan 30, sentence parse 100); suspended users are refused.","Epic: EP-01 Accounts, access and abuse protection
+Status: Shipped
+Requirement: AI features are capped per user per day (receipt scan 30, sentence parse 100); suspended users are refused.
+Test cases: AI-01 (not run)
+Source: Migration 048",story,medium,done,
+[REQ-AUTH-11] Email confirmation required at sign-up.,"Epic: EP-01 Accounts, access and abuse protection
+Status: Blocked
+Requirement: Email confirmation required at sign-up.
+Test cases: AUTH-10, AUTH-11
+Bugs: DEF-001
+Source: Parked until a domain is bought and verified in Resend",story,high,backlog,
+[REQ-TRIP-01] Create a trip with a home currency; dashboard shows first name and trip/circle counts.,"Epic: EP-02 Trips
+Status: Shipped
+Requirement: Create a trip with a home currency; dashboard shows first name and trip/circle counts.
+Test cases: TRIP-01, TRIP-03, TRIP-07, TRIP-02, REC-08",story,medium,done,
+[REQ-TRIP-02] Join a trip with an invite code; wrong codes give a clear message; codes are case-insensitive.,"Epic: EP-02 Trips
+Status: Shipped
+Requirement: Join a trip with an invite code; wrong codes give a clear message; codes are case-insensitive.
+Test cases: TRIP-04..06",story,medium,done,
+[REQ-TRIP-03] Creator can promote and demote managers; managers cannot promote or remove other managers or the creator (enfo,"Epic: EP-02 Trips
+Status: Shipped
+Requirement: Creator can promote and demote managers; managers cannot promote or remove other managers or the creator (enforced in the database).
+Test cases: TRIP-08..12
+Source: Migration 013",story,medium,done,
+"[REQ-TRIP-04] Regular members see no settings, promote or remove controls.","Epic: EP-02 Trips
+Status: Shipped
+Requirement: Regular members see no settings, promote or remove controls.
+Test cases: TRIP-11, TRIP-15",story,medium,done,
+"[REQ-TRIP-05] Duplicate a trip (members, roles, currency; new invite code; no expenses).","Epic: EP-02 Trips
+Status: Shipped
+Requirement: Duplicate a trip (members, roles, currency; new invite code; no expenses).
+Test cases: TRIP-13..15
+Source: Migration 018",story,medium,done,
+[REQ-TRIP-06] Cover photo for owner or manager; images downscaled; non-images rejected; centre-cropped.,"Epic: EP-02 Trips
+Status: Shipped
+Requirement: Cover photo for owner or manager; images downscaled; non-images rejected; centre-cropped.
+Test cases: TRIP-16..19
+Bugs: DEF-007, DEF-008
+Source: Migrations 024, 025",story,medium,done,
+"[REQ-TRIP-07] Removing a member who has an unsettled balance is blocked for everyone, including admins. Settled members can ","Epic: EP-02 Trips
+Status: Shipped
+Requirement: Removing a member who has an unsettled balance is blocked for everyone, including admins. Settled members can be removed and can rejoin.
+Test cases: TRIP-20, TRIP-21, ACT-05
+Bugs: DEF-022
+Source: Migration 046",story,medium,done,
+[REQ-TRIP-08] Archive a trip (soft delete); archived trips are not found by members and cannot take new expenses.,"Epic: EP-02 Trips
+Status: Shipped
+Requirement: Archive a trip (soft delete); archived trips are not found by members and cannot take new expenses.
+Test cases: TRIP-22, AT-07, AT-08
+Bugs: DEF-009, DEF-017, DEF-025
+Source: Migration 044",story,medium,done,
+[REQ-TRIP-09] Trip names are safe against HTML/JS and long text.,"Epic: EP-02 Trips
+Status: Shipped
+Requirement: Trip names are safe against HTML/JS and long text.
+Test cases: TRIP-23, SEC-06",story,medium,done,
+"[REQ-TRIP-10] Optional start and end dates, validated (end after start, plausible years).","Epic: EP-02 Trips
+Status: Shipped
+Requirement: Optional start and end dates, validated (end after start, plausible years).
+Test cases: TRIP-24, TRIP-25
+Bugs: DEF-033
+Source: Migrations 027, 028",story,medium,done,
+"[REQ-TRIP-11] UI uses the word ""Trip"" (formerly Group) with no schema change.","Epic: EP-02 Trips
+Status: Shipped
+Requirement: UI uses the word ""Trip"" (formerly Group) with no schema change.
+Test cases: AUTH-17
+Source: Roadmap 2026-09-07",story,medium,done,
+[REQ-TRIP-12] Shareable invite link in addition to the code.,"Epic: EP-02 Trips
+Status: Not built
+Requirement: Shareable invite link in addition to the code.
+Test cases: FEAT-04
+Source: See REQ-GRO-01",story,low,backlog,
+"[REQ-CIRC-01] Create a Circle, join it with its own code; it has its own dashboard section.","Epic: EP-03 Circles
+Status: Shipped
+Requirement: Create a Circle, join it with its own code; it has its own dashboard section.
+Test cases: CIRC-01, CIRC-02
+Source: Migration 031",story,medium,done,
+[REQ-CIRC-02] A trip created inside a Circle copies the roster once.,"Epic: EP-03 Circles
+Status: Shipped
+Requirement: A trip created inside a Circle copies the roster once.
+Test cases: CIRC-03",story,medium,done,
+[REQ-CIRC-03] Anyone added to a trip later is synced into the Circle; attaching or detaching a trip keeps rosters consistent,"Epic: EP-03 Circles
+Status: Shipped
+Requirement: Anyone added to a trip later is synced into the Circle; attaching or detaching a trip keeps rosters consistent.
+Test cases: CIRC-04 (blocked), CIRC-05, CIRC-06
+Bugs: DEF-012, DEF-013
+Source: Migrations 036, 039",story,medium,done,
+[REQ-CIRC-04] Balances and settle-up stay strictly per trip.,"Epic: EP-03 Circles
+Status: Shipped
+Requirement: Balances and settle-up stay strictly per trip.
+Test cases: CIRC-07",story,medium,done,
+[REQ-CIRC-05] Removing someone from one trip leaves the Circle and sibling trips untouched.,"Epic: EP-03 Circles
+Status: Shipped
+Requirement: Removing someone from one trip leaves the Circle and sibling trips untouched.
+Test cases: CIRC-08",story,medium,done,
+[REQ-CIRC-06] Circle managers mirror trip managers; add a member by email.,"Epic: EP-03 Circles
+Status: Shipped
+Requirement: Circle managers mirror trip managers; add a member by email.
+Test cases: CIRC-09, CIRC-10
+Source: Migrations 037, 038",story,medium,done,
+"[REQ-CIRC-07] Circle cover photo; inline ""+ Create new circle"" in Trip settings.","Epic: EP-03 Circles
+Status: Shipped
+Requirement: Circle cover photo; inline ""+ Create new circle"" in Trip settings.
+Test cases: CIRC-11, CIRC-14
+Bugs: DEF-018
+Source: Migration 040",story,medium,done,
+[REQ-CIRC-08] A Circle member sees sibling trips' info but never the ledger until they join.,"Epic: EP-03 Circles
+Status: Shipped
+Requirement: A Circle member sees sibling trips' info but never the ledger until they join.
+Test cases: CIRC-12
+Bugs: DEF-029
+Source: Migration 031",story,medium,done,
+[REQ-CIRC-09] Circle-wide balances report.,"Epic: EP-03 Circles
+Status: Not built
+Requirement: Circle-wide balances report.
+Test cases: REC-10
+Source: Not planned",story,low,backlog,
+[REQ-EXP-01] Add an expense in the home or any of 30 currencies with a locked-in rate.,"Epic: EP-04 Expenses and splits
+Status: Shipped
+Requirement: Add an expense in the home or any of 30 currencies with a locked-in rate.
+Test cases: EXP-01, EXP-02, EXP-26, EXP-27, EXP-09",story,medium,done,
+"[REQ-EXP-02] Six split types: equal, percentage, exact, shares, adjustment, itemized (with proportional tax and tip); every","Epic: EP-04 Expenses and splits
+Status: Shipped
+Requirement: Six split types: equal, percentage, exact, shares, adjustment, itemized (with proportional tax and tip); every invalid sum is blocked with a clear message.
+Test cases: EXP-03..08, EXP-18..22, REC-01, REC-02, EXP-10, EXP-37
+Bugs: DEF-011",story,medium,done,
+"[REQ-EXP-03] Amount, description and date validation (zero, negative, over 10,000,000, empty, future date warns).","Epic: EP-04 Expenses and splits
+Status: Shipped
+Requirement: Amount, description and date validation (zero, negative, over 10,000,000, empty, future date warns).
+Test cases: EXP-23..25, EXP-29
+Bugs: DEF-003, DEF-012",story,medium,done,
+[REQ-EXP-04] A backdated expense uses the historical rate for its date; an expense before the trip start is rejected.,"Epic: EP-04 Expenses and splits
+Status: Shipped
+Requirement: A backdated expense uses the historical rate for its date; an expense before the trip start is rejected.
+Test cases: EXP-28
+Bugs: DEF-016
+Source: Commit a823ab2",story,medium,done,
+[REQ-EXP-05] Edit an expense; edit never changes the locked rate unless amount or currency changes.,"Epic: EP-04 Expenses and splits
+Status: Shipped
+Requirement: Edit an expense; edit never changes the locked rate unless amount or currency changes.
+Test cases: EXP-12..17
+Bugs: DEF-014
+Source: Migrations 017, 043",story,medium,done,
+"[REQ-EXP-06] Delete is a soft delete, hidden from members and visible to admins in Trash.","Epic: EP-04 Expenses and splits
+Status: Shipped
+Requirement: Delete is a soft delete, hidden from members and visible to admins in Trash.
+Test cases: EXP-11, ATR-01, ATR-04",story,medium,done,
+"[REQ-EXP-07] Duplicate an expense (new date and fresh rate, original untouched).","Epic: EP-04 Expenses and splits
+Status: Shipped
+Requirement: Duplicate an expense (new date and fresh rate, original untouched).
+Test cases: EXP-30..33",story,medium,done,
+"[REQ-EXP-08] Attach a receipt to an own expense, on the ledger row or in the edit modal.","Epic: EP-04 Expenses and splits
+Status: Shipped
+Requirement: Attach a receipt to an own expense, on the ledger row or in the edit modal.
+Test cases: EXP-34..36",story,medium,done,
+"[REQ-EXP-09] Scan a receipt and pre-fill the form, including line items.","Epic: EP-04 Expenses and splits
+Status: Shipped
+Requirement: Scan a receipt and pre-fill the form, including line items.
+Test cases: EXP-38, EXP-39
+Source: `receipt-scan` function",story,medium,done,
+[REQ-EXP-10] Log an expense by typing a sentence; nothing is saved until the user confirms.,"Epic: EP-04 Expenses and splits
+Status: Shipped
+Requirement: Log an expense by typing a sentence; nothing is saved until the user confirms.
+Test cases: SENT-01..08
+Bugs: DEF-013b
+Source: `parse-expense-text` function",story,medium,done,
+[REQ-EXP-11] Search and filter the ledger; saveable default split per trip; note on an expense.,"Epic: EP-04 Expenses and splits
+Status: Shipped
+Requirement: Search and filter the ledger; saveable default split per trip; note on an expense.
+Test cases: FEAT-01..03",story,medium,done,
+[REQ-EXP-12] Exchange rate and its date are shown in the UI.,"Epic: EP-04 Expenses and splits
+Status: Shipped
+Requirement: Exchange rate and its date are shown in the UI.
+Test cases: REC-11",story,medium,done,
+"[REQ-EXP-13] Calculator in the amount field (operator row, safe parser, live result).","Epic: EP-04 Expenses and splits
+Status: Planned quick win
+Requirement: Calculator in the amount field (operator row, safe parser, live result).
+Test cases: none yet
+Source: `brief-amount-calculator.md`",story,medium,todo,
+[REQ-EXP-14] Automatic recurring expenses (scheduled).,"Epic: EP-04 Expenses and splits
+Status: Parked
+Requirement: Automatic recurring expenses (scheduled).
+Test cases: none yet
+Source: See REQ-GRO-04",story,low,backlog,
+"[REQ-EXP-15] Multiple payers, tags, reimbursable flag, comment threads, per-person export, voice input.","Epic: EP-04 Expenses and splits
+Status: Not built
+Requirement: Multiple payers, tags, reimbursable flag, comment threads, per-person export, voice input.
+Test cases: REC-03..07, REC-09, REC-12, REC-13
+Source: Not planned; testers to decide",story,low,backlog,
+[REQ-EXP-16] A phantom expense must never appear when the network drops during save (atomic save).,"Epic: EP-04 Expenses and splits
+Status: Blocked
+Requirement: A phantom expense must never appear when the network drops during save (atomic save).
+Test cases: RES-09
+Bugs: DEF-026
+Source: Needs an atomic-save migration",story,high,backlog,
+"[REQ-BAL-01] Per-member net balances, to the cent.","Epic: EP-05 Balances and settling up
+Status: Shipped
+Requirement: Per-member net balances, to the cent.
+Test cases: BAL-01",story,medium,done,
+[REQ-BAL-02] Suggested minimal settle-up payments.,"Epic: EP-05 Balances and settling up
+Status: Shipped
+Requirement: Suggested minimal settle-up payments.
+Test cases: BAL-02, BAL-08",story,medium,done,
+[REQ-BAL-03] Record a payment in home or foreign currency with the rate locked at record time; overpayment re-nets correctl,"Epic: EP-05 Balances and settling up
+Status: Shipped
+Requirement: Record a payment in home or foreign currency with the rate locked at record time; overpayment re-nets correctly.
+Test cases: BAL-03..06",story,medium,done,
+"[REQ-BAL-04] Undo a settlement; failure is shown, never silent.","Epic: EP-05 Balances and settling up
+Status: Shipped
+Requirement: Undo a settlement; failure is shown, never silent.
+Test cases: BAL-07
+Bugs: DEF-004",story,medium,done,
+"[REQ-BAL-05] Settle-up deep links (UPI, Venmo, PayPal) with pre-filled amount, gated on the recipient's handle.","Epic: EP-05 Balances and settling up
+Status: Shipped
+Requirement: Settle-up deep links (UPI, Venmo, PayPal) with pre-filled amount, gated on the recipient's handle.
+Test cases: BAL-09 (not run), BAL-10 (not run)
+Source: `upi-pay-link-fixes-2026-09-29.md`",story,medium,done,
+"[REQ-BAL-06] Reminders: automatic after the trip end date, every 3 days, plus a manual Remind button; email and web push.","Epic: EP-05 Balances and settling up
+Status: Shipped
+Requirement: Reminders: automatic after the trip end date, every 3 days, plus a manual Remind button; email and web push.
+Test cases: BAL-11..16 (blocked or not run)
+Source: `trip-reminders-cron`, `remind`",story,medium,done,
+[REQ-BAL-07] Stale-rate protection when saving.,"Epic: EP-05 Balances and settling up
+Status: Shipped
+Requirement: Stale-rate protection when saving.
+Test cases: RES-10, RES-11
+Bugs: DEF-019
+Source: Appendix S",story,medium,done,
+[REQ-BAL-08] One-tap plain-text settlement summary (share sheet or copy; no invite code).,"Epic: EP-05 Balances and settling up
+Status: Planned quick win
+Requirement: One-tap plain-text settlement summary (share sheet or copy; no invite code).
+Test cases: none yet
+Source: `brief-settlement-summary.md`",story,medium,todo,
+"[REQ-BAL-09] Neutral ""paid so far vs. share"" bar per person.","Epic: EP-05 Balances and settling up
+Status: Parked
+Requirement: Neutral ""paid so far vs. share"" bar per person.
+Test cases: none yet
+Source: Polish list",story,low,backlog,
+"[REQ-REP-01] Category chart, by-who-paid chart and category-by-person table, consistent with each other; empty state.","Epic: EP-06 Reports and data portability
+Status: Shipped
+Requirement: Category chart, by-who-paid chart and category-by-person table, consistent with each other; empty state.
+Test cases: REP-01..05",story,medium,done,
+[REQ-REP-02] CSV export (excludes soft-deleted expenses).,"Epic: EP-06 Reports and data portability
+Status: Shipped
+Requirement: CSV export (excludes soft-deleted expenses).
+Test cases: CSV-14, CSV-15
+Bugs: DEF-015",story,medium,done,
+"[REQ-REP-03] CSV import: template, preview, all-or-nothing, 500-row cap, email matching, one consolidated activity entry, u","Epic: EP-06 Reports and data portability
+Status: Shipped
+Requirement: CSV import: template, preview, all-or-nothing, 500-row cap, email matching, one consolidated activity entry, undo, auto-rollback on a dropped connection, offline blocked.
+Test cases: CSV-01..14
+Bugs: DEF-015, DEF-005b
+Source: Migrations 021, 023",story,medium,done,
+[REQ-REP-04] Round-trip: an exported file re-imports unmodified.,"Epic: EP-06 Reports and data portability
+Status: Shipped
+Requirement: Round-trip: an exported file re-imports unmodified.
+Test cases: CSV-01
+Bugs: DEF-015
+Source: Commit 81cae01",story,medium,done,
+[REQ-REP-05] Date-range and member filters on Reports; settlements in CSV.,"Epic: EP-06 Reports and data portability
+Status: Not built
+Requirement: Date-range and member filters on Reports; settlements in CSV.
+Test cases: REP-06, CSV-15 (half)
+Source: Roadmap gap 2",story,low,backlog,
+[REQ-REP-06] End-of-trip PDF or Excel summary.,"Epic: EP-06 Reports and data portability
+Status: Parked
+Requirement: End-of-trip PDF or Excel summary.
+Test cases: none yet
+Source: See REQ-GRO-03",story,low,backlog,
+"[REQ-ACT-01] Append-only activity feed: expense added, edited, deleted; settlement recorded, undone; member joined, removed","Epic: EP-07 Activity and notifications
+Status: Shipped
+Requirement: Append-only activity feed: expense added, edited, deleted; settlement recorded, undone; member joined, removed; one row per CSV import.
+Test cases: ACT-01..05, ACT-08, ACT-09
+Source: Migration 026, 034",story,medium,done,
+"[REQ-ACT-02] Removed members keep their name in old entries and balances (""Former member"" fallback).","Epic: EP-07 Activity and notifications
+Status: Shipped
+Requirement: Removed members keep their name in old entries and balances (""Former member"" fallback).
+Test cases: ACT-05
+Bugs: DEF-022",story,medium,done,
+"[REQ-ACT-03] Push on expense added, settlement recorded (other party only) and CSV import; tap deep-links to the trip.","Epic: EP-07 Activity and notifications
+Status: Shipped
+Requirement: Push on expense added, settlement recorded (other party only) and CSV import; tap deep-links to the trip.
+Test cases: ACT-06 (blocked), BAL-11 (blocked)
+Source: `notify-group`",story,medium,done,
+[REQ-ACT-04] `notify-group` filters non-member targets server-side.,"Epic: EP-07 Activity and notifications
+Status: Shipped
+Requirement: `notify-group` filters non-member targets server-side.
+Test cases: ACT-07",story,medium,done,
+[REQ-ACT-05] Push shows reliably on iOS.,"Epic: EP-07 Activity and notifications
+Status: Shipped
+Requirement: Push shows reliably on iOS.
+Test cases: BAL-11
+Bugs: DEF-028 (open, unconfirmed)
+Source: Roadmap known issue",story,medium,done,
+"[REQ-OFF-01] Offline add, edit, delete and settle queue and sync in order with no loss or duplicates; sync banner reflects ","Epic: EP-08 Offline, PWA and install
+Status: Shipped
+Requirement: Offline add, edit, delete and settle queue and sync in order with no loss or duplicates; sync banner reflects state.
+Test cases: OFF-01..15
+Bugs: DEF-020b
+Source: `offlineQueue.js`",story,medium,done,
+[REQ-OFF-02] Offline reload renders from cache; first-ever offline visit shows a clear message.,"Epic: EP-08 Offline, PWA and install
+Status: Shipped
+Requirement: Offline reload renders from cache; first-ever offline visit shows a clear message.
+Test cases: OFF-01, OFF-11 (not run), OFF-12
+Bugs: DEF-021b
+Source: `offlineCache.js`",story,medium,done,
+[REQ-OFF-03] Last-write-wins with a surfaced warning on conflicting edits.,"Epic: EP-08 Offline, PWA and install
+Status: Shipped
+Requirement: Last-write-wins with a surfaced warning on conflicting edits.
+Test cases: OFF-06, OFF-08
+Source: Migration 020",story,medium,done,
+[REQ-OFF-04] Sign out offline with queued operations is safe.,"Epic: EP-08 Offline, PWA and install
+Status: Shipped
+Requirement: Sign out offline with queued operations is safe.
+Test cases: OFF-16 (partial)
+Bugs: DEF-030",story,medium,done,
+"[REQ-OFF-05] Install prompt: native on Chrome/Edge, Add-to-Home-Screen steps on iPhone, 14-day dismissal, permanent card on","Epic: EP-08 Offline, PWA and install
+Status: Shipped
+Requirement: Install prompt: native on Chrome/Edge, Add-to-Home-Screen steps on iPhone, 14-day dismissal, permanent card on Profile and Help. Native store app wrapper (Capacitor) is a later phase.
+Test cases: INST-01, INST-02
+Source: Commit c3f5946",story,medium,done,
+[REQ-ADM-01] Admin link and /admin only for admins.,"Epic: EP-09 Platform admin
+Status: Shipped
+Requirement: Admin link and /admin only for admins.
+Test cases: AU-01, AUTH-09",story,medium,done,
+"[REQ-ADM-02] List every user; suspend, unsuspend; delete a user with no history; deleting a user with live history is refus","Epic: EP-09 Platform admin
+Status: Shipped
+Requirement: List every user; suspend, unsuspend; delete a user with no history; deleting a user with live history is refused with a clear message.
+Test cases: AU-02..08
+Bugs: DEF-023
+Source: `admin-users`",story,medium,done,
+[REQ-ADM-03] Cannot suspend or delete your own account; only SU promotes and demotes.,"Epic: EP-09 Platform admin
+Status: Shipped
+Requirement: Cannot suspend or delete your own account; only SU promotes and demotes.
+Test cases: AU-09..12",story,medium,done,
+"[REQ-ADM-04] Add or remove a user in any trip (SU only), server-enforced; balance check applies.","Epic: EP-09 Platform admin
+Status: Shipped
+Requirement: Add or remove a user in any trip (SU only), server-enforced; balance check applies.
+Test cases: AU-13..19
+Bugs: DEF-022
+Source: Migrations 018, 019, 046",story,medium,done,
+"[REQ-ADM-05] Every trip platform-wide with member count, creator and date.","Epic: EP-09 Platform admin
+Status: Shipped
+Requirement: Every trip platform-wide with member count, creator and date.
+Test cases: AT-01, AT-02",story,medium,done,
+[REQ-ADM-06] Overview tiles link to the right tab; Active users filters.,"Epic: EP-09 Platform admin
+Status: Shipped
+Requirement: Overview tiles link to the right tab; Active users filters.
+Test cases: AT-03, AT-04
+Bugs: DEF-010",story,medium,done,
+[REQ-ADM-07] Platform-wide settlements view.,"Epic: EP-09 Platform admin
+Status: Shipped
+Requirement: Platform-wide settlements view.
+Test cases: AT-05",story,medium,done,
+"[REQ-ADM-08] Rename, archive, restore a trip; attach a trip to any circle; read-only trip view.","Epic: EP-09 Platform admin
+Status: Shipped
+Requirement: Rename, archive, restore a trip; attach a trip to any circle; read-only trip view.
+Test cases: AT-06..11
+Bugs: DEF-017",story,medium,done,
+"[REQ-ADM-09] Trash: restore, and permanently delete only after 30 days (bulk purge gated; per-row delete any age).","Epic: EP-09 Platform admin
+Status: Shipped
+Requirement: Trash: restore, and permanently delete only after 30 days (bulk purge gated; per-row delete any age).
+Test cases: ATR-01..05, AT-09 (not run), ATR-03 (not run)",story,medium,done,
+[REQ-ADM-10] Admin can permanently delete a Circle; signups-per-day tile; bulk suspend.,"Epic: EP-09 Platform admin
+Status: Not built
+Requirement: Admin can permanently delete a Circle; signups-per-day tile; bulk suspend.
+Test cases: none yet
+Bugs: DEF-031
+Source: Backlog",story,low,backlog,
+"[REQ-ONB-01] First-run welcome tour of four illustrated cards (Trip first, then Circle, then start); ""show every time"" opti","Epic: EP-10 Onboarding and navigation
+Status: Shipped
+Requirement: First-run welcome tour of four illustrated cards (Trip first, then Circle, then start); ""show every time"" option; replay from Help and Dashboard.
+Test cases: TOUR-01, TOUR-02
+Bugs: DEF-034
+Source: Roadmap feedback item 3",story,medium,done,
+"[REQ-ONB-02] Top menu on desktop and bottom tabs on phones (Trips, Circles, Rates, Help, Profile).","Epic: EP-10 Onboarding and navigation
+Status: Shipped
+Requirement: Top menu on desktop and bottom tabs on phones (Trips, Circles, Rates, Help, Profile).
+Test cases: NAV-01, NAV-02, RES-02..04, RES-01
+Bugs: DEF-020
+Source: Commit 4d23709",story,medium,done,
+"[REQ-ONB-03] Breadcrumbs on trip and circle pages; ""Where do I start?"" strip on Overview.","Epic: EP-10 Onboarding and navigation
+Status: Shipped
+Requirement: Breadcrumbs on trip and circle pages; ""Where do I start?"" strip on Overview.
+Test cases: NAV-03",story,medium,done,
+[REQ-ONB-04] Help page; light and dark theme with persistence.,"Epic: EP-10 Onboarding and navigation
+Status: Shipped
+Requirement: Help page; light and dark theme with persistence.
+Test cases: RES-05..08",story,medium,done,
+"[REQ-SEC-01] Non-members never see another trip's data (RLS), including direct API calls.","Epic: EP-11 Security and data integrity
+Status: Shipped
+Requirement: Non-members never see another trip's data (RLS), including direct API calls.
+Test cases: SEC-01, SEC-04",story,medium,done,
+[REQ-SEC-02] A non-admin cannot self-promote or call admin functions.,"Epic: EP-11 Security and data integrity
+Status: Shipped
+Requirement: A non-admin cannot self-promote or call admin functions.
+Test cases: SEC-02, SEC-03, AU-16, AU-19 (not run)",story,medium,done,
+[REQ-SEC-03] Storage writes only for managers.,"Epic: EP-11 Security and data integrity
+Status: Shipped
+Requirement: Storage writes only for managers.
+Test cases: SEC-05",story,medium,done,
+[REQ-SEC-04] User text is inert (no XSS).,"Epic: EP-11 Security and data integrity
+Status: Shipped
+Requirement: User text is inert (no XSS).
+Test cases: SEC-06",story,medium,done,
+[REQ-SEC-05] A tampered or expired session degrades safely.,"Epic: EP-11 Security and data integrity
+Status: Shipped
+Requirement: A tampered or expired session degrades safely.
+Test cases: SEC-07 (partial)",story,medium,done,
+[REQ-SEC-06] RLS policies that read other tables go through SECURITY DEFINER helpers.,"Epic: EP-11 Security and data integrity
+Status: Shipped
+Requirement: RLS policies that read other tables go through SECURITY DEFINER helpers.
+Test cases: EXP-12, TRIP-22
+Bugs: DEF-014, DEF-009
+Source: Engineering rule, migration 025",story,medium,done,
+"[REQ-GRO-01] Join by link (`/join/trip/:code`, `/join/circle/:code`), Copy/Share link, invite survives sign-up, Open Graph ","Epic: EP-12 Growth (parked, in priority order; none started)
+Status: Parked
+Requirement: Join by link (`/join/trip/:code`, `/join/circle/:code`), Copy/Share link, invite survives sign-up, Open Graph preview, admin Growth tab. Done when a logged-out person can tap a link, sign up, and land inside the trip.
+Source: `growth-brief-join-link.md` (not yet in repo). Effort small to medium.",story,low,backlog,
+"[REQ-GRO-02] Read-only balance link (hashed, expiring, revocable; privacy review first; ""Join this trip"" call to action).","Epic: EP-12 Growth (parked, in priority order; none started)
+Status: Parked
+Requirement: Read-only balance link (hashed, expiring, revocable; privacy review first; ""Join this trip"" call to action).
+Source: Depends on REQ-GRO-01.",story,low,backlog,
+[REQ-GRO-03] End-of-trip PDF or Excel export. Open decision: free core or Plus.,"Epic: EP-12 Growth (parked, in priority order; none started)
+Status: Parked
+Requirement: End-of-trip PDF or Excel export. Open decision: free core or Plus.",story,low,backlog,
+[REQ-GRO-04] Automatic recurring expenses. Open decision: free core or Plus.,"Epic: EP-12 Growth (parked, in priority order; none started)
+Status: Parked
+Requirement: Automatic recurring expenses. Open decision: free core or Plus.
+Source: pg_cron already exists.",story,low,backlog,
+[REQ-FUND-01] Shared Fund mode (family fund).,"Epic: EP-13 Shared Fund mode
+Status: Blocked
+Requirement: Shared Fund mode (family fund).
+Source: Blocked on a family verdict on its separate BRD.",story,high,backlog,
+[DEF-001] Sign-up failed: Supabase gated account creation on the Resend confirmation email.,"Requirement: AUTH-01
+Found by test: AUTH-01
+Fix: Config: Confirm email turned off 2026-09-29
+Status: Fixed",bug,medium,done,
+[DEF-002] Malformed circle id showed a raw Postgres error.,"Requirement: AUTH-06
+Found by test: CIRC-13
+Fix: 29e95f2
+Status: Fixed",bug,medium,done,
+[DEF-003] Amount 999999999.99 froze the split preview.,"Requirement: EXP-03
+Found by test: EXP-24
+Fix: 0869eff
+Status: Fixed",bug,medium,done,
+[DEF-004] Settlement undo silently did nothing when blocked.,"Requirement: BAL-04
+Found by test: BAL-07
+Fix: 29e95f2 (row-count guard)
+Status: Fixed",bug,medium,done,
+[DEF-005] /login did not redirect when signed in.,"Requirement: AUTH-05
+Found by test: AUTH-19
+Fix: 0869eff
+Status: Fixed",bug,medium,done,
+[DEF-005b] Import undo silently did nothing when blocked.,"Requirement: REP-03
+Found by test: CSV-09
+Fix: 0869eff
+Status: Fixed",bug,medium,done,
+[DEF-006] /reset-password showed the form with no recovery link.,"Requirement: AUTH-04
+Found by test: AUTH-16
+Fix: 0869eff
+Status: Fixed",bug,medium,done,
+[DEF-007] A PDF was accepted as a cover photo.,"Requirement: TRIP-06
+Found by test: TRIP-18
+Fix: 0869eff
+Status: Fixed",bug,medium,done,
+[DEF-008] A 14.1 MB image was stored and served in full.,"Requirement: TRIP-06
+Found by test: TRIP-19
+Fix: a5b64e1 (downscale to JPEG)
+Status: Fixed (avatar path not live-tested)",bug,medium,done,
+[DEF-009] An archived trip stayed reachable to its creator and accepted an expense.,"Requirement: TRIP-08
+Found by test: TRIP-22
+Fix: TripView treats archived as not found
+Status: Partial: server RLS still allows inserts into an archived trip (see DEF-025)",bug,medium,in_progress,
+[DEF-010] Active users tile did nothing.,"Requirement: ADM-06
+Found by test: AT-04
+Fix: 0869eff
+Status: Fixed",bug,medium,done,
+[DEF-011] Exact split off by 0.01 was accepted.,"Requirement: EXP-02
+Found by test: EXP-07
+Fix: 0869eff
+Status: Fixed",bug,medium,done,
+[DEF-012] Future-dated expense gave no warning.,"Requirement: EXP-03
+Found by test: EXP-29
+Fix: 0869eff (warn, still saves)
+Status: Fixed",bug,medium,done,
+[DEF-013] Trips attached to a Circle did not sync their roster.,"Requirement: CIRC-03
+Found by test: Circle E2E
+Fix: Migration 039
+Status: Fixed",bug,medium,done,
+[DEF-013b] Offline sentence parse showed a generic message.,"Requirement: EXP-10
+Found by test: SENT-08
+Fix: 0869eff
+Status: Fixed (code-verified)",bug,medium,done,
+[DEF-014] A member could not delete their own expense (RLS view policy).,"Requirement: EXP-05
+Found by test: EXP-12
+Fix: Migration 043
+Status: Fixed",bug,medium,done,
+[DEF-015] An exported CSV did not re-import.,"Requirement: REP-04
+Found by test: CSV-01
+Fix: 81cae01
+Status: Fixed",bug,medium,done,
+[DEF-016] Backdated expenses used today's rate.,"Requirement: EXP-04
+Found by test: EXP-28
+Fix: a823ab2
+Status: Fixed",bug,medium,done,
+[DEF-017] Admin archive failed with an RLS error.,"Requirement: ADM-08
+Found by test: AT-07
+Fix: Migration 044, d6c4b53
+Status: Fixed",bug,medium,done,
+[DEF-018] Circle delete failed for its creator.,"Requirement: CIRC-07
+Found by test: Appendix P
+Fix: Appendix P
+Status: See Appendix P",bug,medium,done,
+[DEF-019] A stale exchange rate was saved.,"Requirement: BAL-07
+Found by test: RES-10
+Fix: Appendix S
+Status: Fixed",bug,medium,done,
+"[DEF-020] Horizontal overflow at 375 and 320 px (trip tabs, profile, navbar).","Requirement: ONB-02
+Found by test: RES-02
+Fix: RES-02 fix
+Status: Fixed",bug,medium,done,
+[DEF-020b] A synced expense needed a manual refresh.,"Requirement: OFF-01
+Found by test: offline testing
+Fix: Auto reload after sync
+Status: Fixed",bug,medium,done,
+"[DEF-021b] Safari offline resolved as a query error, not a rejection.","Requirement: OFF-02
+Found by test: offline testing
+Fix: Check navigator.onLine
+Status: Fixed",bug,medium,done,
+[DEF-022] Admin removal with an unsettled balance orphaned a member's name and balance.,"Requirement: TRIP-07
+Found by test: ACT-05, TRIP-20
+Fix: Migration 046 + ""Former member"" label
+Status: Fixed",bug,medium,done,
+"[DEF-023] Deleting a user with history gave ""Database error deleting user"".","Requirement: ADM-02
+Found by test: AU-08
+Fix: f8cdde5 (admin-users)
+Status: Fixed",bug,medium,done,
+[DEF-024] A suspended user's live session kept working.,"Requirement: AUTH-07
+Found by test: AU-04
+Fix: Migration 047 + session revoke
+Status: Fixed",bug,medium,done,
+[DEF-025] Server RLS still allows expense inserts into an archived trip.,"Requirement: TRIP-08
+Found by test: TRIP-22
+Fix: Needs a migration
+Status: Open",bug,high,todo,
+[DEF-026] Dropped connection mid-save can leave a phantom expense.,"Requirement: EXP-16
+Found by test: RES-09
+Fix: Needs an atomic-RPC migration
+Status: Open",bug,high,todo,
+[DEF-027] Admin link and name missing right after a fresh load.,"Requirement: AUTH-05
+Found by test: AUTH-20
+Fix: See Sheet
+Status: Fixed",bug,medium,done,
+[DEF-028] iOS web push disappears after display.,"Requirement: ACT-05
+Found by test: BAL-11
+Fix: Diagnostic logging in `sw.js`; cause unconfirmed
+Status: Open",bug,high,todo,
+"[DEF-029] The ""Viewing as admin"" banner wrongly shows for a non-joined Circle member.","Requirement: CIRC-08
+Found by test: CIRC-12
+Fix: Copy only
+Status: Open (minor)",bug,low,todo,
+[DEF-030] Sign out offline with queued ops only partly fixed.,"Requirement: OFF-04
+Found by test: OFF-16
+Fix: Partial
+Status: Partial",bug,high,in_progress,
+[DEF-031] A user cannot be deleted if their archived circle still exists; admin has no circle purge.,"Requirement: ADM-10
+Found by test: AU-08
+Fix: Backlog
+Status: Open",bug,medium,todo,
+[DEF-032] Malformed trip id showed a raw Postgres error.,"Requirement: AUTH-06
+Found by test: AUTH-18
+Fix: `TripView.jsx`
+Status: Fixed",bug,medium,done,
+[DEF-033] Trip dates had no validation.,"Requirement: TRIP-10
+Found by test: TRIP-24, TRIP-25
+Fix: Migrations 027, 028
+Status: Fixed",bug,medium,done,
+[DEF-034] Tour disappeared on untick; replay reappeared after refresh.,"Requirement: ONB-01
+Found by test: TOUR-02
+Fix: Fixed during build
+Status: Fixed",bug,medium,done,
+"[DEF-035] ""Add to trip"" lists trips the user is already in; Admin Circle dropdown lists archived circles.","Requirement: ADM-04
+Found by test: AU-15
+Fix: Backlog
+Status: Open (nit)",bug,low,todo,
+[DEF-036] Inline create-circle does three non-atomic writes (orphan or duplicate if one fails).,"Requirement: CIRC-07
+Found by test: CIRC-14
+Fix: Backlog
+Status: Open (latent)",bug,medium,todo,
+"[DEF-037] An unhandled fetch error left skeletons spinning offline (dashboard, trip, admin route).","Requirement: OFF-01
+Found by test: historical
+Fix: try/catch added
+Status: Fixed",bug,medium,done,
