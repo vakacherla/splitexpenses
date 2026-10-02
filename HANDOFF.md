@@ -1,11 +1,25 @@
 # Handoff — Split Expenses QA/fix session
 
-_Last updated: 2026-10-01 (late). Resume here; read only this file + the "Appendix R/Q/P/O" tail of
+_Last updated: 2026-10-02 (evening). Resume here; read only this file + the "Appendix R/Q/P/O" tail of
 `test-cases-2026-09-29.md` for detail._
 
 Record keeping: `test-cases-2026-09-29.md` (evidence-backed, authoritative) is mirrored to the
 [Google Sheet](https://docs.google.com/spreadsheets/d/1QHNnjMGCffXa4okRjHJXi9tn_WjywgLFrAwy6kiyZXk/edit?gid=366923856)
 (sheet `Cases`, columns E=Status, F=Evidence). Keep both in sync; reconcile if they drift (they did once).
+
+## 2026-10-02 admin (SU) batch — done (details: Appendix S of test-cases)
+PASS: AU-03/05/06/11/13/14/15/18, AT-02/03/06/08/11, ATR-02/05. AU-08 was a real bug (generic "Database error
+deleting user") — fixed in `admin-users`, **deployed**, re-verified (f8cdde5, local only, not pushed).
+Merged owner-supplied handoffs (commit after f8cdde5): `website-sync.patch` (home page "free forever", pricing
+removed, Help `ai-and-data` section) + `roadmap-parked-priorities.patch`; tests 287/287, build OK, lint 20 = baseline.
+Briefs committed as docs, NOT built: `brief-amount-calculator.md`, `brief-settlement-summary.md`.
+Cleanup done: re-archived `P1 close` + `roadmap check (copy)` trips; deleted user `E2E Verify`.
+**Tomorrow (2026-10-03, owner confirmed):** AT-09 + ATR-03 — oldest archived/trashed items (29 days on 10-02:
+`Live Test Delete` trip, Sep-2 era) become purge-eligible; bulk "Permanently delete N eligible" button should
+appear. Needs owner OK on which item to purge. Spec note: per-row "Delete permanently" works at any age.
+Still open: AU-07 (needs user with only soft-deleted history, not a trip creator), AU-04/16/19 (need Jayashree
+live session / non-SU), second-account cases, phone cases, inbox cases. Not pushed: everything since a5b64e1.
+Small UX nits: admin Circle dropdown lists archived circles; "Add to a trip" still offers trips user is in.
 
 ## Standing rules (from the owner — do not skip)
 1. **No fix is pushed until validated holistically**: grep every consumer of what changed, think about

@@ -369,6 +369,38 @@ export const HELP_SECTIONS = [
     ),
   },
   {
+    id: 'ai-and-data',
+    title: 'AI features & your data',
+    body: (
+      <>
+        <p>
+          Two features use an AI service: <strong className="text-ink">receipt scanning</strong> and{' '}
+          <strong className="text-ink">typing a sentence</strong> to fill in an expense. Everything else —
+          your ledger, balances, and reports — never leaves the app's own database.
+        </p>
+        <H>What gets sent, and only when you tap</H>
+        <p>
+          <strong className="text-ink">Scan a receipt:</strong> the photo is sent to Google's Gemini model to
+          be read. If Gemini can't read it, a fallback model (Qwen, via OpenRouter) is tried.
+        </p>
+        <p>
+          <strong className="text-ink">Type a sentence:</strong> the sentence, the names of the trip's members,
+          your home currency, and today's date are sent to the same providers, so names can be matched to real
+          members. Nothing is saved until you review the form and press Save.
+        </p>
+        <p>
+          Your other expenses, balances, and trips are never sent. The providers process what they receive
+          under their own terms. We don't show ads or sell data.
+        </p>
+        <H>Exchange rates</H>
+        <p>
+          Looking up a rate sends only a currency pair and a date to the Frankfurter API — no personal
+          information.
+        </p>
+      </>
+    ),
+  },
+  {
     id: 'faq',
     title: 'A few common questions',
     body: (

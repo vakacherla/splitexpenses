@@ -17,7 +17,12 @@ const USPS = [
   {
     icon: '"…"',
     title: 'Log an expense by typing a sentence',
-    body: '"Lunch 24.50 split with Jayashree" becomes a categorized, split ledger entry — no form-filling required.',
+    body: '"Lunch 24.50 split with Priya and Tom" becomes a categorized, split ledger entry — no form-filling required.',
+  },
+  {
+    icon: '↻',
+    title: 'Works with no signal',
+    body: 'Add expenses offline and they sync cleanly when you reconnect — nothing lost, nothing duplicated.',
   },
   {
     icon: '◐',
@@ -26,18 +31,13 @@ const USPS = [
   },
   {
     icon: '✓',
-    title: 'Debt simplification',
-    body: 'Settle-up shows the smallest possible set of payments to clear every debt in the group, not every pairwise IOU.',
-  },
-  {
-    icon: '↗',
-    title: 'One-tap settle-up links',
-    body: 'Deep-links straight into UPI, Venmo, or PayPal with the amount pre-filled — this stays a ledger, your bank stays your bank.',
+    title: 'Fewest payments to settle up',
+    body: 'Settle-up shows the smallest possible set of payments to clear every debt, with UPI, Venmo, and PayPal links that pre-fill the amount — this stays a ledger, your bank stays your bank.',
   },
   {
     icon: '⇅',
     title: 'Your data, portable',
-    body: "Export or bulk-import any trip as CSV, or query the raw database directly. Nothing is locked behind a vendor's export button.",
+    body: "Export any trip as CSV, or bulk-import one — all-or-nothing, with one-click undo. Nothing is locked behind a vendor's export button.",
   },
 ]
 
@@ -168,7 +168,6 @@ function ReportsMock() {
 
 export default function Overview() {
   const [showcase, setShowcase] = useState('ledger')
-  const [region, setRegion] = useState('us')
 
   return (
     <div className="bg-paper">
@@ -226,7 +225,7 @@ export default function Overview() {
             </div>
             <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[12.5px] text-ink-soft">
               <span className="flex items-center gap-1.5">
-                <span className="font-bold text-owed">✓</span>Free during early access
+                <span className="font-bold text-owed">✓</span>Free forever, no ads
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="font-bold text-owed">✓</span>No card required
@@ -342,13 +341,13 @@ export default function Overview() {
                   </p>
                   <ul className="space-y-2.5 text-[13.5px] text-ink">
                     <li className="flex gap-2.5">
-                      <span className="font-bold text-owed">✓</span>Live conversion, not a manual lookup
+                      <span className="font-bold text-owed">✓</span>Daily ECB rates, not a manual lookup
                     </li>
                     <li className="flex gap-2.5">
                       <span className="font-bold text-owed">✓</span>Itemized receipts stay attached to the line
                     </li>
                     <li className="flex gap-2.5">
-                      <span className="font-bold text-owed">✓</span>Included free during early access
+                      <span className="font-bold text-owed">✓</span>Included in the free plan
                     </li>
                   </ul>
                 </div>
@@ -360,7 +359,7 @@ export default function Overview() {
                 <div>
                   <h3 className="mb-2.5 text-xl font-semibold text-ink">Type a sentence. It fills the form.</h3>
                   <p className="mb-4 text-[14.5px] leading-relaxed text-ink-soft">
-                    "Lunch 24.50 split with Jayashree" becomes a categorized, split expense — plain English
+                    "Lunch 24.50 split with Priya and Tom" becomes a categorized, split expense — plain English
                     straight into the ledger.
                   </p>
                   <ul className="space-y-2.5 text-[13.5px] text-ink">
@@ -391,7 +390,7 @@ export default function Overview() {
                       <span className="font-bold text-owed">✓</span>Spend by category, every trip
                     </li>
                     <li className="flex gap-2.5">
-                      <span className="font-bold text-owed">✓</span>Included free during early access
+                      <span className="font-bold text-owed">✓</span>Included in the free plan
                     </li>
                     <li className="flex gap-2.5">
                       <span className="font-bold text-owed">✓</span>Export the same data to CSV in one tap
@@ -412,12 +411,11 @@ export default function Overview() {
               What's included
             </div>
             <h2 className="mb-2.5 font-display text-2xl font-medium text-ink sm:text-[29px]">
-              Free covers the whole trip. Plus goes further.
+              Everything here is free.
             </h2>
             <p className="text-[15px] leading-relaxed text-ink-soft">
-              No feature here is held back to force an upgrade — Free is a complete, real product on its own. Plus
-              adds the handful of things that take real infrastructure to run (live rates, OCR), and everything on
-              this page is free for early-access accounts either way.
+              No feature here is held back to force an upgrade. The core ledger is free forever — and if an optional
+              paid Plus tier ever arrives, nothing on this page moves behind it.
             </p>
           </div>
 
@@ -442,16 +440,16 @@ export default function Overview() {
             </ul>
             <ul className="space-y-3.5">
               <li className="flex items-start gap-2.5 text-sm text-ink">
-                <span className="w-4 shrink-0 text-center text-accent">◆</span>Multi-currency, live conversion
+                <span className="w-4 shrink-0 text-center text-primary">✓</span>Multi-currency, daily ECB conversion
               </li>
               <li className="flex items-start gap-2.5 text-sm text-ink">
-                <span className="w-4 shrink-0 text-center text-accent">◆</span>Category spending reports & charts
+                <span className="w-4 shrink-0 text-center text-primary">✓</span>Category spending reports & charts
               </li>
               <li className="flex items-start gap-2.5 text-sm text-ink">
-                <span className="w-4 shrink-0 text-center text-accent">◆</span>Receipt scanning (OCR) & itemization
+                <span className="w-4 shrink-0 text-center text-primary">✓</span>Receipt scanning (OCR) & itemization
               </li>
               <li className="flex items-start gap-2.5 text-sm text-ink">
-                <span className="w-4 shrink-0 text-center text-accent">◆</span>
+                <span className="w-4 shrink-0 text-center text-primary">✓</span>
                 <span>
                   Log an expense by typing a sentence
                   <span className="ml-2 rounded bg-accent-tint px-1.5 py-0.5 font-mono text-[9.5px] font-semibold uppercase tracking-wide text-accent">
@@ -460,7 +458,7 @@ export default function Overview() {
                 </span>
               </li>
               <li className="flex items-start gap-2.5 text-sm text-ink">
-                <span className="w-4 shrink-0 text-center text-accent">◆</span>Saved default splits per group
+                <span className="w-4 shrink-0 text-center text-primary">✓</span>Saved default splits per group
               </li>
             </ul>
           </div>
@@ -468,9 +466,6 @@ export default function Overview() {
           <div className="mb-8 flex justify-center gap-6 border-t border-line pt-5 text-[13px] text-ink-soft">
             <span className="flex items-center gap-1.5">
               <span className="text-primary">✓</span>Free, forever
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="text-accent">◆</span>Plus — free during early access
             </span>
           </div>
 
@@ -483,7 +478,7 @@ export default function Overview() {
               <div className="mb-4 flex items-start gap-3 rounded-xl border border-owed/30 bg-owed-tint px-4.5 py-4 text-[13.5px] text-ink">
                 <span>💸</span>
                 <span>
-                  <b className="text-owed">Nothing gated during early access</b> — every row below is available on
+                  <b className="text-owed">Nothing gated</b> — every row below is available on
                   the free plan right now.
                 </span>
               </div>
@@ -505,7 +500,7 @@ export default function Overview() {
                   </thead>
                   <tbody>
                     {[
-                      ['Multi-currency, live rates', 'Strong', 'Weak', 'Strong'],
+                      ['Multi-currency, daily ECB rates', 'Strong', 'Weak', 'Strong'],
                       ['Category reports / charts', 'Strong', 'Absent', 'Strong'],
                       ['Receipt scanning (OCR, itemized)', 'Strong', 'Absent', 'Strong'],
                       ['Log an expense by typing a sentence', 'Strong', 'Absent', 'Absent'],
@@ -537,8 +532,7 @@ export default function Overview() {
                 </table>
               </div>
               <p className="mt-3 text-[11.5px] text-ink-soft">
-                Splitwise pricing and feature gating as documented in this project's own competitive research, current
-                as of 2026.
+                Splitwise pricing and feature gating as documented in this project's own competitive research, as of September 2026.
               </p>
             </div>
           </details>
@@ -548,119 +542,55 @@ export default function Overview() {
       <section id="pricing" className="border-t border-line py-12 sm:py-14">
         <div className="mx-auto max-w-5xl px-5 sm:px-8">
           <div className="mb-8 max-w-xl">
-            <div className="mb-2.5 font-mono text-[11.5px] uppercase tracking-wide text-accent">Pricing</div>
+            <div className="mb-2.5 font-mono text-[11.5px] uppercase tracking-wide text-accent">Free, forever</div>
             <h2 className="mb-2.5 font-display text-2xl font-medium text-ink sm:text-[29px]">
-              Free to start. Honestly priced later.
+              The whole core ledger is free.
             </h2>
             <p className="text-[15px] leading-relaxed text-ink-soft">
-              Every feature above is free during early access. When Plus launches, pricing is set relative to what
-              people already pay for Splitwise Pro — never above it.
+              No trial, no expiry, no card, no ads. If we ever add an optional paid Plus tier, it would come only once
+              the community is a few thousand strong — and it would add new extras without moving anything in the free
+              core behind it.
             </p>
           </div>
 
-          <div className="mb-7 flex items-start gap-3 rounded-xl border border-accent/35 bg-accent-tint px-4.5 py-3.5 text-[13.5px] text-ink">
-            <span>🎁</span>
-            <span>
-              <b className="text-accent">Early-access pricing:</b> everything on this page is free for every account
-              created now — that price is locked in for as long as you keep the account, even after Plus launches.
-            </span>
-          </div>
-
-          <div className="mb-7 inline-flex gap-1 rounded-full border border-line bg-paper-raised p-1">
-            {[
-              { id: 'us', label: 'Global (USD)' },
-              { id: 'in', label: 'India (INR)' },
-            ].map((r) => (
-              <button
-                key={r.id}
-                type="button"
-                onClick={() => setRegion(r.id)}
-                className={`rounded-full px-4 py-2 text-[13px] font-semibold transition-colors ${
-                  region === r.id ? 'bg-primary text-on-primary' : 'text-ink-soft'
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div className="rounded-2xl border border-line bg-paper-raised p-6 shadow-raised">
-              <div className="mb-2 font-mono text-[10.5px] uppercase tracking-wide text-ink-soft">Free</div>
-              <h3 className="mb-2.5 text-lg font-semibold text-ink">Free, always</h3>
-              <div className="mb-1 flex items-baseline gap-2">
-                <span className="num font-display text-3xl font-semibold text-ink">
-                  {region === 'us' ? '$0' : '₹0'}
-                </span>
-                <span className="text-[13px] text-ink-soft">/ forever</span>
-              </div>
-              <div className="mb-4.5 text-xs text-ink-soft">The core ledger — no trial, no expiry.</div>
-              <ul className="mb-5 space-y-2.5 text-[13.5px]">
-                <li className="flex gap-2.5">
-                  <span className="font-bold text-owed">✓</span>Unlimited trips and expenses
-                </li>
-                <li className="flex gap-2.5">
-                  <span className="font-bold text-owed">✓</span>Equal / percentage / exact / shares / adjustment
-                  splits
-                </li>
-                <li className="flex gap-2.5">
-                  <span className="font-bold text-owed">✓</span>Settle-up deep links{region === 'in' ? ' via UPI' : ''}
-                </li>
-              </ul>
-              <Link
-                to="/signup"
-                className="block rounded-full border border-line bg-paper px-5 py-2.5 text-center text-sm font-semibold text-ink transition-colors hover:border-primary"
-              >
-                Create free account
-              </Link>
+          <div className="rounded-2xl border border-primary bg-paper-raised p-6 shadow-raised sm:max-w-md">
+            <div className="mb-2 font-mono text-[10.5px] uppercase tracking-wide text-primary">Free</div>
+            <h3 className="mb-2.5 text-lg font-semibold text-ink">Free, always</h3>
+            <div className="mb-1 flex items-baseline gap-2">
+              <span className="num font-display text-3xl font-semibold text-ink">Free</span>
+              <span className="text-[13px] text-ink-soft">/ forever</span>
             </div>
-
-            <div className="rounded-2xl border border-primary bg-paper-raised p-6 shadow-raised">
-              <div className="mb-2 font-mono text-[10.5px] uppercase tracking-wide text-primary">
-                Plus · after early access
-              </div>
-              <h3 className="mb-2.5 text-lg font-semibold text-ink">Everything, unlocked</h3>
-              <div className="mb-1 flex items-baseline gap-2">
-                <span className="num font-display text-2xl font-semibold text-ink-soft line-through decoration-2">
-                  {region === 'us' ? '$24.99' : '₹999'}
-                </span>
-                <span className="text-[13px] text-ink-soft">/ year, someday</span>
-              </div>
-              <div className="mb-4.5 text-xs text-ink-soft">
-                Not active — no billing exists yet. Included free for as long as you're on an early-access account.
-                {region === 'in' && " Shown for reference against Splitwise Pro's ₹2,499/year in India."}
-              </div>
-              <ul className="mb-5 space-y-2.5 text-[13.5px]">
-                <li className="flex gap-2.5">
-                  <span className="font-bold text-owed">✓</span>Multi-currency conversion & reports
+            <div className="mb-4.5 text-xs text-ink-soft">The whole core ledger — no trial, no expiry.</div>
+            <ul className="mb-5 space-y-2.5 text-[13.5px]">
+              {[
+                'Unlimited trips, members, and expenses',
+                'Equal, percentage, exact, shares, adjustment, and itemized splits',
+                'Multi-currency with daily ECB rates',
+                'Receipt scanning and typed-sentence entry',
+                'Offline entry that syncs when you reconnect',
+                'CSV export and all-or-nothing import',
+                'Settle-up deep links',
+              ].map((item) => (
+                <li key={item} className="flex gap-2.5">
+                  <span className="font-bold text-owed">✓</span>
+                  {item}
                 </li>
-                <li className="flex gap-2.5">
-                  <span className="font-bold text-owed">✓</span>Receipt scanning (OCR) & itemization
-                </li>
-                <li className="flex gap-2.5">
-                  <span className="font-bold text-owed">✓</span>CSV export / bulk import
-                </li>
-              </ul>
-              <Link
-                to="/signup"
-                className="block rounded-full bg-primary px-5 py-2.5 text-center text-sm font-semibold text-on-primary transition-colors hover:bg-primary-dark"
-              >
-                Create free account
-              </Link>
-            </div>
+              ))}
+            </ul>
+            <Link
+              to="/signup"
+              className="block rounded-full bg-primary px-5 py-2.5 text-center text-sm font-semibold text-on-primary transition-colors hover:bg-primary-dark"
+            >
+              Create free account
+            </Link>
           </div>
-          <p className="mt-4 text-[11.5px] text-ink-soft">
-            India pricing reflects standard purchasing-power-adjusted SaaS discounting (45–60% below global list
-            price), not a flat currency conversion — for reference, Splitwise Pro is priced separately at
-            ₹2,499/year in India rather than a like-for-like FX conversion of its $59.99 global price.
-          </p>
         </div>
       </section>
 
       <div className="mx-auto max-w-5xl px-5 pb-12 sm:px-8">
         <div className="rounded-3xl bg-primary-dark px-6 py-8 text-center sm:px-10">
           <p className="font-display text-xl font-medium text-on-primary sm:text-2xl">
-            Start free. Keep early-access pricing for life.
+            Start free. The core stays free forever.
           </p>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 border-t border-on-primary/15 pt-5 text-xs text-on-primary/70">
             <span>Split Expenses — shared expenses, any currency.</span>

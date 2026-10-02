@@ -760,7 +760,9 @@ and #3 are now shipped (below); #4 remains, blocked on family review.
      only breaks spend down by category and by person — no way to
      narrow to a date range or a single member the way the competitor's
      reports do. Contained addition, same component.
-  3. **Two split types we don't have: "Shares" and "Adjustment."**
+  3. ~~**Two split types we don't have: "Shares" and "Adjustment."**~~
+     ✅ **Since shipped** — `splitByShares` / `splitByAdjustments`; the form
+     now offers six split types. Original note kept below for history.
      Confirmed directly from their split-method tab strip (Equally /
      Percent / Shares / Adjustment / Manual / Itemize) in the receipt-
      upload demo video. "Shares" splits by relative weight (e.g. 2
@@ -785,6 +787,90 @@ and #3 are now shipped (below); #4 remains, blocked on family review.
   evidence in their product beyond marketing copy), and fetching a
   friend's name/photo from a payment app during invite (cosmetic, not
   functional).
+
+### Quick wins — usability (set 2026-10-02, not started)
+
+Small, self-contained, and independent of the growth stack below — pick
+up any time. From a reviewed list of five user-suggested usability ideas
+(the other three are the read-only link, now Priority 2 below, avatar
+chips, and the "who should pay next" nudge, which is not being built —
+see "Deliberately not doing").
+
+1. **One-tap settlement summary (text) — Quick win 1.** *Effort: small.*
+   Users settle in chat (WhatsApp), outside the app, but today the only
+   copy path in settle-up is a recipient's payment handle
+   (`SettleUpModal.jsx`). Add a "Share summary" button on Balances that
+   builds a plain-text who-pays-whom list from the existing
+   `simplifyDebts` output, in the trip's home currency (`formatMoney`),
+   via `navigator.share` with a clipboard fallback. **No invite code or
+   trip link in the text** — it would travel wherever it is pasted.
+   Side benefits: every share is app exposure in a chat, and settlement
+   completion becomes measurable. Brief: `brief-settlement-summary.md`.
+   The PDF/Excel version is parked Priority 3 below.
+2. **Calculator in the amount field — Quick win 2.** *Effort: medium
+   (UX, not math).* Trip entry is arithmetic (shared items, tax, tip).
+   The field is `inputMode="decimal"`, and iOS's decimal keypad has no
+   operators — so it needs an on-screen operator row plus a small
+   hand-written parser (no `eval`) with a live "= result". Also fixes a
+   latent bug: `parseFloat('12.5+8')` silently returns 12.5 today. Brief:
+   `brief-amount-calculator.md`.
+
+**Polish, later:** avatar chips on ledger rows (the `Avatar` component
+exists; show up to 3 plus "+N" — the value is catching a wrongly
+included person early), and a neutral "paid so far vs. share" bar per
+person on Balances.
+
+### Parked — growth priorities (set 2026-10-02)
+
+**Goal behind the ranking:** more sign-ups and more trips, as the traction
+story for investors or acquirers. Ram's call: park these four for later —
+**none is started.** Order matters; each later item leans on the earlier
+ones. The detailed brief for #1 (and the growth-metrics companion) is
+`growth-brief-join-link.md`. Re-check Settle Up / Splid listings before
+starting any of these — their free-vs-paid gating changes.
+
+1. **Join by link, plus growth metrics — Priority 1.** *Effort: small to
+   medium.* Already noted as gap #1 in the 2026-09-13 entry above; raised
+   to the top because it removes the biggest sign-up friction (today: get
+   a code, sign up, confirm email, find "Join with a code", type it).
+   Scope: `/join/trip/:code` and `/join/circle/:code` wrapping the
+   existing `join_group_by_code` / `join_circle_by_code` RPCs; Copy/Share
+   link next to the code; the pending invite must survive signup *and*
+   email confirmation in a different browser (localStorage plus an
+   `emailRedirectTo` query string — verify the Supabase redirect
+   allow-list first); Open Graph tags so shared links preview properly.
+   Companion: an admin "Growth" tab (activated users, real trips, repeat
+   trips, retention) plus a few first-party invite-funnel events. **Done
+   when** a logged-out person can tap a link, sign up, confirm, and land
+   inside the trip.
+2. **Read-only balance link — Priority 2.** *Effort: medium. Depends on
+   #1.* Settle Up's hook: friends see balances in a browser without
+   installing anything. Needs a hashed, expiring, revocable token; a
+   minimal read-only RPC; a `/view/:token` route; an owner "revoke"
+   control; rate limiting. **Privacy review before building** — it
+   exposes money data. Put a "Join this trip" call to action on the view
+   page so it feeds sign-ups instead of replacing them; measure whether
+   people who only look ever join.
+3. **End-of-trip summary export (PDF / Excel) — Priority 3.** *Effort:
+   medium.* Today is CSV export only. Settle Up and Splid charge for
+   Excel. **Open decision:** the deck lists a "one-page shareable trip
+   report" as a possible future Plus extra — decide whether a basic
+   version ships in the free core (leaning yes: it is a natural
+   trip-closing moment and a share hook). The shareable *text* summary
+   is split out as Quick win 1 above; this item is the PDF/Excel version.
+4. **Automatic recurring expenses — Priority 4.** *Effort: small to
+   medium; the daily pg_cron scheduler already exists.* Today is the
+   Duplicate helper only (shipped above) — see gap #4 in the 2026-09-13
+   entry. Matters most for the roommate/household groups the home page
+   pitches. Settle Up gates this as Premium. **Open decision:** free
+   core or a future Plus item (this is *scheduling*, not the
+   "recurring-expense detection" idea on the Plus list).
+
+**Also considered, not parked yet** — revisit if testers ask: multiple
+payers / income on one expense (no support in the schema today), a
+Hindi/Telugu UI (English-only today; large effort, only worth it if India
+growth is a goal), and a home-screen "Add expense" shortcut in the web
+manifest (tiny).
 
 ### Deliberately not doing — and why
 
@@ -830,6 +916,14 @@ and #3 are now shipped (below); #4 remains, blocked on family review.
 - **Business/merchant payment profiles.** Not relevant to peer expense
   splitting.
 
+- **A "who should pay next" nudge on Balances (proposed 2026-10-02).**
+  Balances encode debts, not turn order, so the suggestion would often be
+  wrong or feel judgmental — someone who put the hotel on their card looks
+  "ahead" and would never be told to pay dinner. The useful part (fairness
+  at a glance) is covered by the neutral "paid so far vs. share" bar listed
+  under Polish above, without telling anyone what to do. Revisit only if
+  testers ask for turn-taking specifically.
+
 ## If you want to pick a starting point
 
 Everything in "Now" is shipped, and three of the four items in "Next"'s
@@ -841,3 +935,6 @@ on a family verdict on its BRD, not on effort, so check on that before
 starting it. Absent a verdict, the best next move is picking something
 from "Deliberately not doing" to re-litigate, or a fresh pass at
 competitive research to find what's changed since 2026-09-05.
+As of 2026-10-02, the two usability quick wins (settlement summary, amount
+calculator) can be picked up any time; the growth priorities ("Parked —
+growth priorities") start with join-by-link.
