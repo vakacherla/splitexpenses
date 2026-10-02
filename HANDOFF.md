@@ -56,6 +56,13 @@ with a Safari fallback note for Chrome/Firefox/Edge on iOS); "Not now" hides it 
 a first visit/over the welcome tour; permanent "Install the app" card on Profile and Help. Verified in real desktop Chrome (native banner),
 iOS path via UA override, dismissal + reload. NOT verified on a real iPhone/Android device. iOS cannot trigger an install programmatically.
 NEXT for native-store users: Capacitor wrapper (separate project: Apple developer account, review, retest push + UPI deep links on iOS).
+**AT-09 + ATR-03 PLAN (owner: do tomorrow, 2026-10-03, after ~01:25 UTC / ~06:55 AM IST):** items become 30 days old at: trip `Live Test Delete`
+(archived 2026-09-03 00:55:30 UTC -> eligible 2026-10-03 00:55 UTC) and expense `Uber` (deleted 2026-09-03 01:21:43 UTC -> eligible 01:21 UTC).
+Next eligible: expenses from 2026-09-04 (10-04+). Steps: Admin > Trips (Archived) and Trash must show "eligible for permanent deletion" + the bulk
+"Permanently delete N eligible" button; permanently delete ONLY those two items individually (owner must confirm in chat first; the bulk button would
+also take anything else eligible); confirm they are gone with no restore; record PASS in test-cases + sheet (AT-09 row 184, ATR-03 row 189).
+Negative side already verified 2026-10-02 (no label/button before 30 days). SU session: owner's Chrome tab on localhost:5183 (dev server must be
+running; Turnstile now allows localhost). Per-row "Delete permanently" works at any age (spec note).
 Small UX nits: admin Circle dropdown lists archived circles; "Add to a trip" still offers trips user is in.
 
 ## Standing rules (from the owner — do not skip)
