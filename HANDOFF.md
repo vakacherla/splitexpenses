@@ -24,6 +24,9 @@ Record keeping: `test-cases-2026-09-29.md` (evidence-backed, authoritative) is m
 AT-07 (trip archive), TRIP-22 (archived trip = not found), homepage Sign-in link on mobile, RES-02 overflow
 fixes (trip tab strip, Navbar, Profile), migration 045 (circle archive) + guards. All re-verified live.
 
+## Pushed + live (a5b64e1): TRIP-19 image downscale (banner path verified on prod), RES-10 keyed FX rate
+Avatar upload + SettleUpModal not exercised live.
+
 ## Committed locally, NOT pushed
 - `cd00527`: `src/lib/imageResize.js` (+tests; 284/284 pass) downscales banner/avatar uploads (TRIP-19).
   Verified live on trip banner (14.1MB -> 1.5MB). **Still to verify before push: avatar upload live**
