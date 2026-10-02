@@ -1,3 +1,4 @@
+import { InstallCard } from '../components/InstallApp'
 import { useEffect, useRef, useState } from 'react'
 import { downscaleImage } from '../lib/imageResize'
 import { Link } from 'react-router-dom'
@@ -154,6 +155,10 @@ export default function ProfilePage() {
         <p className="text-sm text-ink-soft mt-0.5">
           Visible to anyone you share a trip with — this is how they'll recognize and reach you.
         </p>
+      </div>
+
+      <div className="mb-8">
+        <InstallCard />
       </div>
 
       <div className="flex items-center gap-4 mb-8">

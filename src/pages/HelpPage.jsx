@@ -1,3 +1,4 @@
+import { InstallCard } from '../components/InstallApp'
 import { useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -89,6 +90,9 @@ export default function HelpPage() {
             Replay the welcome tour
           </button>
         )}
+        <div className="mb-8">
+          <InstallCard />
+        </div>
 
         {HELP_SECTIONS.map((section) => (
           <Section key={section.id} id={section.id} title={section.title} defaultOpen={section.defaultOpen}>

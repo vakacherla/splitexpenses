@@ -50,6 +50,12 @@ label) and Circles (`/dashboard?view=circles`), breadcrumbs on trip/circle pages
 suspended users. Logic in src/lib/navItems.js (tested). Verified in real Chrome on localhost (desktop dark, circles view, breadcrumb, phone-width
 iframe). NEXT (owner request): install prompt (Add to Home Screen / PWA install, iOS instructions), then store-wrapper later. localhost is now
 in the Cloudflare Turnstile hostnames, so owner sign-in works on localhost in Chrome (the built-in pane still fails Turnstile).
+**Install prompt built (feedback #1, step 1), committed locally, NOT pushed:** `beforeinstallprompt` captured at startup (src/lib/installPrompt.js,
+tested); dashboard banner (one-tap Install on Android/desktop Chrome/Edge; "Show me how" 3-step Share > Add to Home Screen card on iPhone/iPad,
+with a Safari fallback note for Chrome/Firefox/Edge on iOS); "Not now" hides it for 14 days (per device); never shown if already installed or on
+a first visit/over the welcome tour; permanent "Install the app" card on Profile and Help. Verified in real desktop Chrome (native banner),
+iOS path via UA override, dismissal + reload. NOT verified on a real iPhone/Android device. iOS cannot trigger an install programmatically.
+NEXT for native-store users: Capacitor wrapper (separate project: Apple developer account, review, retest push + UPI deep links on iOS).
 Small UX nits: admin Circle dropdown lists archived circles; "Add to a trip" still offers trips user is in.
 
 ## Standing rules (from the owner — do not skip)

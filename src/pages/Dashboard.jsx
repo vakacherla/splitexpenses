@@ -11,6 +11,7 @@ import { accentFor } from '../components/TripIcon'
 import CircleIcon from '../components/CircleIcon'
 import HelpLink from '../components/HelpLink'
 import WelcomeCards from '../components/WelcomeCards'
+import { InstallBanner } from '../components/InstallApp'
 import {
   dismissWelcome,
   isWelcomeAlways,
@@ -344,6 +345,9 @@ export default function Dashboard() {
           }}
         />
       )}
+
+      {/* Not on someone's very first visit, and never over the welcome tour. */}
+      {view === 'trips' && !showWelcome && (allTrips.length > 0 || (circles?.length ?? 0) > 0) && <InstallBanner />}
 
       {view === 'circles' ? (
       <div className="mb-9 rounded-2xl border border-line bg-paper-raised p-6 sm:p-7">

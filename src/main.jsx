@@ -5,6 +5,10 @@ import './index.css'
 import App from './App.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { ThemeProvider } from './context/ThemeContext.jsx'
+import { captureInstallPrompt } from './lib/installPrompt'
+
+// The browser may fire its install event before React mounts; catch it now.
+captureInstallPrompt()
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
