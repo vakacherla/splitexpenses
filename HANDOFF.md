@@ -25,6 +25,12 @@ show as "Former member". AU-04: suspended user's live session still worked (FAIL
 admin-users deployed, app pushed (4b9e7f3). Re-verify pending: reload the `ThrowAway` (vakacherla@comcast.net, left suspended)
 Chrome tab -> expect suspended screen + email link; then Unsuspend -> normal. Admin contact defaults to admin@splitexpense.com.
 Test trip `E2E-TEST 047 write check` not yet archived. Two-user test data archived (owner OK). Chrome tab 454295720 = Jayashree (prod); built-in pane = SU account.
+**Bot protection shipped (same day):** migration 048 + AI caps (30 scans / 100 parses per user per day) + throwaway-email
+blocklist + Cloudflare Turnstile on signup/login/reset (Supabase CAPTCHA enforcement ON; works in real Chrome). Appendix V.
+NOTE: the agent's embedded browser fails Turnstile, so it cannot sign in on prod any more (localhost pane sessions already
+signed in still work). Owner TODO: try signup with a mailinator address (expect the friendly message); reload the suspended
+`ThrowAway` Chrome tab to finish AU-04. Feedback backlog (owner): #3 first-time welcome cards + home "how to start" (next),
+#2 navigation (bottom tabs / sidebar), #1 native app (install prompt first, Capacitor later).
 Small UX nits: admin Circle dropdown lists archived circles; "Add to a trip" still offers trips user is in.
 
 ## Standing rules (from the owner — do not skip)
