@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { downscaleImage } from '../lib/imageResize'
 import { supabase } from '../lib/supabaseClient'
 import { accentFor } from './TripIcon'
 import TripBanner from './TripBanner'
@@ -36,9 +37,10 @@ export default function CircleSettingsModal({ circle, canManage, onRename, onArc
     }
     setUploadingBanner(true)
     setBannerError('')
-    const ext = file.name.split('.').pop() || 'jpg'
+    const upload = await downscaleImage(file)
+    const ext = upload.name.split('.').pop() || 'jpg'
     const path = `${circle.id}/banner.${ext}`
-    const { error: uploadError } = await supabase.storage.from('circle-banners').upload(path, file, { upsert: true })
+    const { error: uploadError } = await supabase.storage.from('circle-banners').upload(path, upload, { upsert: true })
     if (uploadError) {
       setUploadingBanner(false)
       setBannerError(uploadError.message)

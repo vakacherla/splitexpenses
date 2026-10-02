@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { downscaleImage } from '../lib/imageResize'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
@@ -65,9 +66,10 @@ export default function ProfilePage() {
     if (!file) return
     setAvatarUploading(true)
     setError('')
-    const ext = file.name.split('.').pop() || 'jpg'
+    const upload = await downscaleImage(file, { maxDim: 512 })
+    const ext = upload.name.split('.').pop() || 'jpg'
     const path = `${user.id}.${ext}`
-    const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(path, upload, { upsert: true })
     if (uploadError) {
       setAvatarUploading(false)
       setError(uploadError.message)
