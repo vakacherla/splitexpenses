@@ -239,6 +239,28 @@ export default function Overview() {
         </div>
       </div>
 
+      <section className="border-t border-line py-10 sm:py-12">
+        <div className="mx-auto max-w-5xl px-5 sm:px-8">
+          <div className="mb-2.5 font-mono text-[11.5px] uppercase tracking-wide text-accent">Where do I start?</div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-2xl border border-line bg-paper-raised p-5">
+              <h3 className="mb-1.5 font-display text-lg text-ink">Start with a Trip</h3>
+              <p className="text-[13.5px] leading-relaxed text-ink-soft">
+                Create one in a minute, invite people with a code, and add expenses. This is the right place for
+                almost everyone.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-line bg-paper-raised p-5">
+              <h3 className="mb-1.5 font-display text-lg text-ink">Use a Circle only for repeat groups</h3>
+              <p className="text-[13.5px] leading-relaxed text-ink-soft">
+                Roommates or a yearly trip crew? Create a Circle once and every new trip inside it starts with
+                everyone already added.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="how" className="border-t border-line py-12 sm:py-14">
         <div className="mx-auto max-w-5xl px-5 sm:px-8">
           <div className="mb-9 max-w-xl">

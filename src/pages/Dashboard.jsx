@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import CurrencySelect from '../components/CurrencySelect'
@@ -10,6 +10,8 @@ import TripBanner from '../components/TripBanner'
 import { accentFor } from '../components/TripIcon'
 import CircleIcon from '../components/CircleIcon'
 import HelpLink from '../components/HelpLink'
+import WelcomeCards from '../components/WelcomeCards'
+import { dismissWelcome, isWelcomeDismissed, shouldShowWelcome } from '../lib/welcomeTour'
 import { runSync } from '../lib/offlineQueue'
 import { getCachedDashboard, setCachedDashboard } from '../lib/offlineCache'
 import { pickGreetingTemplate } from '../lib/greetings'
@@ -17,7 +19,12 @@ import { pickGreetingTemplate } from '../lib/greetings'
 export default function Dashboard() {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [groups, setGroups] = useState(null)
+  // First-run welcome tour: shown to brand-new accounts, or on demand when
+  // Help sends someone here with state.welcome (a replay).
+  const [welcomeDismissed, setWelcomeDismissed] = useState(() => isWelcomeDismissed(user.id))
+  const [replayClosed, setReplayClosed] = useState(false)
   const [error, setError] = useState('')
   const [stale, setStale] = useState(null)
   const [greetingTemplate] = useState(pickGreetingTemplate)
@@ -198,6 +205,12 @@ export default function Dashboard() {
   // Trips that belong to a Circle show up inside that Circle's own card
   // above instead of in this flat grid — a Trip is never shown twice.
   const standaloneGroups = (groups ?? []).filter((g) => !g.circle_id)
+  const showWelcome = shouldShowWelcome({
+    groups,
+    circles,
+    dismissed: welcomeDismissed,
+    forced: Boolean(location.state?.welcome) && !replayClosed,
+  })
 
   return (
     <div className="mx-auto max-w-3xl xl:max-w-6xl px-4 sm:px-6 py-10">
@@ -270,14 +283,34 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {showWelcome && (
+        <WelcomeCards
+          firstName={firstName === 'there' ? '' : firstName}
+          onDismiss={() => {
+            dismissWelcome(user.id)
+            setWelcomeDismissed(true)
+            setReplayClosed(true)
+            // A replay arrives via history state, which survives a refresh.
+            if (location.state?.welcome) navigate('/dashboard', { replace: true, state: null })
+          }}
+          onCreateTrip={() => {
+            setShowCreate(true)
+            setShowJoin(false)
+          }}
+          onJoinTrip={() => {
+            setShowJoin(true)
+            setShowCreate(false)
+          }}
+        />
+      )}
+
       <div className="mb-9 rounded-2xl border border-line bg-paper-raised p-6 sm:p-7">
         <div className="flex items-center gap-1.5 mb-2.5">
           <p className="font-display text-lg text-ink">Circles</p>
           <HelpLink to="circles" />
         </div>
         <p className="text-sm text-ink-soft mb-4 max-w-md">
-          Take trips with the same people often? Join once, then create or join any trip inside it — no new
-          invite code each time.
+          Taking trips with the same people often? A Circle lets everyone join once. New here? Start with a Trip.
         </p>
         <div className="flex flex-wrap gap-3">
           <button

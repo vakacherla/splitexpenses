@@ -1,9 +1,10 @@
 import { useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ThemeToggle from '../components/ThemeToggle'
 import FeatureRequestForm from '../components/FeatureRequestForm'
 import { HELP_SECTIONS } from '../lib/helpContent'
+import { resetWelcome } from '../lib/welcomeTour'
 
 function Section({ id, title, defaultOpen, children }) {
   return (
@@ -31,6 +32,7 @@ function Section({ id, title, defaultOpen, children }) {
 export default function HelpPage() {
   const { user } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
 
   // Lets other screens link straight to the relevant section (e.g.
   // /help#balances) instead of dropping people at the top of a long page
@@ -75,6 +77,18 @@ export default function HelpPage() {
           A quick guide to everything in the app. Tap any section to open it — nothing here needs to be read in
           order.
         </p>
+        {user && (
+          <button
+            type="button"
+            onClick={() => {
+              resetWelcome(user.id)
+              navigate('/dashboard', { state: { welcome: true } })
+            }}
+            className="mb-8 -mt-3 text-sm font-medium text-primary hover:underline"
+          >
+            Replay the welcome tour
+          </button>
+        )}
 
         {HELP_SECTIONS.map((section) => (
           <Section key={section.id} id={section.id} title={section.title} defaultOpen={section.defaultOpen}>
