@@ -1,10 +1,13 @@
 // AU-04: what a suspended person sees, and how they reach the administrator.
 //
-// The administrator's address comes from VITE_ADMIN_CONTACT_EMAIL (set it in
-// .env and in the hosting provider's environment variables). Without it the
-// suspended screen still explains what happened, just without an email link.
+// The administrator's address defaults to the one below; set
+// VITE_ADMIN_CONTACT_EMAIL (in .env and the hosting provider's environment
+// variables) to override it. It is a fixed address on purpose: a suspended
+// person can no longer read any data, so the app could not look up a trip or
+// circle admin for them, and platform admins are the ones who suspend.
 
-export const ADMIN_CONTACT_EMAIL = (import.meta.env?.VITE_ADMIN_CONTACT_EMAIL ?? '').trim()
+export const DEFAULT_ADMIN_CONTACT_EMAIL = 'admin@splitexpense.com'
+export const ADMIN_CONTACT_EMAIL = (import.meta.env?.VITE_ADMIN_CONTACT_EMAIL ?? '').trim() || DEFAULT_ADMIN_CONTACT_EMAIL
 
 // Builds a mailto: link that opens the person's own email app with the
 // subject and the account they are writing about already filled in.

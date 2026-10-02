@@ -1,9 +1,13 @@
 import { describe, it, expect } from 'vitest'
-import { adminMailtoLink, isBannedAuthError } from './suspension'
+import { adminMailtoLink, isBannedAuthError, DEFAULT_ADMIN_CONTACT_EMAIL } from './suspension'
 
 describe('adminMailtoLink', () => {
-  it('returns null when no administrator address is configured', () => {
+  it('returns null when given an empty administrator address', () => {
     expect(adminMailtoLink('me@example.com', '')).toBeNull()
+  })
+
+  it('falls back to the default administrator address', () => {
+    expect(adminMailtoLink('me@example.com').startsWith('mailto:' + DEFAULT_ADMIN_CONTACT_EMAIL)).toBe(true)
   })
 
   it('builds a mailto link with the subject and account filled in', () => {
