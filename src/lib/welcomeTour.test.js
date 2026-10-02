@@ -6,6 +6,8 @@ import {
   isWelcomeDismissed,
   dismissWelcome,
   resetWelcome,
+  isWelcomeAlways,
+  setWelcomeAlways,
 } from './welcomeTour'
 
 describe('welcome cards', () => {
@@ -59,5 +61,21 @@ describe('dismissal storage', () => {
     expect(isWelcomeDismissed('u2')).toBe(false)
     resetWelcome('u1')
     expect(isWelcomeDismissed('u1')).toBe(false)
+  })
+
+  it('remembers the "show every time" choice per user', () => {
+    expect(isWelcomeAlways('u1')).toBe(false)
+    setWelcomeAlways('u1', true)
+    expect(isWelcomeAlways('u1')).toBe(true)
+    expect(isWelcomeAlways('u2')).toBe(false)
+    setWelcomeAlways('u1', false)
+    expect(isWelcomeAlways('u1')).toBe(false)
+  })
+
+  it('keeps the choice separate from dismissal', () => {
+    setWelcomeAlways('u1', true)
+    dismissWelcome('u1')
+    resetWelcome('u1')
+    expect(isWelcomeAlways('u1')).toBe(true)
   })
 })

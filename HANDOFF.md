@@ -38,7 +38,8 @@ src/lib/suspension.js, so create that mailbox on the new domain or change the de
 Resend free tier (100/day). Until then CAPTCHA + email blocklist + AI caps are the protection.
 **Welcome tour built (feedback #3), committed locally, NOT pushed:** 4 illustrated cards on the dashboard for brand-new accounts
 (no trips/circles), Skip/Back/Next, last card = Create my first Trip / Join with a code; replay via Help > "Replay the welcome tour";
-home page "Where do I start?" strip; dashboard Circles blurb reworded ("New here? Start with a Trip"). Verified in the pane (light,
+"Show this tour every time I open the app" checkbox (per user, localStorage; default = first time only) + a "Show the welcome tour"
+link on the dashboard so users needn't use Help; home page "Where do I start?" strip; dashboard Circles blurb reworded ("New here? Start with a Trip"). Verified in the pane (light,
 dark, mobile width, replay, CTA, dismissal; 308 tests, build, lint baseline). NOT yet seen as a real first-run: the suspended
 `ThrowAway` account is brand new, so unsuspend it and sign in once to see the tour automatically. NOTE: the dev server
 (vite-dev) must be running for localhost checks; it had stopped earlier.

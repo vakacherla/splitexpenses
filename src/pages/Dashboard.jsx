@@ -11,7 +11,13 @@ import { accentFor } from '../components/TripIcon'
 import CircleIcon from '../components/CircleIcon'
 import HelpLink from '../components/HelpLink'
 import WelcomeCards from '../components/WelcomeCards'
-import { dismissWelcome, isWelcomeDismissed, shouldShowWelcome } from '../lib/welcomeTour'
+import {
+  dismissWelcome,
+  isWelcomeAlways,
+  isWelcomeDismissed,
+  setWelcomeAlways,
+  shouldShowWelcome,
+} from '../lib/welcomeTour'
 import { runSync } from '../lib/offlineQueue'
 import { getCachedDashboard, setCachedDashboard } from '../lib/offlineCache'
 import { pickGreetingTemplate } from '../lib/greetings'
@@ -25,6 +31,11 @@ export default function Dashboard() {
   // Help sends someone here with state.welcome (a replay).
   const [welcomeDismissed, setWelcomeDismissed] = useState(() => isWelcomeDismissed(user.id))
   const [replayClosed, setReplayClosed] = useState(false)
+  const [welcomeAlways, setWelcomeAlwaysState] = useState(() => isWelcomeAlways(user.id))
+  // Closing the tour hides it for this visit; whether it comes back next
+  // time depends on the "every time" checkbox.
+  const [welcomeHidden, setWelcomeHidden] = useState(false)
+  const [replayOpen, setReplayOpen] = useState(false)
   const [error, setError] = useState('')
   const [stale, setStale] = useState(null)
   const [greetingTemplate] = useState(pickGreetingTemplate)
@@ -205,12 +216,14 @@ export default function Dashboard() {
   // Trips that belong to a Circle show up inside that Circle's own card
   // above instead of in this flat grid — a Trip is never shown twice.
   const standaloneGroups = (groups ?? []).filter((g) => !g.circle_id)
-  const showWelcome = shouldShowWelcome({
-    groups,
-    circles,
-    dismissed: welcomeDismissed,
-    forced: Boolean(location.state?.welcome) && !replayClosed,
-  })
+  const showWelcome =
+    !welcomeHidden &&
+    shouldShowWelcome({
+      groups,
+      circles,
+      dismissed: welcomeDismissed,
+      forced: welcomeAlways || replayOpen || (Boolean(location.state?.welcome) && !replayClosed),
+    })
 
   return (
     <div className="mx-auto max-w-3xl xl:max-w-6xl px-4 sm:px-6 py-10">
@@ -256,7 +269,7 @@ export default function Dashboard() {
               — reconnect to refresh.
             </p>
           )}
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="mt-6 flex flex-wrap items-center gap-3">
             <button
               onClick={() => {
                 setShowCreate((v) => !v)
@@ -279,6 +292,18 @@ export default function Dashboard() {
             >
               Join with a code
             </button>
+            {!showWelcome && (
+              <button
+                type="button"
+                onClick={() => {
+                  setWelcomeHidden(false)
+                  setReplayOpen(true)
+                }}
+                className="text-sm text-ink-soft underline-offset-2 hover:text-ink hover:underline"
+              >
+                Show the welcome tour
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -286,10 +311,20 @@ export default function Dashboard() {
       {showWelcome && (
         <WelcomeCards
           firstName={firstName === 'there' ? '' : firstName}
+          always={welcomeAlways}
+          onAlwaysChange={(on) => {
+            setWelcomeAlways(user.id, on)
+            setWelcomeAlwaysState(on)
+            // Keep the tour open for the rest of this visit rather than having
+            // it vanish the moment the box is unticked.
+            setReplayOpen(true)
+          }}
           onDismiss={() => {
-            dismissWelcome(user.id)
-            setWelcomeDismissed(true)
+            if (!welcomeAlways) dismissWelcome(user.id)
+            setWelcomeDismissed(!welcomeAlways)
             setReplayClosed(true)
+            setReplayOpen(false)
+            setWelcomeHidden(true)
             // A replay arrives via history state, which survives a refresh.
             if (location.state?.welcome) navigate('/dashboard', { replace: true, state: null })
           }}

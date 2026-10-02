@@ -51,6 +51,27 @@ export function dismissWelcome(userId) {
   }
 }
 
+// "Show this tour every time I open the app": a per-user choice made on the
+// tour itself, so people don't have to find it in Help.
+const ALWAYS_PREFIX = 'welcome_tour_always_v1:'
+
+export function isWelcomeAlways(userId) {
+  try {
+    return localStorage.getItem(ALWAYS_PREFIX + userId) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function setWelcomeAlways(userId, on) {
+  try {
+    if (on) localStorage.setItem(ALWAYS_PREFIX + userId, '1')
+    else localStorage.removeItem(ALWAYS_PREFIX + userId)
+  } catch {
+    // ignore: the choice just won't stick
+  }
+}
+
 export function resetWelcome(userId) {
   try {
     localStorage.removeItem(KEY_PREFIX + userId)
@@ -60,8 +81,8 @@ export function resetWelcome(userId) {
 }
 
 // Brand-new accounts (nothing created or joined yet) who haven't dismissed
-// it see the tour; a replay from Help (`forced`) shows it to anyone.
-// `groups` / `circles` are null while still loading.
+// it see the tour; `forced` (a replay, or the person chose "show every
+// time") shows it to anyone. `groups` / `circles` are null while loading.
 export function shouldShowWelcome({ groups, circles, dismissed, forced }) {
   if (groups === null || circles === null) return false
   if (forced) return true

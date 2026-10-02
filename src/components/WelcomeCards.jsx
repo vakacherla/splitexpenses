@@ -5,7 +5,7 @@ import WelcomeArt from './WelcomeArt'
 // A short, dismissible first-run tour: four illustrated cards that explain
 // Trip vs Circle and point to the first action. The parent decides when it
 // shows and what the buttons on the last card do.
-export default function WelcomeCards({ firstName, onDismiss, onCreateTrip, onJoinTrip }) {
+export default function WelcomeCards({ firstName, always, onAlwaysChange, onDismiss, onCreateTrip, onJoinTrip }) {
   const [step, setStep] = useState(0)
   const card = WELCOME_CARDS[step]
   const isLast = step === WELCOME_CARDS.length - 1
@@ -39,7 +39,17 @@ export default function WelcomeCards({ firstName, onDismiss, onCreateTrip, onJoi
           </p>
         )}
 
-        <div className="mt-7 flex flex-wrap items-center justify-between gap-4">
+        <label className="mt-6 flex cursor-pointer items-center gap-2.5 text-sm text-ink-soft">
+          <input
+            type="checkbox"
+            checked={always}
+            onChange={(e) => onAlwaysChange(e.target.checked)}
+            className="h-4 w-4 rounded border-line accent-primary"
+          />
+          Show this tour every time I open the app
+        </label>
+
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2" role="group" aria-label="Tour progress">
             {WELCOME_CARDS.map((c, i) => (
               <button
