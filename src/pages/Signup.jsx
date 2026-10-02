@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import ThemeToggle from '../components/ThemeToggle'
+import TurnstileWidget from '../components/TurnstileWidget'
+import { captchaOptions } from '../lib/turnstile'
 import { signupErrorMessage, THROWAWAY_EMAIL_MESSAGE } from '../lib/signup'
 
 export default function Signup() {
@@ -10,6 +12,9 @@ export default function Signup() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState(null)
+  const [captchaReset, setCaptchaReset] = useState(0)
+  const [captchaError, setCaptchaError] = useState('')
   const [done, setDone] = useState(false)
   const navigate = useNavigate()
 
@@ -22,6 +27,7 @@ export default function Signup() {
     const { data: allowed, error: checkError } = await supabase.rpc('signup_email_allowed', { p_email: email })
     if (!checkError && allowed === false) {
       setBusy(false)
+      setCaptchaReset((n) => n + 1)
       setError(THROWAWAY_EMAIL_MESSAGE)
       return
     }
@@ -29,12 +35,14 @@ export default function Signup() {
       email,
       password,
       options: {
+        ...captchaOptions(captchaToken),
         data: { display_name: displayName.trim() },
         emailRedirectTo: `${window.location.origin}/login`,
       },
     })
     setBusy(false)
     if (error) {
+      setCaptchaReset((n) => n + 1)
       setError(signupErrorMessage(error))
       return
     }
@@ -131,9 +139,11 @@ export default function Signup() {
 
           {error && <p className="text-sm text-owe">{error}</p>}
 
+          <TurnstileWidget onToken={setCaptchaToken} onLoadError={setCaptchaError} resetCount={captchaReset} />
+          {captchaError && <p className="text-sm text-owe">{captchaError} Check your connection or content blocker and reload.</p>}
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || !captchaToken}
             className="w-full rounded-full bg-primary text-on-primary font-medium py-2.5 hover:bg-primary-dark transition-colors disabled:opacity-60"
           >
             {busy ? 'Creating account…' : 'Create account'}

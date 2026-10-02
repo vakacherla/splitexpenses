@@ -2,12 +2,17 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import ThemeToggle from '../components/ThemeToggle'
+import TurnstileWidget from '../components/TurnstileWidget'
+import { captchaOptions } from '../lib/turnstile'
 import HelpLink from '../components/HelpLink'
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState(null)
+  const [captchaReset, setCaptchaReset] = useState(0)
+  const [captchaError, setCaptchaError] = useState('')
   const [done, setDone] = useState(false)
 
   async function handleSubmit(e) {
@@ -16,9 +21,11 @@ export default function ForgotPassword() {
     setBusy(true)
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
+      ...captchaOptions(captchaToken),
     })
     setBusy(false)
     if (error) {
+      setCaptchaReset((n) => n + 1)
       setError(error.message)
       return
     }
@@ -79,9 +86,11 @@ export default function ForgotPassword() {
 
           {error && <p className="text-sm text-owe">{error}</p>}
 
+          <TurnstileWidget onToken={setCaptchaToken} onLoadError={setCaptchaError} resetCount={captchaReset} />
+          {captchaError && <p className="text-sm text-owe">{captchaError} Check your connection or content blocker and reload.</p>}
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || !captchaToken}
             className="w-full rounded-full bg-primary text-on-primary font-medium py-2.5 hover:bg-primary-dark transition-colors disabled:opacity-60"
           >
             {busy ? 'Sending…' : 'Send reset link'}

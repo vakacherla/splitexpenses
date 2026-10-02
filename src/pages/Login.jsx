@@ -4,12 +4,17 @@ import { supabase } from '../lib/supabaseClient'
 import { adminMailtoLink, isBannedAuthError, SUSPENDED_MESSAGE } from '../lib/suspension'
 import { useAuth } from '../context/AuthContext'
 import ThemeToggle from '../components/ThemeToggle'
+import TurnstileWidget from '../components/TurnstileWidget'
+import { captchaOptions } from '../lib/turnstile'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [suspendedAtLogin, setSuspendedAtLogin] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState(null)
+  const [captchaReset, setCaptchaReset] = useState(0)
+  const [captchaError, setCaptchaError] = useState('')
   const [busy, setBusy] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
@@ -26,9 +31,10 @@ export default function Login() {
     setError('')
     setSuspendedAtLogin(false)
     setBusy(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signInWithPassword({ email, password, options: captchaOptions(captchaToken) })
     setBusy(false)
     if (error) {
+      setCaptchaReset((n) => n + 1)
       // "User is banned" is Supabase's wording for a suspended account.
       if (isBannedAuthError(error)) setSuspendedAtLogin(true)
       setError(isBannedAuthError(error) ? SUSPENDED_MESSAGE : error.message)
@@ -98,9 +104,11 @@ export default function Login() {
             </p>
           )}
 
+          <TurnstileWidget onToken={setCaptchaToken} onLoadError={setCaptchaError} resetCount={captchaReset} />
+          {captchaError && <p className="text-sm text-owe">{captchaError} Check your connection or content blocker and reload.</p>}
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || !captchaToken}
             className="w-full rounded-full bg-primary text-on-primary font-medium py-2.5 hover:bg-primary-dark transition-colors disabled:opacity-60"
           >
             {busy ? 'Signing in…' : 'Sign in'}
