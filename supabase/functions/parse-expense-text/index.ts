@@ -186,6 +186,26 @@ Deno.serve(async (req) => {
       error: userError,
     } = await callerClient.auth.getUser()
     if (userError || !user) return json({ error: 'Not authenticated' }, 401)
+    // A suspended user's access token stays valid for a while (AU-04).
+    if (user.banned_until && new Date(user.banned_until) > new Date()) {
+      return json({ error: 'Your account is suspended. Contact the administrator.' }, 403)
+    }
+
+    // Daily per-user cap (migration 048): keeps a few junk accounts from
+    // burning the shared free AI quota. Counted before any provider call.
+    const adminClient = createClient(supabaseUrl, serviceRoleKey)
+    const { data: withinLimit, error: quotaError } = await adminClient.rpc('consume_ai_quota', {
+      p_user: user.id,
+      p_feature: 'parse_text',
+      p_limit: 100,
+    })
+    if (quotaError) return json({ error: 'Could not check your daily limit — please try again.' }, 500)
+    if (!withinLimit) {
+      return json(
+        { error: "You've reached today's limit of 100 typed expense parses. It resets tomorrow (UTC)." },
+        429
+      )
+    }
 
     const { text, members, homeCurrency, today } = await req.json()
     if (!text || typeof text !== 'string') {

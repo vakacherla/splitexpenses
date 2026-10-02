@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import ThemeToggle from '../components/ThemeToggle'
+import { signupErrorMessage, THROWAWAY_EMAIL_MESSAGE } from '../lib/signup'
 
 export default function Signup() {
   const [displayName, setDisplayName] = useState('')
@@ -16,6 +17,14 @@ export default function Signup() {
     e.preventDefault()
     setError('')
     setBusy(true)
+    // Friendly pre-check; the database refuses throwaway domains regardless.
+    // If the check itself fails, carry on and let the server decide.
+    const { data: allowed, error: checkError } = await supabase.rpc('signup_email_allowed', { p_email: email })
+    if (!checkError && allowed === false) {
+      setBusy(false)
+      setError(THROWAWAY_EMAIL_MESSAGE)
+      return
+    }
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -26,7 +35,7 @@ export default function Signup() {
     })
     setBusy(false)
     if (error) {
-      setError(error.message)
+      setError(signupErrorMessage(error))
       return
     }
     if (data.session) {
