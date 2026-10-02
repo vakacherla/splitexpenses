@@ -1,3 +1,5 @@
+import Breadcrumbs from '../components/Breadcrumbs'
+import { tripCrumbs } from '../lib/navItems'
 import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
@@ -462,14 +464,7 @@ export default function TripView() {
         className="rounded-2xl mb-5 h-36 sm:h-44"
       />
       <div className="mb-6">
-        <Link to="/dashboard" className="text-sm text-ink-soft hover:text-ink">
-          ← Your trips
-        </Link>
-        {group.circle_id && circleName && (
-          <Link to={`/circles/${group.circle_id}`} className="block text-sm text-ink-soft hover:text-ink mt-0.5">
-            {circleName} ›
-          </Link>
-        )}
+        <Breadcrumbs items={tripCrumbs({ tripName: group.name, circleId: group.circle_id, circleName })} />
         <div className="flex items-center gap-2 mt-1">
           <h1 className="font-display text-2xl sm:text-3xl text-ink">{group.name}</h1>
           {canManage && (
@@ -683,7 +678,7 @@ export default function TripView() {
       {isMember && (
         <button
           onClick={() => setShowAdd(true)}
-          className="fixed bottom-6 right-6 sm:right-[max(1.5rem,calc(50%-22rem))] rounded-full bg-primary text-on-primary shadow-raised h-14 w-14 flex items-center justify-center text-2xl hover:bg-primary-dark transition-colors"
+          className="fixed bottom-24 md:bottom-6 right-6 sm:right-[max(1.5rem,calc(50%-22rem))] rounded-full bg-primary text-on-primary shadow-raised h-14 w-14 flex items-center justify-center text-2xl hover:bg-primary-dark transition-colors"
           aria-label="Add expense"
         >
           +

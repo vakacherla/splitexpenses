@@ -44,6 +44,12 @@ link on the dashboard so users needn't use Help; home page "Where do I start?" s
 dark, mobile width, replay, CTA, dismissal; 308 tests, build, lint baseline). NOT yet seen as a real first-run: the suspended
 `ThrowAway` account is brand new, so unsuspend it and sign in once to see the tour automatically. NOTE: the dev server
 (vite-dev) must be running for localhost checks; it had stopped earlier.
+**Navigation built (feedback #2), committed locally, NOT pushed:** labeled top-bar menu (Trips/Circles/Rates/Help + Admin/Profile) on desktop,
+fixed bottom tab bar on phones (md:hidden, pb-20 on the shell, add-expense FAB lifted), dashboard split into Trips (all trips, with a circle
+label) and Circles (`/dashboard?view=circles`), breadcrumbs on trip/circle pages (Trips > Trip or Circles > Circle > Trip), nav hidden for
+suspended users. Logic in src/lib/navItems.js (tested). Verified in real Chrome on localhost (desktop dark, circles view, breadcrumb, phone-width
+iframe). NEXT (owner request): install prompt (Add to Home Screen / PWA install, iOS instructions), then store-wrapper later. localhost is now
+in the Cloudflare Turnstile hostnames, so owner sign-in works on localhost in Chrome (the built-in pane still fails Turnstile).
 Small UX nits: admin Circle dropdown lists archived circles; "Add to a trip" still offers trips user is in.
 
 ## Standing rules (from the owner — do not skip)

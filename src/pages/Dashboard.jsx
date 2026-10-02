@@ -18,6 +18,7 @@ import {
   setWelcomeAlways,
   shouldShowWelcome,
 } from '../lib/welcomeTour'
+import { dashboardView } from '../lib/navItems'
 import { runSync } from '../lib/offlineQueue'
 import { getCachedDashboard, setCachedDashboard } from '../lib/offlineCache'
 import { pickGreetingTemplate } from '../lib/greetings'
@@ -26,6 +27,8 @@ export default function Dashboard() {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  // The menu's Trips and Circles entries are two views of this page.
+  const view = dashboardView(location.search)
   const [groups, setGroups] = useState(null)
   // First-run welcome tour: shown to brand-new accounts, or on demand when
   // Help sends someone here with state.welcome (a replay).
@@ -215,7 +218,8 @@ export default function Dashboard() {
 
   // Trips that belong to a Circle show up inside that Circle's own card
   // above instead of in this flat grid — a Trip is never shown twice.
-  const standaloneGroups = (groups ?? []).filter((g) => !g.circle_id)
+  const allTrips = groups ?? []
+  const circleNameById = Object.fromEntries((circles ?? []).map((c) => [c.id, c.name]))
   const showWelcome =
     !welcomeHidden &&
     shouldShowWelcome({
@@ -227,6 +231,7 @@ export default function Dashboard() {
 
   return (
     <div className="mx-auto max-w-3xl xl:max-w-6xl px-4 sm:px-6 py-10">
+      {view === 'trips' && (
       <div
         className="relative mb-9 overflow-hidden rounded-3xl border border-line p-7 sm:p-9 shadow-raised"
         style={{
@@ -307,8 +312,9 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      )}
 
-      {showWelcome && (
+      {view === 'trips' && showWelcome && (
         <WelcomeCards
           firstName={firstName === 'there' ? '' : firstName}
           always={welcomeAlways}
@@ -339,6 +345,7 @@ export default function Dashboard() {
         />
       )}
 
+      {view === 'circles' ? (
       <div className="mb-9 rounded-2xl border border-line bg-paper-raised p-6 sm:p-7">
         <div className="flex items-center gap-1.5 mb-2.5">
           <p className="font-display text-lg text-ink">Circles</p>
@@ -368,12 +375,20 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+      ) : (
+      <p className="mb-8 text-sm text-ink-soft">
+        Taking trips with the same people often?{' '}
+        <Link to="/dashboard?view=circles" className="font-medium text-primary hover:underline">
+          Try a Circle →
+        </Link>
+      </p>
+      )}
 
       {error && (
         <div className="mb-6 rounded-lg border border-owe/30 bg-owe-tint text-owe text-sm px-4 py-3">{error}</div>
       )}
 
-      {showCreate && (
+      {view === 'trips' && showCreate && (
         <form
           onSubmit={handleCreate}
           className="mb-8 bg-paper-raised border border-line rounded-2xl p-5 shadow-raised flex flex-col sm:flex-row gap-3 sm:items-end"
@@ -402,7 +417,7 @@ export default function Dashboard() {
         </form>
       )}
 
-      {showJoin && (
+      {view === 'trips' && showJoin && (
         <form
           onSubmit={handleJoin}
           className="mb-8 bg-paper-raised border border-line rounded-2xl p-5 shadow-raised flex flex-col sm:flex-row gap-3 sm:items-end"
@@ -427,7 +442,7 @@ export default function Dashboard() {
         </form>
       )}
 
-      {showCreateCircle && (
+      {view === 'circles' && showCreateCircle && (
         <form
           onSubmit={handleCreateCircle}
           className="mb-8 bg-paper-raised border border-line rounded-2xl p-5 shadow-raised flex flex-col sm:flex-row gap-3 sm:items-end"
@@ -452,7 +467,7 @@ export default function Dashboard() {
         </form>
       )}
 
-      {showJoinCircle && (
+      {view === 'circles' && showJoinCircle && (
         <form
           onSubmit={handleJoinCircle}
           className="mb-8 bg-paper-raised border border-line rounded-2xl p-5 shadow-raised flex flex-col sm:flex-row gap-3 sm:items-end"
@@ -477,9 +492,23 @@ export default function Dashboard() {
         </form>
       )}
 
-      {circles && circles.length > 0 && (
+      {view === 'circles' && circles && circles.length === 0 && (
+        <EmptyState
+          icon={
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4">
+              <circle cx="10" cy="10" r="6.5" strokeDasharray="2.5 2.5" />
+              <circle cx="10" cy="4" r="1.6" />
+              <circle cx="15.5" cy="13" r="1.6" />
+              <circle cx="4.5" cy="13" r="1.6" />
+            </svg>
+          }
+          title="No circles yet"
+          subtitle="A circle is for groups that travel again and again. Create one, or join with a code."
+        />
+      )}
+
+      {view === 'circles' && circles && circles.length > 0 && (
         <div className="mb-8">
-          <h2 className="font-display text-lg text-ink mb-3">Circles</h2>
           <div className="space-y-4">
           {circles.map((c) => {
             const trips = (groups ?? []).filter((g) => g.circle_id === c.id)
@@ -514,7 +543,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {groups === null && error ? (
+      {view === 'trips' && (
+      groups === null && error ? (
         <div className="text-center py-10">
           <p className="text-sm text-ink-soft mb-3">You're offline and this device has never loaded your trips before.</p>
           <button onClick={loadGroups} className="text-primary hover:underline text-sm">
@@ -523,8 +553,8 @@ export default function Dashboard() {
         </div>
       ) : groups === null ? (
         <SkeletonRows count={3} />
-      ) : standaloneGroups.length === 0 ? (
-        circles && circles.length > 0 ? null : (
+      ) : allTrips.length === 0 ? (
+        (
           <EmptyState
             icon={
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4">
@@ -540,9 +570,8 @@ export default function Dashboard() {
         )
       ) : (
         <div>
-          {circles && circles.length > 0 && <h2 className="font-display text-lg text-ink mb-3">Trips</h2>}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {standaloneGroups.map((g, idx) => {
+          {allTrips.map((g, idx) => {
             const accent = accentFor(g.id)
             return (
               <Link
@@ -581,6 +610,11 @@ export default function Dashboard() {
                   </span>
                 </div>
 
+                {g.circle_id && circleNameById[g.circle_id] && (
+                  <p className="mb-1 font-mono text-[11px] uppercase tracking-wide text-accent truncate">
+                    {circleNameById[g.circle_id]}
+                  </p>
+                )}
                 <p className="mb-1 font-display text-xl font-semibold leading-tight text-ink">{g.name}</p>
                 <p className="mb-4 text-sm text-ink-soft">
                   {g.group_members.length} member{g.group_members.length === 1 ? '' : 's'}
@@ -596,6 +630,7 @@ export default function Dashboard() {
           })}
           </div>
         </div>
+      )
       )}
     </div>
   )

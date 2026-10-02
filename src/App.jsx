@@ -7,6 +7,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import AdminRoute from './components/AdminRoute'
 import LoadingScreen from './components/LoadingScreen'
 import Navbar from './components/Navbar'
+import BottomTabs from './components/BottomTabs'
 import SyncStatusBanner from './components/SyncStatusBanner'
 import Overview from './pages/Overview'
 import Login from './pages/Login'
@@ -23,12 +24,16 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const RatesPage = lazy(() => import('./pages/RatesPage'))
 
 function AppShell({ children }) {
-  const { user } = useAuth()
+  const { user, suspended } = useAuth()
+  // A suspended person only gets the suspended screen: no menu to click into.
+  const showNav = Boolean(user) && !suspended
   return (
-    <div className="min-h-dvh bg-paper">
-      {user && <Navbar />}
-      {user && <SyncStatusBanner />}
+    // pb-20 on phones leaves room for the fixed bottom tab bar.
+    <div className={`min-h-dvh bg-paper ${showNav ? 'pb-20 md:pb-0' : ''}`}>
+      {showNav && <Navbar />}
+      {showNav && <SyncStatusBanner />}
       {children}
+      {showNav && <BottomTabs />}
     </div>
   )
 }

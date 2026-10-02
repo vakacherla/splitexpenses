@@ -1,3 +1,5 @@
+import Breadcrumbs from '../components/Breadcrumbs'
+import { circleCrumbs } from '../lib/navItems'
 import { useCallback, useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
@@ -226,9 +228,7 @@ export default function CirclePage() {
         className="rounded-2xl mb-5 h-36 sm:h-44"
       />
       <div className="mb-6">
-        <Link to="/dashboard" className="text-sm text-ink-soft hover:text-ink">
-          ← Your trips
-        </Link>
+        <Breadcrumbs items={circleCrumbs({ circleName: circle.name })} />
         <div className="flex items-center gap-3 mt-1">
           <div
             className="h-10 w-10 shrink-0 rounded-full flex items-center justify-center"
