@@ -169,13 +169,13 @@ FAIL severity: **P0: 5** (signup broken, malformed circle route leaks DB error, 
 | BAL-07 | Undo a settlement | P0 | PASS | Fixed and confirmed live 2026-09-30: Undo on a real $10 settlement correctly reverted the balance (Demo Traveler back to "owes $10.00") and removed the row from Recent payments. Root cause of the original FAIL: very likely a native confirm() dialog being auto-dismissed by browser automation, not a real defect. See Appendix D (F4); re-confirmed with a different, genuine fix (RLS-blocked undo surfacing a clear error instead of silently no-opping) commit `29e95f2`. |
 | BAL-08 | Fully-settled trip state | P2 | PASS | "Nothing to settle" message shown. |
 | BAL-09 | Settle-up deep links (UPI/Venmo/PayPal) | P1 | NOT RUN | Policy: never tap external payment links. |
-| BAL-10 | Recipient with no payment handle: graceful state | P1 | NOT RUN | Not covered this run. |
+| BAL-10 | Recipient with no payment handle: graceful state | P1 | NOT RUN | Code-reviewed 2026-10-01 (not run live): `SettleUpModal.jsx` shows "<name> hasn't added a payment handle yet" and hides the pay button when the recipient has no handle. Live run still needs a real debt to a no-handle member. |
 | BAL-11 | Push notification deep-links to the trip | P1 | BLOCKED | Needs a second identity and a real device. |
 | BAL-12 | Trip end date in the past triggers debtor reminders | P1 | BLOCKED | Needs waiting days plus inbox/device access. |
 | BAL-13 | Reminder 3-day cooldown boundary | P1 | BLOCKED | Needs waiting days plus inbox/device access. |
 | BAL-14 | Manual "Remind" button delivers | P1 | BLOCKED | Needs a second identity plus inbox/device access. |
 | BAL-15 | Notification enable/disable flow | P1 | NOT RUN | Not covered this run. |
-| BAL-16 | Deny browser notification permission | P1 | NOT RUN | Not covered this run. |
+| BAL-16 | Deny browser notification permission | P1 | NOT RUN | Code-reviewed 2026-10-01 (not run live): `enablePush` throws "Notification permission was not granted." and `NotificationSettings` shows it inline; button re-enables. Browser permission prompt cannot be driven by automation. |
 
 ## 7. Reports
 
@@ -307,7 +307,7 @@ FAIL severity: **P0: 5** (signup broken, malformed circle route leaks DB error, 
 | OFF-08 | Edit an expense deleted remotely while offline | P1 | NOT RUN | Not covered this run. |
 | OFF-09 | Offline settlement gets the same queued/pending treatment | P0 | PASS | FAIL, found and fixed 2026-10-01 — see Appendix N. Originally reproduced live: recording a settlement while offline queued it correctly (banner, Recent payments) but the Balances tab showed "owes $NaN" for every member until the op synced — `mergeQueueIntoSettlements` never set `amount_in_home` on the optimistic object. Fixed to mirror the expense-side `estimateHomeAmounts()` pattern, with 4 new unit tests (`offlineCache.test.js`). Re-verified live on production as Jayashree after deploy: the same repro now shows "settled up" immediately while offline, no NaN. |
 | OFF-10 | /admin as non-admin while offline | P0 | PASS | Verified live 2026-10-01 — see Appendix N. Client-side navigation to /admin as Jayashree (non-admin) while genuinely offline redirects cleanly to /dashboard, no hang or crash, same as while online. |
-| OFF-11 | First-ever offline visit (no cache) | P1 | NOT RUN | Not covered this run. |
+| OFF-11 | First-ever offline visit (no cache) | P1 | NOT RUN | Code-reviewed 2026-10-01 (not run live): no cache -> `offline-no-cache` -> "You're offline and haven't opened this trip on this device before" with Retry. Live run needs a true cold offline load. |
 | OFF-12 | Safari-style network failure treated as offline, not a raw error | P0 | PASS | Hand-verified 2026-09-04. |
 | OFF-13 | Offline receipt attach shows a warning | P1 | PASS | Fixed and confirmed live 2026-09-30: attaching a receipt to an already-synced expense while offline now shows "You're offline — attach a receipt once you're back online." instead of a dead click. See Appendix D (F12). |
 | OFF-14 | Sync banner states (offline / syncing / failed) reflect reality | P1 | PASS | Not actually a bug — confirmed live 2026-09-30: the full offline banner ("You're offline — N changes will sync when you're back online.") appears and updates correctly once genuinely offline. Original FAIL was a false positive from the QA pass's offline-simulation method not toggling `navigator.onLine`. See Appendix D (F13). |
