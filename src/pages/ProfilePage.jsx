@@ -199,7 +199,7 @@ export default function ProfilePage() {
             <select
               value={paymentProvider}
               onChange={(e) => setPaymentProvider(e.target.value)}
-              className="rounded-lg border border-line bg-paper px-3 py-2.5 text-sm text-ink focus:border-primary outline-none"
+              className="max-w-[50%] shrink-0 rounded-lg border border-line bg-paper px-3 py-2.5 text-sm text-ink focus:border-primary outline-none"
             >
               {PAYMENT_PROVIDERS.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -211,7 +211,7 @@ export default function ProfilePage() {
               value={paymentHandle}
               onChange={(e) => setPaymentHandle(e.target.value)}
               placeholder={selectedProviderMeta?.placeholder}
-              className="flex-1 rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm text-ink focus:border-primary outline-none"
+              className="flex-1 min-w-0 rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm text-ink focus:border-primary outline-none"
             />
           </div>
         </div>

@@ -31,11 +31,11 @@ export default function Navbar() {
   return (
     <header className="border-b border-line bg-paper-raised">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 h-16 flex items-center justify-between">
-        <Link to="/dashboard" className="flex items-baseline gap-2">
-          <span className="font-display text-xl font-semibold text-ink tracking-tight">Split Expenses</span>
+        <Link to="/dashboard" className="flex items-baseline gap-2 min-w-0">
+          <span className="font-display text-lg sm:text-xl font-semibold text-ink tracking-tight truncate">Split Expenses</span>
         </Link>
         {user && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {profile?.is_admin && (
               <Link to="/admin" className="text-sm text-ink-soft hover:text-ink">
                 Admin
@@ -89,7 +89,7 @@ export default function Navbar() {
             <ThemeToggle />
             <button
               onClick={handleSignOut}
-              className="text-sm text-ink-soft hover:text-ink border border-line rounded-full px-3.5 py-1.5 transition-colors"
+              className="text-sm whitespace-nowrap text-ink-soft hover:text-ink border border-line rounded-full px-3 sm:px-3.5 py-1.5 transition-colors"
             >
               Sign out
             </button>

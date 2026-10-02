@@ -510,13 +510,15 @@ export default function TripView() {
         )}
       </div>
 
-      <div className="flex items-center justify-between border-b border-line mb-6">
-        <div className="flex gap-1">
+      <div className="flex items-center justify-between gap-2 border-b border-line mb-6">
+        {/* min-w-0 + overflow-x-auto: five tabs are wider than a phone, so the
+            strip scrolls inside itself rather than widening the whole page (RES-02) */}
+        <div className="flex gap-1 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`px-3.5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              className={`shrink-0 whitespace-nowrap px-2.5 sm:px-3.5 py-2.5 text-sm font-medium border-b-2 transition-colors ${
                 tab === t.id ? 'border-primary text-ink' : 'border-transparent text-ink-soft hover:text-ink'
               }`}
             >
