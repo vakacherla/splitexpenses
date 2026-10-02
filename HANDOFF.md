@@ -1,140 +1,91 @@
-# Handoff — Split Expenses QA/fix session
+# Handoff — Split Expenses
 
-_Last updated: 2026-10-02 (evening). Resume here; read only this file + the "Appendix R/Q/P/O" tail of
-`test-cases-2026-09-29.md` for detail._
+_Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it first, then only the files it points to._
 
-Record keeping: `test-cases-2026-09-29.md` (evidence-backed, authoritative) is mirrored to the
-[Google Sheet](https://docs.google.com/spreadsheets/d/1QHNnjMGCffXa4okRjHJXi9tn_WjywgLFrAwy6kiyZXk/edit?gid=366923856)
-(sheet `Cases`, columns E=Status, F=Evidence). Keep both in sync; reconcile if they drift (they did once).
+## Where things stand
+- **Everything is pushed.** GitHub `main` = `6d47ed8`. Production (Vercel) is live through the install prompt (`c3f5946`).
+- **Supabase prod:** migrations 046, 047, 048 applied; Edge Functions `admin-users`, `receipt-scan`, `parse-expense-text` deployed.
+- **Shipped 2026-10-02:** member removal blocked with an unsettled balance (046), suspended users cut off at the DB + suspended screen with
+  mailto link to admin (047), AI daily caps (30 scans / 100 parses) + throwaway-email blocklist (048), Cloudflare Turnstile on sign-up/sign-in/reset,
+  welcome tour, main navigation (top menu, phone bottom tabs, Trips/Circles views, breadcrumbs), install prompt (owner confirmed on a real iPhone).
+- Tests: 329 vitest, build OK, lint at baseline (20 warnings). Untracked and never touched: `marketing materials/`, `scratch/`, `upi-pay-link-fixes-2026-09-29.md`.
 
-## 2026-10-02 admin (SU) batch — done (details: Appendix S of test-cases)
-PASS: AU-03/05/06/11/13/14/15/18, AT-02/03/06/08/11, ATR-02/05. AU-08 was a real bug (generic "Database error
-deleting user") — fixed in `admin-users`, **deployed**, re-verified (f8cdde5, local only, not pushed).
-Merged owner-supplied handoffs (commit after f8cdde5): `website-sync.patch` (home page "free forever", pricing
-removed, Help `ai-and-data` section) + `roadmap-parked-priorities.patch`; tests 287/287, build OK, lint 20 = baseline.
-Briefs committed as docs, NOT built: `brief-amount-calculator.md`, `brief-settlement-summary.md`.
-Cleanup done: re-archived `P1 close` + `roadmap check (copy)` trips; deleted user `E2E Verify`.
-**Tomorrow (2026-10-03, owner confirmed):** AT-09 + ATR-03 — oldest archived/trashed items (29 days on 10-02:
-`Live Test Delete` trip, Sep-2 era) become purge-eligible; bulk "Permanently delete N eligible" button should
-appear. Needs owner OK on which item to purge. Spec note: per-row "Delete permanently" works at any age.
-Still open: AU-07 (needs user with only soft-deleted history, not a trip creator), AU-04/16/19 (need Jayashree
-live session / non-SU), second-account cases, phone cases, inbox cases. Not pushed: everything since a5b64e1.
-**Two-account batch (same day):** ACT-04/05, ATR-04, CIRC-08 PASS (Appendix T). FINDING FIXED (cc7159a + migration 046, applied to prod,
-NOT pushed to git): removal with an unsettled balance is blocked in the DB for every path incl. admin; removed members
-show as "Former member". AU-04 FIXED and VERIFIED on prod (migration 047 + admin-users + app): live session shows the suspended screen with an
-email-the-admin link, DB refuses writes. `ThrowAway` (vakacherla@comcast.net) left suspended. Admin contact defaults to
-admin@splitexpense.com. Pane/automation note: Turnstile blocks the agent's browser sign-in; use the owner's Chrome (new MCP tab
-shares its login) and incognito for a second identity.
-Test trip `E2E-TEST 047 write check` not yet archived. Two-user test data archived (owner OK). Chrome tab 454295720 = Jayashree (prod); built-in pane = SU account.
-**Bot protection shipped (same day):** migration 048 + AI caps (30 scans / 100 parses per user per day) + throwaway-email
-blocklist + Cloudflare Turnstile on signup/login/reset (Supabase CAPTCHA enforcement ON; works in real Chrome). Appendix V.
-NOTE: the agent's embedded browser fails Turnstile, so it cannot sign in on prod any more (localhost pane sessions already
-signed in still work). Owner TODO: try signup with a mailinator address (expect the friendly message); reload the suspended
-`ThrowAway` Chrome tab to finish AU-04. Feedback backlog (owner): #3 first-time welcome cards + home "how to start" (next),
-#2 navigation (bottom tabs / sidebar), #1 native app (install prompt first, Capacitor later).
-**PARKED (owner buying a domain, ~2026-10-03/04 weekend):** re-enable email confirmation. Steps: verify the domain in Resend (SPF/DKIM DNS),
-set Supabase Auth SMTP to Resend with a no-reply@<domain> sender, then turn "Confirm email" on, re-test signup, and run the
-inbox-dependent cases (AUTH-11, AUTH-13/14/15). Also: the suspended-screen contact defaults to admin@splitexpense.com in
-src/lib/suspension.js, so create that mailbox on the new domain or change the default / set VITE_ADMIN_CONTACT_EMAIL. Watch the
-Resend free tier (100/day). Until then CAPTCHA + email blocklist + AI caps are the protection.
-**Welcome tour built (feedback #3), committed locally, NOT pushed:** 4 illustrated cards on the dashboard for brand-new accounts
-(no trips/circles), Skip/Back/Next, last card = Create my first Trip / Join with a code; replay via Help > "Replay the welcome tour";
-"Show this tour every time I open the app" checkbox (per user, localStorage; default = first time only) + a "Show the welcome tour"
-link on the dashboard so users needn't use Help; home page "Where do I start?" strip; dashboard Circles blurb reworded ("New here? Start with a Trip"). Verified in the pane (light,
-dark, mobile width, replay, CTA, dismissal; 308 tests, build, lint baseline). NOT yet seen as a real first-run: the suspended
-`ThrowAway` account is brand new, so unsuspend it and sign in once to see the tour automatically. NOTE: the dev server
-(vite-dev) must be running for localhost checks; it had stopped earlier.
-**Navigation built (feedback #2), committed locally, NOT pushed:** labeled top-bar menu (Trips/Circles/Rates/Help + Admin/Profile) on desktop,
-fixed bottom tab bar on phones (md:hidden, pb-20 on the shell, add-expense FAB lifted), dashboard split into Trips (all trips, with a circle
-label) and Circles (`/dashboard?view=circles`), breadcrumbs on trip/circle pages (Trips > Trip or Circles > Circle > Trip), nav hidden for
-suspended users. Logic in src/lib/navItems.js (tested). Verified in real Chrome on localhost (desktop dark, circles view, breadcrumb, phone-width
-iframe). NEXT (owner request): install prompt (Add to Home Screen / PWA install, iOS instructions), then store-wrapper later. localhost is now
-in the Cloudflare Turnstile hostnames, so owner sign-in works on localhost in Chrome (the built-in pane still fails Turnstile).
-**Install prompt built (feedback #1, step 1), committed locally, NOT pushed:** `beforeinstallprompt` captured at startup (src/lib/installPrompt.js,
-tested); dashboard banner (one-tap Install on Android/desktop Chrome/Edge; "Show me how" 3-step Share > Add to Home Screen card on iPhone/iPad,
-with a Safari fallback note for Chrome/Firefox/Edge on iOS); "Not now" hides it for 14 days (per device); never shown if already installed or on
-a first visit/over the welcome tour; permanent "Install the app" card on Profile and Help. Verified in real desktop Chrome (native banner),
-iOS path via UA override, dismissal + reload. NOT verified on a real iPhone/Android device. iOS cannot trigger an install programmatically.
-NEXT for native-store users: Capacitor wrapper (separate project: Apple developer account, review, retest push + UPI deep links on iOS).
-**AT-09 + ATR-03 PLAN (owner: do tomorrow, 2026-10-03, after ~01:25 UTC / ~06:55 AM IST):** items become 30 days old at: trip `Live Test Delete`
-(archived 2026-09-03 00:55:30 UTC -> eligible 2026-10-03 00:55 UTC) and expense `Uber` (deleted 2026-09-03 01:21:43 UTC -> eligible 01:21 UTC).
-Next eligible: expenses from 2026-09-04 (10-04+). Steps: Admin > Trips (Archived) and Trash must show "eligible for permanent deletion" + the bulk
-"Permanently delete N eligible" button; permanently delete ONLY those two items individually (owner must confirm in chat first; the bulk button would
-also take anything else eligible); confirm they are gone with no restore; record PASS in test-cases + sheet (AT-09 row 184, ATR-03 row 189).
-Negative side already verified 2026-10-02 (no label/button before 30 days). SU session: owner's Chrome tab on localhost:5183 (dev server must be
-running; Turnstile now allows localhost). Per-row "Delete permanently" works at any age (spec note).
-Small UX nits: admin Circle dropdown lists archived circles; "Add to a trip" still offers trips user is in.
+## Tomorrow (2026-10-03), in this order
+1. **AT-09 + ATR-03** after ~00:55 UTC (trip) / ~01:21 UTC (expense) = ~06:55 AM IST. Items: trip `Live Test Delete` (archived 2026-09-03 00:55:30 UTC)
+   and expense `Uber` (deleted 2026-09-03 01:21:43 UTC). Steps: Admin > Trips (Archived) and Trash must show "eligible for permanent deletion" and the bulk
+   "Permanently delete N eligible" button; permanently delete ONLY those two, individually, after the owner confirms in chat (the bulk button would also take
+   anything else eligible); confirm gone, no restore; record PASS in `test-cases-2026-09-29.md` and the Sheet (AT-09 row 184, ATR-03 row 189).
+   Needs the owner's signed-in Chrome on `localhost:5183` (dev server `vite-dev` running). Per-row "Delete permanently" works at any age (spec note).
+2. **Open Sprint 6** on the Jira-lite board with its goal, then run the **full regression sweep** (below).
+
+## Tracking system (built 2026-10-02)
+- **Test records:** `test-cases-2026-09-29.md` (authoritative, with Appendices) mirrored to the Google Sheet
+  [1QHNnjMGCffXa4okRjHJXi9tn_WjywgLFrAwy6kiyZXk](https://docs.google.com/spreadsheets/d/1QHNnjMGCffXa4okRjHJXi9tn_WjywgLFrAwy6kiyZXk/edit), sheet `Cases`
+  (A Section, B Ref, C Case, D Priority, E Status, F Evidence, **G Req**). New section 18 (NAV, TOUR, INST, SUSP, SIGN, CAP, AI) is at rows 242–252; a blank row sits at 241.
+  Row formula for older cases: AU-n = 156+n, AT-n = 175+n, ATR-n = 186+n, CIRC-n = 45+n, ACT-n = 143+n. Keep md and Sheet in sync.
+- **`BRD.md`:** 13 epics (EP-nn), 98 requirements (REQ-<epic>-nn), defect register (DEF-nnn, 40 bugs), sprint plan (section 11), release labels (section 12),
+  Jira key index (section 10). Every test case maps to a REQ via the Sheet `Req` column. Rebuild helpers live in `jira/` (`build_jira.py`, `build_releases.py`).
+- **`RELEASES.md`:** every push to `main` (60 so far) with the issues it first shipped. Label format `rel-<date>-<tip sha>`.
+- **`TESTING-AGENT-BRIEF.md`:** what the testing agent can run vs what needs the owner or a phone.
+- **Jira-lite board** (the owner's own app): `http://localhost:5173/board`, project **SplitExpenses (key SE)**. Code in `../Proj Mgmt Tool` (Docker compose; `docker compose up -d`),
+  private GitHub repo `vakacherla/jira-lite` (`f7076fa`). 151 issues imported (SE-1..13 epics, SE-14..111 stories, SE-112..151 bugs), stories/bugs linked to epics.
+  Sprints: **S0** core (2-4 Sep), **S1** 5-7 Sep, **S2** 13 Sep, **S3** 30 Sep, **S4** 1 Oct, **S5** 2 Oct (all closed), **S6** 3 Oct onward (planned: regression sweep,
+  AT-09/ATR-03, settlement summary, amount calculator, DEF-025, DEF-026). Epic status rolls up from children (Done only when all children Done). Epics hidden from the
+  Kanban board; Epics page `/epics`, Bugs page `/bugs`. Bug reporter defaults to **Ganesha - Testing Agent**; fixer on fixed bugs is **Vishwakarma - Fixer Agent**
+  (both non-login viewer identities; script `backend/scripts/seed_testing_agent.py`).
+- **Owner rule from 2026-10-02:** every new feature from now on is assigned to a sprint with a goal BEFORE it is built, gets a BRD `REQ` row and Sheet `Req`, and each push to
+  prod gets its `rel-` label on the issues it ships. Memory note: `feedback_assign_features_to_sprints.md`.
+- Browser/automation for the board: use the owner's real Chrome (new MCP tab shares its login). The Jira-lite backend is `localhost:8000`; its API token is in that tab's
+  localStorage (`access_token`). Importing a file: serve it from a local CORS server and set the file input via `DataTransfer`.
+
+## Regression sweep plan (tomorrow, after AT-09/ATR-03)
+- **Agent runs:** RES-04, BAL-10, NAV-01..03, INST-02, TOUR-02, optional EXP-17/EXP-39 (see the brief).
+- **Owner, real Chrome / two accounts / throwaway:** AUTH-02, AUTH-04, AUTH-06, AUTH-07, CIRC-04, AU-07, AU-16, AU-19, SEC-07, SIGN-01 (try a mailinator sign-up), SIGN-02, TOUR-01.
+- **Owner, phone:** RES-01, BAL-09 (agent never taps payment links), BAL-11, BAL-14, BAL-15, BAL-16, ACT-06, OFF-11.
+- **Blocked:** AUTH-11/13/14/15 (domain + email), BAL-12/13 (days must pass), RES-09 (needs a migration).
+- Owner wants a single complete sweep across the app, so run it after the remaining items above.
 
 ## Standing rules (from the owner — do not skip)
-1. **No fix is pushed until validated holistically**: grep every consumer of what changed, think about
-   races/edge cases, run unit tests + build + lint (no new warnings), run the real flow against the real
-   backend (local dev server `npm run dev` via launch.json `vite-dev`), re-test related flows. "Band-aid on
-   band-aid" is explicitly unwanted. Prefer fixing at the right layer (RLS/server) over UI masking.
-2. Confirm with the owner before any `supabase db push` / functions deploy / git push. Ship batched, verified.
-3. Test data: prefix `E2E-TEST`. Clean up (archive) what you create. Deleting a trip/circle through the UI
-   needs the owner's explicit OK in chat (the harness classifier blocks it otherwise).
-4. Never enter credentials; the owner signs in. Jayashree (test account, non-admin) is signed in at
-   `https://splitexpenses-app.vercel.app` in Chrome (tabId 454295707) and at `http://localhost:5183` in the
-   built-in browser pane (tab-1). `127.0.0.1:5183` is a different origin = logged-out view.
-5. Owner's token budget matters: keep context small; this file is the memory.
+1. **No fix is pushed until validated holistically:** grep every consumer, think about races/edge cases, run unit tests + build + lint (no new warnings), run the real flow,
+   re-test related flows. Fix at the right layer (RLS/server), not UI masking.
+2. **Ask before every production change:** `supabase db push`, functions deploy, git push (and pushes to the Jira-lite repo). Ship one roadmap item at a time:
+   plan, build, verify live, commit, ask before push.
+3. Test data prefix `E2E-TEST`; archive what you create. Deleting/archiving through the UI needs the owner's explicit OK in chat for the named items only.
+4. Never enter credentials; the owner signs in. Turnstile blocks the built-in pane's sign-in; use the owner's Chrome (MCP tabs share its login) and an incognito window for a
+   second identity. `127.0.0.1:5183` is a different origin from `localhost:5183`.
+5. Keep context small; this file is the memory. Commit with the attribution line from the session reminder.
 
-## Pushed + live on production (as of 2cf0fa8 / 1d4142b)
-AT-07 (trip archive), TRIP-22 (archived trip = not found), homepage Sign-in link on mobile, RES-02 overflow
-fixes (trip tab strip, Navbar, Profile), migration 045 (circle archive) + guards. All re-verified live.
+## Parked / owner to-dos
+- **Domain** (owner buying ~2026-10-03/04): then verify it in Resend (SPF/DKIM), set Supabase Auth SMTP to Resend with `no-reply@<domain>`, turn Confirm email on, re-test sign-up, run
+  AUTH-11/13/14/15. Create the `admin@<domain>` mailbox or change the default in `src/lib/suspension.js` (currently `admin@splitexpense.com`, or set `VITE_ADMIN_CONTACT_EMAIL`).
+  Watch the Resend free tier (100/day).
+- Owner: try a mailinator sign-up; sign out the incognito SU window; decide on the suspended `ThrowAway` account (vakacherla@comcast.net) — it cannot be deleted because its archived circle
+  still references it (admin has no circle purge).
+- Native store app: Capacitor wrapper (Apple developer account, review, retest push + UPI deep links on iOS).
+- Epic-based reports and how to visualise them on the board (owner idea, later). Consider hosting Jira-lite later (frontend on Vercel needs its own backend + DB).
 
-## Pushed + live (a5b64e1): TRIP-19 image downscale (banner path verified on prod), RES-10 keyed FX rate
-Avatar upload + SettleUpModal not exercised live.
-
-## Committed locally, NOT pushed
-- `cd00527`: `src/lib/imageResize.js` (+tests; 284/284 pass) downscales banner/avatar uploads (TRIP-19).
-  Verified live on trip banner (14.1MB -> 1.5MB). **Still to verify before push: avatar upload live**
-  (changes the shared account avatar — ask first) and consumers. Then ask to push.
-
-- `<next commit>`: RES-10 fix — `useLiveRate` keyed rate (stale rate 1.0 saved EUR as USD when FX down) +
-  accurate Save-blocked message (287/287 tests). Verified live; SettleUpModal (same hook) not exercised live.
+## Open findings (not fixed) — also in BRD section 6
+1. **RES-09 / DEF-026 (P1):** a dropped connection mid-save leaves a phantom expense with no splits. Proposal: atomic `create_expense_with_splits` / `update_expense_with_splits`
+   plpgsql functions and route the 6 call sites through them. Needs a migration + approval.
+2. **DEF-025:** RLS still allows expense inserts into an archived trip.
+3. DEF-036 inline create-circle does 3 non-atomic writes; DEF-031 admin has no circle purge; DEF-035 admin dropdowns list archived circles / trips the user is already in;
+   DEF-028 iOS web push disappears after display (unconfirmed); DEF-030 offline sign-out only partly fixed.
+4. Stale banner cache on same-extension replace; avatar upload has no `image/*` check; CSV export has no settlements; ~13 NOT-BUILT features (REC-03..07, 09, 10, 12, 13, FEAT-04).
+5. Backlog: remove redundant "← Your trips" links on Rates/Help/Profile; admin signups-per-day tile and bulk suspend; cleanup job for old `ai_usage` rows; light-mode check of the new nav;
+   confirm the Gemini API tier (`website-sync-notes.md`).
+- **Planned feature (after verification): voice input** for the "describe it" box. Engine order: browser Web Speech API, then on-device STT in the mobile app, then Whisper, and only then paid
+  options; keep it behind one small function.
 
 ## Test data on production
-- Archived 2026-10-02 (owner OK): `E2E-TEST P1 sweep trip` + `E2E-TEST P1 sweep circle`, CIRC-14 trip/circle,
-  duplicate-trip copy. Orphan storage objects (banner.jpg/png) remain in banners buckets; harmless.
-- Not archivable by Jayashree (not creator/manager): circle `E2E-TEST Circle 20260929-1055` (17c3af0a-...) and its
-  trip `E2E-TEST Circle Trip 20260929-1055` (46f95bfc-...), plus fixtures CSV Import Trip / Empty Trip. Needs the
-  owner or an admin session (tomorrow).
-
-## Open findings (not fixed) — need a design/approval
-1. **RES-09 (P1, data integrity)**: expense create/edit = two writes; a connection drop leaves a phantom
-   expense with no splits and wrong balances. Proposal: atomic `create_expense_with_splits` /
-   `update_expense_with_splits` plpgsql functions, route the 6 call sites (AddExpenseForm create+edit,
-   offlineQueue create+update, ImportCsvModal) through them. Needs migration + db push approval.
-2. TRIP-22 server gap: RLS still allows expense inserts into an archived trip.
-3. CIRC-14: inline create-circle does 3 non-atomic writes (orphan/duplicate on partial failure).
-4. STALE-BANNER: same-extension banner replace keeps same cached URL (1h) -> old image shown.
-5. AVATAR-TYPE: avatar upload has no `image/*` check.
-6. CSV-15: export has no settlements (product gap). Nine P1 features NOT-BUILT (REC-03..07, 09, 10, 12, FEAT-04).
-
-## What I can still do alone (next)
-RES-04 (laptop-width layout), RES-10 (FX slow/down), SEC-07 remaining, BAL-10 live (needs a debt to a
-no-handle member), verify avatar path of TRIP-19, then bundle fixes for findings 4/5 as a reviewed change.
-
-## Needs the owner (planned for tomorrow morning)
-- Second normal account: AUTH-06, AUTH-07, CIRC-04, CIRC-08, ACT-04, ACT-05, ATR-04, AUTH-02, AUTH-04 (last; needs sign-out).
-- Platform-admin login (or owner runs steps): AU-03..08, AU-11, AU-13..16, AU-18, AU-19, AT-02, AT-03, AT-06, AT-08,
-  AT-11, ATR-02, ATR-05; AT-09/ATR-03 also need 30-day wait or back-dated rows.
-- Inbox: AUTH-11/13/14/15. Real phone + notifications: RES-01, BAL-09, BAL-11..15, ACT-06.
-- Owner end-of-day goal: close all BLOCKED, run all NOT RUN.
-
-## Planned feature (after verification): voice input for "describe it" box
-Mic button -> text in the existing box; `parse-expense-text` already matches member names/nicknames (not
-emails). Engine order: browser Web Speech API (free) -> on-device STT in the mobile app -> Whisper (free) ->
-ElevenLabs / 1min.ai / Muse only if free options fail. Keep engine behind one small function. Test name
-accuracy ("Maya, Jon, and me", Ana/Anna).
+- Archived with owner OK: the E2E-TEST sweep trips/circles, the two-user and CIRC-08 fixtures. Test trip `E2E-TEST 047 write check` is not yet archived.
+- Not archivable by Jayashree (not creator/manager): circle `E2E-TEST Circle 20260929-1055` and its trip, plus fixtures CSV Import Trip / Empty Trip. Needs an admin session.
+- Accounts: Jayashree (non-admin test account), the owner (SU), `ThrowAway` (suspended).
 
 ## Gotchas
-- Native `confirm()` is auto-cancelled by automation; override `window.confirm=()=>true` for test-row deletes.
-- Set React inputs via native value setter + dispatch `input`. File inputs: build a canvas blob, `DataTransfer`,
-  dispatch `change`. Offline sim: `Object.defineProperty(navigator,'onLine',{configurable:true,get:()=>false})` +
-  `offline`/`online` events; hard reload resets it.
-- Browser-pane viewport emulation resets between calls: measure responsive layout inside a same-origin
-  `<iframe style="width:375px">` instead.
-- `supabase db push` / `git push` need `dangerouslyDisableSandbox: true` (network); only after owner approval.
-- macOS `sed -i` needs a backup suffix; use python for edits.
-- Vercel deploy check: behavioral (e.g., archived-trip URL shows "not found") is more reliable than grepping bundles.
+- Native `confirm()` is auto-cancelled by automation; override `window.confirm=()=>true`.
+- Set React inputs via the native value setter + dispatch `input`. File inputs: `DataTransfer` + dispatch `change`. Offline sim: override `navigator.onLine` + `offline`/`online` events.
+- Browser-pane viewport emulation resets between calls: measure responsive layout inside a same-origin `<iframe style="width:375px">`.
+- `supabase db push`, functions deploy and `git push` need `dangerouslyDisableSandbox: true` (network); only after owner approval. Shell cannot write `~/.claude/projects/.../memory`; use the Write tool.
+- The Jira-lite folder needed `request_directory` access; Docker commands must be run through the user's terminal tool (`mcp__terminal__run_in_terminal`, single-line).
+- macOS `sed -i` needs a backup suffix; use python for edits. Background Chrome tabs freeze CDP calls: create a fresh MCP tab.
+- Vercel deploy check: behavioural (e.g. archived-trip URL shows "not found") is more reliable than grepping bundles.
