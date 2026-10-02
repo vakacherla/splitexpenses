@@ -237,22 +237,22 @@ FAIL severity: **P0: 5** (signup broken, malformed circle route leaks DB error, 
 |---|---|---|---|---|
 | AU-01 | Non-admin sees no "Admin" link in the nav | P0 | PASS | Verified live 2026-10-01 — see Appendix E. |
 | AU-02 | Admin → Users lists every account platform-wide | P0 | PASS | Full user list loads (18 users seen). |
-| AU-03 | Suspend a user | P0 | NOT RUN | Destructive; skipped per production policy. |
+| AU-03 | Suspend a user | P0 | PASS | Verified live 2026-10-02 (SU session, throwaway `E2E Verify`): Suspend shows "suspended" badge; persisted after reload. |
 | AU-04 | Suspend a user with an active session | P1 | NOT RUN | Destructive; skipped per production policy. |
-| AU-05 | Unsuspend a user | P1 | NOT RUN | Destructive; skipped per production policy. |
-| AU-06 | Delete a user with no history | P0 | NOT RUN | Destructive; skipped per production policy. |
+| AU-05 | Unsuspend a user | P1 | PASS | Verified live 2026-10-02: Unsuspend restored the user; persisted after reload. |
+| AU-06 | Delete a user with no history | P0 | PASS | Verified live 2026-10-02: deleted throwaway user `E2E Verify` (no history); gone from Users after reload, no error. |
 | AU-07 | Delete a user whose only history is soft-deleted expenses | P0 | NOT RUN | Destructive; skipped per production policy. |
-| AU-08 | Delete a user with live history is blocked with a clear explanation | P0 | NOT RUN | Destructive; skipped per production policy. |
+| AU-08 | Delete a user with live history is blocked with a clear explanation | P0 | PASS | Initially FAIL 2026-10-02 (generic "Database error deleting user"). Fixed in `admin-users` (regex also matches that wording), deployed 2026-10-02, re-verified live: deleting `E2E-TEST Payee` (trip creator) is refused with "Can't delete this account — they have expense or payment history in a group. Suspend them instead...", user kept. |
 | AU-09 | Cannot suspend/delete your own admin account | P0 | PASS | No Suspend/Delete buttons on your own row. |
 | AU-10 | Only super admin sees promote/demote; never on your own row | P0 | PASS | Verified in the Users view. |
-| AU-11 | Promote member → admin → super admin → demote back | P1 | NOT RUN | Destructive; skipped per production policy. |
+| AU-11 | Promote member → admin → super admin → demote back | P1 | PASS | Verified live 2026-10-02 on throwaway `E2E Verify`: member -> admin -> SU -> demote to admin -> demote to member, all persisted. Ladder is member/admin/SU (SU demotes to admin, admin to member). |
 | AU-12 | Oldest admin shows "SU" badge | P1 | PASS | Badge verified on the oldest admin. |
-| AU-13 | Only super admin sees "Add to trip" | P0 | NOT RUN | Not covered this run. |
-| AU-14 | "Add to trip" for a suspended user | P1 | NOT RUN | Not covered this run. |
-| AU-15 | Adding a user already in the trip is a harmless no-op | P1 | NOT RUN | Not covered this run. |
+| AU-13 | Only super admin sees "Add to trip" | P0 | PASS | Verified live 2026-10-02: "Manage trips" and role buttons visible in SU session. |
+| AU-14 | "Add to trip" for a suspended user | P1 | PASS | Verified live 2026-10-02: adding a suspended user to a trip succeeds with no error (inert, they cannot sign in). No restriction exists. |
+| AU-15 | Adding a user already in the trip is a harmless no-op | P1 | PASS | Verified live 2026-10-02: re-adding a user already in the trip raises no error and leaves one membership row. Note: the dropdown still offers trips the user is already in. |
 | AU-16 | Non-super-admin replaying admin_add_user_to_group is rejected | P1 | NOT RUN | Not covered this run. |
 | AU-17 | "Manage trips" lists each trip with Remove | P0 | PASS | Trips list loads with per-trip Remove. |
-| AU-18 | Removing a user with expense history keeps the expenses | P1 | NOT RUN | Destructive; skipped per production policy. |
+| AU-18 | Removing a user with expense history keeps the expenses | P1 | PASS | Verified live 2026-10-02: removed `E2E-TEST Payee` from `E2E-TEST UPI Pay Link`; the trip's soft-deleted expense (dinner, INR 500) remained in Trash after reload. |
 | AU-19 | Non-super-admin replaying admin_remove_user_from_group is rejected | P1 | NOT RUN | Not covered this run. |
 
 ## 12. Admin — Trips
@@ -260,27 +260,25 @@ FAIL severity: **P0: 5** (signup broken, malformed circle route leaks DB error, 
 | Ref | Test case | Priority | Status | Evidence |
 |---|---|---|---|---|
 | AT-01 | Admin → Trips lists every trip platform-wide with member counts | P0 | PASS | Full trip list loads with accurate counts. |
-| AT-02 | Each trip shows accurate "Created <date> by <name>" | P1 | NOT RUN | Not covered this run. |
-| AT-03 | Every Overview stat tile lands on the right tab | P0 | NOT RUN | Not covered this run. |
+| AT-02 | Each trip shows accurate "Created <date> by <name>" | P1 | PASS | Verified live 2026-10-02: all 20 trips show "Created <date> by <name>"; the two checkable independently (own trip, owner-created CSV trip) match. |
+| AT-03 | Every Overview stat tile lands on the right tab | P0 | PASS | Verified live 2026-10-02: Trips->Trips, Users->Users, Active users->Users filtered, Expenses logged->Reports, Settlements->Settlements. |
 | AT-04 | "Active users" stat tile filters to the active users | P1 | PASS | Fixed and confirmed live 2026-09-30: the tile now shows "Showing active users only. Show everyone" and correctly filters the Users tab (9 of 23 users, matching the tile's own count). See Appendix D (F14). |
 | AT-05 | Admin → Settlements: every settlement platform-wide | P0 | PASS | Correct from/to/trip/date/amount, including home-currency equivalents for foreign-currency settlements. |
-| AT-06 | Rename a trip | P1 | NOT RUN | Destructive-ish; skipped per production policy. |
+| AT-06 | Rename a trip | P1 | PASS | Verified live 2026-10-02: renamed `E2E-TEST P1 close`, persisted after reload, renamed back. |
 | AT-07 | Delete a trip (archives it) | P0 | PASS | Initially FAIL (RLS error on archive); fixed by migration 044 + CirclePage filter (d6c4b53). Re-verified live 2026-10-01: archive of test copy succeeded, redirected to /dashboard, trip gone from lists. See Appendix N. |
-| AT-08 | Archived trip shows day count + restore works | P0 | NOT RUN | Destructive; skipped per production policy. |
+| AT-08 | Archived trip shows day count + restore works | P0 | PASS | Verified live 2026-10-02: archived trips show "Archived N days ago . N days left to restore"; Restore on `roster check (copy)` moved it back to the active list. |
 | AT-09 | "Permanently delete" only after 30+ days | P0 | NOT RUN | MANUAL: cannot wait 30 days. |
 | AT-10 | Admin trip view: real tabs, "Viewing as admin", no add-expense | P1 | PASS | Real Ledger/Balances/Reports/Members; no add-expense button. |
-| AT-11 | Admin "Circle" button attaches any trip to any circle | P1 | NOT RUN | Not covered this run. |
-
+| AT-11 | Admin "Circle" button attaches any trip to any circle | P1 | PASS | Verified live 2026-10-02: Circle button attached a trip to a circle (breadcrumb showed it on the trip page); set back to standalone. Note: dropdown also lists archived circles. |
 ## 13. Admin — Trash
 
 | Ref | Test case | Priority | Status | Evidence |
 |---|---|---|---|---|
 | ATR-01 | Deleted expense lands in Trash; ledger and balances updated | P0 | PASS | 22 items visible with trip name, amount, day count. |
-| ATR-02 | Restore from Trash | P0 | NOT RUN | Destructive-adjacent; skipped per production policy. |
+| ATR-02 | Restore from Trash | P0 | PASS | Verified live 2026-10-02: restored `OFF-06 OFFLINE edit` from Trash; gone from Trash and back in the live trip ledger. |
 | ATR-03 | "Delete permanently" only after 30+ days | P0 | NOT RUN | MANUAL: cannot wait 30 days. |
 | ATR-04 | Non-admin never sees deleted expenses anywhere | P1 | NOT RUN | Not covered this run. |
-| ATR-05 | Restore an expense whose trip has since been archived | P1 | NOT RUN | Not covered this run. |
-
+| ATR-05 | Restore an expense whose trip has since been archived | P1 | PASS | Verified live 2026-10-02: restoring `queue-scoping verify` whose trip is archived succeeds with no error; expense stays inside the archived trip. |
 ## 14. Security boundaries
 
 | Ref | Test case | Priority | Status | Evidence |
@@ -653,3 +651,11 @@ Test data: trip `E2E-TEST P1 sweep trip` (32ddaebf-13de-48b2-8c3b-b42fc74cd7b6) 
 
 **Production verification (2026-10-01, after push of a5b64e1):** RES-10 — with the rate service failing, the form shows "—"/"Rate unavailable" and Save is blocked with "Couldn't get the exchange rate — check your connection and try again."; with it restored, €10.00 converted at 1.1355 and saved as $11.36. TRIP-19 — a 14.1MB 3000x3000 PNG uploaded as the trip banner is stored as a 1.5MB JPEG (`banner.jpg`). (A first probe ran seconds before Vercel finished deploying and briefly exercised the old build, writing one wrong test row; deleted with the other test expenses.) Avatar upload and SettleUpModal remain not exercised live.
 
+
+
+## Appendix S — Admin (SU) batch, 2026-10-02 (Claude Code)
+Ran with the owner signed in as super admin on the local dev server against the production backend, using throwaway `E2E Verify` / `E2E-TEST` data. See per-row evidence. Still open: AU-04 (needs a second live session), AU-06/07/08/18 (irreversible user deletes, need owner OK), AU-16/19 (need non-SU session), AT-09/ATR-03 (oldest archived/trashed items are 29 days old; eligible 2026-10-03, bulk-purge button not shown today). Spec note: per-row "Delete permanently" is available at any age; only the bulk purge is gated at 30 days.
+
+Cleanup 2026-10-02 (owner OK): re-archived `E2E-TEST P1 close` and `E2E-TEST CIRC-03 roster check (copy)`; deleted user `E2E Verify`.
+
+AU-07 not closed: Payee also created a trip, so its delete is refused (AU-08 path), not the soft-deleted-only case. Needs a user whose only history is soft-deleted expenses (not a trip creator).

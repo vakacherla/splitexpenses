@@ -114,7 +114,9 @@ Deno.serve(async (req) => {
         // someone else's shared ledger, so it's blocked rather than
         // cascaded away silently. Suspend instead, or have them settle up and
         // leave their groups first.
-        const message = /foreign key|violates/i.test(error.message)
+        // supabase-auth reports the FK failure as "Database error deleting
+        // user" (no "foreign key" text), so match that wording too.
+        const message = /foreign key|violates|database error deleting user/i.test(error.message)
           ? "Can't delete this account — they have expense or payment history in a group. Suspend them instead, or have them settle up and leave their groups first."
           : error.message
         return json({ error: message }, 400)
