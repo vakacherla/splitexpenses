@@ -31,6 +31,11 @@ NOTE: the agent's embedded browser fails Turnstile, so it cannot sign in on prod
 signed in still work). Owner TODO: try signup with a mailinator address (expect the friendly message); reload the suspended
 `ThrowAway` Chrome tab to finish AU-04. Feedback backlog (owner): #3 first-time welcome cards + home "how to start" (next),
 #2 navigation (bottom tabs / sidebar), #1 native app (install prompt first, Capacitor later).
+**PARKED (owner buying a domain, ~2026-10-03/04 weekend):** re-enable email confirmation. Steps: verify the domain in Resend (SPF/DKIM DNS),
+set Supabase Auth SMTP to Resend with a no-reply@<domain> sender, then turn "Confirm email" on, re-test signup, and run the
+inbox-dependent cases (AUTH-11, AUTH-13/14/15). Also: the suspended-screen contact defaults to admin@splitexpense.com in
+src/lib/suspension.js, so create that mailbox on the new domain or change the default / set VITE_ADMIN_CONTACT_EMAIL. Watch the
+Resend free tier (100/day). Until then CAPTCHA + email blocklist + AI caps are the protection.
 Small UX nits: admin Circle dropdown lists archived circles; "Add to a trip" still offers trips user is in.
 
 ## Standing rules (from the owner — do not skip)
