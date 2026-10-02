@@ -94,10 +94,10 @@ FAIL severity: **P0: 5** (signup broken, malformed circle route leaks DB error, 
 | CIRC-08 | Removing someone from one trip keeps them in the circle and sibling trips | P1 | NOT RUN | Not covered this run. |
 | CIRC-09 | Circle manager rules mirror trip manager rules | P0 | PASS | Verified live + server-side policy inspection 2026-10-01 — see Appendix K. |
 | CIRC-10 | Add-by-email with an address that has no account | P1 | NOT RUN | Not covered this run. |
-| CIRC-11 | Circle cover photo upload | P1 | NOT RUN | Not covered this run. |
+| CIRC-11 | Circle cover photo upload | P1 | PASS | Verified live 2026-10-01: cover uploaded to circle-banners, button changed to Change, image renders (1200x600) on the circle page. Dashboard circle cards do not show covers by design. |
 | CIRC-12 | Circle member who hasn't joined a sibling trip sees info only, never the ledger | P0 | PASS | Verified live 2026-10-01 — see Appendix K. Minor copy issue noted, not a security problem: the banner reads "Viewing as admin — you're not a member of this trip" for this case too, which is misleading (Jayashree isn't a platform admin, just a circle member) even though the actual restriction is correct. |
 | CIRC-13 | Malformed circle id /circles/49A047 | P0 | PASS | Fixed and confirmed live 2026-09-30: /circles/49A047 now shows "This circle doesn't exist, or you don't have access to it." (previously leaked `invalid input syntax for type uuid`). See Appendix D (F2); commit `29e95f2`. |
-| CIRC-14 | "+ Create new circle" inline in Trip Settings | P1 | NOT RUN | Not covered this run. |
+| CIRC-14 | "+ Create new circle" inline in Trip Settings | P1 | PASS | Verified live 2026-10-01: created a new circle inline from Trip Settings and the trip attached; circle name shown. Known weakness logged in Appendix N (three non-atomic writes). |
 
 ## 4. Expenses
 
@@ -123,7 +123,7 @@ FAIL severity: **P0: 5** (signup broken, malformed circle route leaks DB error, 
 | EXP-18 | Itemized: assigned items + proportional tax/tip per person | P0 | PASS | Per-person math verified correct. |
 | EXP-19 | Itemized: participant assigned $0 of items but still checked | P1 | PASS | Verified live 2026-10-01 — see Appendix K. |
 | EXP-20 | Itemized: item assigned to nobody is blocked | P0 | PASS | Verified live 2026-10-01 — see Appendix E. |
-| EXP-21 | Itemized: add/remove rows keep live totals in sync | P1 | NOT RUN | Not covered this run. |
+| EXP-21 | Itemized: add/remove rows keep live totals in sync | P1 | PASS | Verified live 2026-10-01 (local dev server, real backend): two items, one assigned to both and one to Ram only, total and per-person shares stayed in sync (5.00/11.00 of 16.00); removing the second item returned to 10.00 and 5.00/5.00. Nothing saved. See Appendix N. |
 | EXP-22 | Expanded itemized row shows per-item assignments and totals | P1 | PASS | Verified on fixture expenses. |
 | EXP-23 | Amount 0 or negative is blocked | P1 | PASS | Verified live 2026-10-01 — see Appendix E. |
 | EXP-24 | Amount 999999999.99 is accepted and formatted sanely | P0 | PASS | Fixed and confirmed live 2026-09-30: typing 999999999.99 now shows "Amount can't be more than 10,000,000." immediately, with no freeze or hang. See Appendix D (F3). |
@@ -320,7 +320,7 @@ FAIL severity: **P0: 5** (signup broken, malformed circle route leaks DB error, 
 |---|---|---|---|---|
 | RES-01 | Full flow on an actual phone | P0 | NOT RUN | MANUAL: needs a real phone, not a resized window. |
 | RES-02 | No horizontal scrolling on small screens | P1 | PASS (after fix) | Initially FAIL 2026-10-01: trip page tab strip (456px) and Profile payment row overflowed at 375px; Navbar overflowed at 320px. Fixed locally (TripView tab strip scrolls inside itself; Navbar tightened; Profile input min-w-0). Re-measured at 375/320 across dashboard, trip (all 5 tabs), circle, profile, rates, help: no page overflow. Not pushed. See Appendix N. |
-| RES-03 | Floating add-expense button stays reachable | P1 | NOT RUN | Not covered this run. |
+| RES-03 | Floating add-expense button stays reachable | P1 | PASS | Verified 2026-10-01 at 375/320px: button is fixed, fully on-screen, and at page bottom the last content on Ledger/Balances/Members clears it. See Appendix N. |
 | RES-04 | Laptop-width layout looks intentional | P2 | NOT RUN | Not covered this run. |
 | RES-05 | Theme toggle is instant | P1 | PASS | Toggles instantly with no wrong-theme flash. |
 | RES-06 | Theme choice persists across browser restarts | P1 | PASS | Persists. |
@@ -336,7 +336,7 @@ FAIL severity: **P0: 5** (signup broken, malformed circle route leaks DB error, 
 |---|---|---|---|---|
 | REC-01 | "Shares" split: relative weights split proportionally | P0 | PASS | $30 at 2 shares vs 1 renders "You $30.00 (2 shares)"; amounts proportional. |
 | REC-02 | "Adjustment" split: nudge individual amounts, total stays balanced | P0 | PASS | Single-member: typed 40 on a $60 expense saved without a rebalancing warning (row shows $60.00 (+$40.00)). Multi-member auto-rebalance NOT RUN. |
-| REC-03 | Multiple payers on one expense | P1 | NOT RUN | Not covered this run. |
+| REC-03 | Multiple payers on one expense | P1 | NOT-BUILT | Verified 2026-10-01: expenses have a single `paid_by` and the form has one Paid-by selector; no multi-payer support. |
 | REC-04 | Tags on an expense | P1 | NOT-BUILT | Verified 2026-09-29: no tag field in the form, edit modal, expanded row, or Help. |
 | REC-05 | "Reimbursable" flag | P1 | NOT-BUILT | Verified 2026-09-29: no such flag in the expense flow or Help. |
 | REC-06 | Comments on an expense | P1 | NOT-BUILT | Verified 2026-09-29: the Activity tab is a read-only event log; no comment UI. |
@@ -594,4 +594,5 @@ Not reachable this pass: **AT-03** ("Every Overview stat tile lands on the right
 - **UX-LOGIN (owner-reported, 2026-10-01)** — Homepage (`/`) showed only "Create free account" on phone-width screens; the nav's "Sign in" link was `hidden sm:inline`, so returning users had to open Sign-up and pick "existing account". Fix in `Overview.jsx`: Sign in always visible; mobile nav button reads "Sign up" (full "Create free account" from `sm` up); tightened spacing and `whitespace-nowrap` so nothing wraps. Verified on local dev server at 375px and 320px: no horizontal overflow, nav stays one line (76px). 280/280 tests, build clean. Not pushed.
 - **TRIP-22 fix revised** — audit of the first fix found it read `profile.is_admin` before the profile loaded (platform admin would wrongly see "not found" on a cold direct link). `TripView.load` now depends on the admin flag and re-runs when it resolves. Known gaps left open on purpose: server still accepts expense inserts into an archived trip (needs an RLS migration, to be proposed with a consumer audit), and an offline cached copy of an archived trip can still render.
 - **RES-02** — FAIL, then fixed locally. Method: loaded each page in a same-origin iframe of exact width (375 / 320) and listed elements extending past the viewport that aren't inside a scroll/clip container (browser-pane viewport emulation was unreliable between calls). Found: (1) trip page tab strip ~456px wide with no `min-w-0`/scroll container → whole page scrolled sideways at 375; (2) Navbar overflowed at 320 (Sign out button) on every page; (3) Profile payment-handle row (`flex-1` input with no `min-w-0`) → 476px at 375/320. Fixes: `TripView.jsx` tab strip `min-w-0 overflow-x-auto` with `shrink-0` tabs and tighter mobile padding; `Navbar.jsx` smaller gaps/brand, brand truncates last, right group `shrink-0`; `ProfilePage.jsx` input `min-w-0`, select `max-w-[50%]`. Re-measured: all 7 pages ok at both widths; 280/280 tests; build clean. Regression watch for cross-verification: navbar for admin users (extra "Admin" link) at 320, and tab strip with 5 tabs on a trip where the HelpLink is shown.
+- **EXP-21 / RES-03 / REC-03 / CIRC-11 / CIRC-14 (2026-10-01, local dev server vs real backend).** EXP-21: itemized rows kept totals in sync through add/assign/remove (nothing saved). RES-03: add button stays reachable and clear of content at 375/320. REC-03: not built (single `paid_by`). CIRC-11: circle cover upload works. CIRC-14: inline create-and-attach works. **Latent issue found in CIRC-14:** `TripSettingsModal.handleCreateAndAttachCircle` does three separate writes (insert circle, insert circle_member, `attach_trip_to_circle` RPC). If step 2 or 3 fails, an orphan circle remains and a retry creates a second one with the same name. Low probability, worth an RPC that does all three atomically; not fixed yet (would be a migration). **Test data left on production for cleanup:** trip `E2E-TEST CIRC-14 trip` (e09e3a6f-9a8d-4bc7-83f7-8675294b743e) and circle `E2E-TEST CIRC-14 circle` (96829dc6-409e-4b07-ae80-0f23c3ff64a8), plus a $5 expense in the already-archived copy trip.
 
