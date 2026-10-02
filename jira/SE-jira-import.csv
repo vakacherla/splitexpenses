@@ -40,9 +40,9 @@ Requirement: Logged-out visitors are redirected to Login; signed-in users visiti
 Test cases: AUTH-08, AUTH-09, AUTH-19, AUTH-20
 Bugs: DEF-005, DEF-027
 Source: Routing",story,medium,done,
-[REQ-AUTH-06] Old /groups/&lt;id&gt; links redirect to /trips/&lt;id&gt;; malformed ids give a friendly not-found.,"Epic: EP-01 Accounts, access and abuse protection
+[REQ-AUTH-06] Old /groups/<id> links redirect to /trips/<id>; malformed ids give a friendly not-found.,"Epic: EP-01 Accounts, access and abuse protection
 Status: Shipped
-Requirement: Old /groups/&lt;id&gt; links redirect to /trips/&lt;id&gt;; malformed ids give a friendly not-found.
+Requirement: Old /groups/<id> links redirect to /trips/<id>; malformed ids give a friendly not-found.
 Test cases: AUTH-17, AUTH-18, CIRC-13
 Bugs: DEF-002, DEF-032
 Source: Roadmap Now",story,medium,done,

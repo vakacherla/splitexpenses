@@ -1,4 +1,4 @@
-import re, csv, json, collections
+import re, csv, json, collections, html
 t = open('BRD.md').read()
 sec = t.split('## 4. Requirements by epic')[1].split('## 5.')[0]
 epics = {}
@@ -71,5 +71,5 @@ for b in defs:
 
 with open('jira/SE-jira-import.csv', 'w', newline='', encoding='utf-8') as f:
     w = csv.DictWriter(f, fieldnames=['title', 'description', 'type', 'priority', 'status', 'assignee_email'])
-    w.writeheader(); w.writerows(rows)
+    w.writeheader(); w.writerows([{k: html.unescape(v) for k, v in r.items()} for r in rows])
 print(len(epic_title), 'epics', len(reqs), 'stories', len(defs), 'bugs', len(rows), 'rows', len(tmap), 'tests mapped')
