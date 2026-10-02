@@ -21,8 +21,10 @@ Still open: AU-07 (needs user with only soft-deleted history, not a trip creator
 live session / non-SU), second-account cases, phone cases, inbox cases. Not pushed: everything since a5b64e1.
 **Two-account batch (same day):** ACT-04/05, ATR-04, CIRC-08 PASS (Appendix T). FINDING FIXED (cc7159a + migration 046, applied to prod,
 NOT pushed to git): removal with an unsettled balance is blocked in the DB for every path incl. admin; removed members
-show as "Former member". AU-04 RUN with throwaway `ThrowAway` (vakacherla@comcast.net, left
-suspended): FAIL — a suspended user's live session still works (Appendix U); fix pending owner's choice (A sessions revoke / B + restrictive RLS). Two-user test data archived (owner OK). Chrome tab 454295720 = Jayashree (prod); built-in pane = SU account.
+show as "Former member". AU-04: suspended user's live session still worked (FAIL). FIXED with option B: migration 047 applied,
+admin-users deployed, app pushed (4b9e7f3). Re-verify pending: reload the `ThrowAway` (vakacherla@comcast.net, left suspended)
+Chrome tab -> expect suspended screen + email link; then Unsuspend -> normal. Admin contact defaults to admin@splitexpense.com.
+Test trip `E2E-TEST 047 write check` not yet archived. Two-user test data archived (owner OK). Chrome tab 454295720 = Jayashree (prod); built-in pane = SU account.
 Small UX nits: admin Circle dropdown lists archived circles; "Add to a trip" still offers trips user is in.
 
 ## Standing rules (from the owner — do not skip)
