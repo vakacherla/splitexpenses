@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
+import { adminMailtoLink, isBannedAuthError, SUSPENDED_MESSAGE } from '../lib/suspension'
 import { useAuth } from '../context/AuthContext'
 import ThemeToggle from '../components/ThemeToggle'
 
@@ -8,6 +9,7 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [suspendedAtLogin, setSuspendedAtLogin] = useState(false)
   const [busy, setBusy] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
@@ -22,11 +24,14 @@ export default function Login() {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+    setSuspendedAtLogin(false)
     setBusy(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     setBusy(false)
     if (error) {
-      setError(error.message)
+      // "User is banned" is Supabase's wording for a suspended account.
+      if (isBannedAuthError(error)) setSuspendedAtLogin(true)
+      setError(isBannedAuthError(error) ? SUSPENDED_MESSAGE : error.message)
       return
     }
     navigate(location.state?.from ?? '/dashboard', { replace: true })
@@ -83,6 +88,15 @@ export default function Login() {
           </div>
 
           {error && <p className="text-sm text-owe">{error}</p>}
+          {suspendedAtLogin && adminMailtoLink(email) && (
+            <p className="text-sm text-ink-soft">
+              Questions?{' '}
+              <a href={adminMailtoLink(email)} className="text-primary hover:underline">
+                Email the administrator
+              </a>
+              .
+            </p>
+          )}
 
           <button
             type="submit"

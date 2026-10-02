@@ -690,3 +690,93 @@ create trigger group_members_block_removal_with_balance
   before delete on public.group_members
   for each row execute function public.block_member_removal_with_balance();
 
+
+-- Migration 047: suspended users are blocked at the database (AU-04).
+create or replace function public.is_suspended()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(
+    (select u.banned_until is not null and u.banned_until > now()
+     from auth.users u
+     where u.id = auth.uid()),
+    false
+  );
+$$;
+
+create or replace function public.block_suspended_writes()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if public.is_suspended() then
+    raise exception 'Your account is suspended. Contact the administrator.';
+  end if;
+  if tg_op = 'DELETE' then
+    return old;
+  end if;
+  return new;
+end;
+$$;
+
+create or replace function public.protect_table_from_suspended(tbl regclass)
+returns void
+language plpgsql
+as $$
+declare
+  rel text := tbl::text;
+begin
+  execute format('drop policy if exists "suspended: deny all" on %s', rel);
+  execute format(
+    'create policy "suspended: deny all" on %s as restrictive for all
+       using (not (select public.is_suspended()))
+       with check (not (select public.is_suspended()))',
+    rel
+  );
+  execute format('drop trigger if exists block_suspended_writes on %s', rel);
+  execute format(
+    'create trigger block_suspended_writes before insert or update or delete on %s
+       for each row execute function public.block_suspended_writes()',
+    rel
+  );
+end;
+$$;
+
+-- Apply to every table in public.
+do $$
+declare
+  t record;
+begin
+  for t in select tablename from pg_tables where schemaname = 'public' loop
+    perform public.protect_table_from_suspended(format('public.%I', t.tablename)::regclass);
+  end loop;
+end $$;
+
+-- Storage (avatars, banners, receipts): deny access while suspended.
+drop policy if exists "suspended: deny all" on storage.objects;
+create policy "suspended: deny all" on storage.objects
+  as restrictive for all
+  using (not (select public.is_suspended()))
+  with check (not (select public.is_suspended()));
+
+-- Kill the user's sessions when an admin suspends them. Only the service
+-- role (the admin-users Edge Function) may call this.
+create or replace function public.revoke_user_sessions(target uuid)
+returns void
+language sql
+security definer
+set search_path = auth, public
+as $$
+  delete from auth.sessions where user_id = target;
+$$;
+
+revoke all on function public.revoke_user_sessions(uuid) from public, anon, authenticated;
+grant execute on function public.revoke_user_sessions(uuid) to service_role;
+
+grant execute on function public.is_suspended() to authenticated;
+

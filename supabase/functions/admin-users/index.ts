@@ -100,6 +100,14 @@ Deno.serve(async (req) => {
         ban_duration: action === 'suspend' ? '876000h' : 'none',
       })
       if (error) return json({ error: error.message }, 400)
+
+      // Banning alone only blocks a *new* sign-in. Drop the user's existing
+      // sessions too so they can't silently refresh (migration 047 also
+      // makes the database itself refuse a banned user's requests).
+      if (action === 'suspend') {
+        const { error: revokeError } = await admin.rpc('revoke_user_sessions', { target: userId })
+        if (revokeError) return json({ error: revokeError.message }, 400)
+      }
       return json({ ok: true })
     }
 

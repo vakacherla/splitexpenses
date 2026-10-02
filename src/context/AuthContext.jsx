@@ -51,6 +51,11 @@ export function AuthProvider({ children }) {
   // instead of treating this like a normal sign-in and routing them into the
   // dashboard with a session they never set a password for.
   const [passwordRecovery, setPasswordRecovery] = useState(false)
+  // AU-04: holds the id of a signed-in person the database reports as suspended
+  // (migration 047). Their open session keeps a valid token for a while after
+  // an admin suspends them, but every data request is refused, so the app
+  // swaps to a "suspended" screen instead of showing broken pages.
+  const [suspendedUserId, setSuspendedUserId] = useState(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null))
@@ -107,6 +112,30 @@ export function AuthProvider({ children }) {
     }
   }, [session?.user?.id])
 
+  // Ask the database whether this person is suspended: once when the session
+  // starts, then again whenever the tab regains focus and once a minute, so a
+  // suspension takes effect without them having to reload.
+  const userId = session?.user?.id
+  useEffect(() => {
+    if (!userId) return
+    let cancelled = false
+    const check = () =>
+      supabase.rpc('is_suspended').then(({ data, error }) => {
+        // On any error (offline, a blip) leave the current state alone rather
+        // than flipping someone to "suspended" or back by accident.
+        if (!cancelled && !error && typeof data === 'boolean') setSuspendedUserId(data ? userId : null)
+      })
+    check()
+    const timer = setInterval(check, 60000)
+    const onVisible = () => document.visibilityState === 'visible' && check()
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [userId])
+
   function fetchProfile(userId) {
     return supabase
       .from('profiles')
@@ -126,6 +155,7 @@ export function AuthProvider({ children }) {
     profileError,
     loading: session === undefined,
     passwordRecovery,
+    suspended: Boolean(session?.user) && suspendedUserId === session.user.id,
     clearPasswordRecovery: () => setPasswordRecovery(false),
     signOut: () => {
       clearCachedProfile()
