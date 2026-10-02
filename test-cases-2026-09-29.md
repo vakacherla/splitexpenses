@@ -607,3 +607,20 @@ Scope: the 4 unpushed code commits (`7f3f941`, `b842ccc`, `4f5e184` + test-recor
 - Overflow fixes: dashboard, trip (all 5 tabs), circle, profile, rates, help re-measured at 375/320: no page overflow.
 - Extra-fetch check: loading a trip issues the same number of `groups`/`expenses` requests with and without the `isAdmin` dependency (2 each in dev mode), so the admin-race fix adds no extra load for normal users.
 - **Not verified, by design:** platform-admin viewing (no admin credentials) for the archived guard and the 320px navbar with the extra Admin link; the full create -> archive -> redirect flow was verified on production for AT-07 before these commits and the archive code path itself is unchanged, but was not re-run against these commits (it would delete a test trip).
+
+## Appendix P — Circle delete fails for its creator (AT-07 variant, 2026-10-01, Claude Code)
+
+Found while cleaning up test data after the push: the owner (creator) of `E2E-TEST CIRC-14 circle` clicked **Delete this circle** on production and got "You don't have permission to do that." Same root cause as AT-07 (trips) and EXP-12 (expenses): `circles: members can view` (migration 031) only returns `archived_at is null` rows to non-admins, so the archive UPDATE's new row satisfies no SELECT-relevant policy and is rejected.
+
+**Fix prepared locally, NOT applied/pushed:** `supabase/migrations/045_circle_view_allows_own_archived_row.sql` adds `or public.is_circle_manager(id)` to the SELECT policy.
+
+**Consumer audit of the `circles` table (done before any push):**
+- `Dashboard.jsx` — already filters `archived_at` client-side. OK.
+- `TripSettingsModal.jsx` "Attach to a circle" list — read `circles(id, name)` with no archived filter; would have shown a manager's archived circle again. Fixed: selects `archived_at` and filters.
+- `TripSettingsModal.jsx` / `TripView.jsx` circle-name breadcrumb — would have named an archived circle for trips still inside it. Fixed: ignore archived.
+- `CirclePage.jsx` — would have opened an archived circle by direct link for its manager. Fixed: archived circle = "doesn't exist or no access" for non-admins (admin flag in `load` deps, same pattern as TripView).
+- `AdminPage.jsx` — platform admin only, unaffected. `circle_members` policies — unchanged.
+
+**Local verification so far (against real backend, migration not yet applied):** 280/280 tests, build clean, no new lint warnings; a normal circle page, its trip list, and the trip's circle breadcrumb all behave exactly as before. **Still to verify after the migration is applied:** (1) owner can delete the circle and lands on `/dashboard`; (2) the archived circle is absent from the dashboard, the Attach list, and shows "not found" by direct link; (3) its trips keep working with no breadcrumb.
+
+Test data still on production until then: circle `E2E-TEST CIRC-14 circle` (96829dc6-409e-4b07-ae80-0f23c3ff64a8).

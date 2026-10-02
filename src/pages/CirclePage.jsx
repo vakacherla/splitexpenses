@@ -15,7 +15,8 @@ import { friendlyError } from '../lib/errors'
 
 export default function CirclePage() {
   const { circleId } = useParams()
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
+  const isAdmin = !!profile?.is_admin
   const navigate = useNavigate()
 
   const [circle, setCircle] = useState(null)
@@ -52,6 +53,14 @@ export default function CirclePage() {
       // the URL (bad UUID syntax) and a nonexistent/not-a-member id
       // (RLS just hides the row, same as "not found") are both real
       // ways a visitor lands here, and neither should show DB internals.
+      setError("This circle doesn't exist, or you don't have access to it.")
+      setLoading(false)
+      return
+    }
+    // Migration 045 lets a circle's manager still SELECT it once archived (the
+    // archive UPDATE needs that), so a deleted circle would otherwise open by
+    // direct link. Treat it as gone for everyone but platform admins.
+    if (circleRes.data.archived_at && !isAdmin) {
       setError("This circle doesn't exist, or you don't have access to it.")
       setLoading(false)
       return
@@ -97,7 +106,7 @@ export default function CirclePage() {
       }
     }
     setLoading(false)
-  }, [circleId, user.id])
+  }, [circleId, user.id, isAdmin])
 
   useEffect(() => {
     load()

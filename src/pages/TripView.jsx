@@ -199,11 +199,13 @@ export default function TripView() {
     let cancelled = false
     supabase
       .from('circles')
-      .select('name')
+      .select('name, archived_at')
       .eq('id', group.circle_id)
       .single()
       .then(({ data }) => {
-        if (!cancelled) setCircleName(data?.name ?? null)
+        // Archived circles stay visible to their own manager (migration 045);
+        // don't show one as this trip's breadcrumb.
+        if (!cancelled) setCircleName(data && !data.archived_at ? data.name : null)
       })
     return () => {
       cancelled = true

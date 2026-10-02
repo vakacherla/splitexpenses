@@ -68,10 +68,10 @@ export default function TripSettingsModal({
     let cancelled = false
     supabase
       .from('circle_members')
-      .select('circles(id, name)')
+      .select('circles(id, name, archived_at)')
       .eq('user_id', currentUserId)
       .then(({ data }) => {
-        if (!cancelled) setMyCircles((data ?? []).map((row) => row.circles).filter(Boolean))
+        if (!cancelled) setMyCircles((data ?? []).map((row) => row.circles).filter((c) => c && !c.archived_at))
       })
     return () => {
       cancelled = true
@@ -86,11 +86,13 @@ export default function TripSettingsModal({
     let cancelled = false
     supabase
       .from('circles')
-      .select('name')
+      .select('name, archived_at')
       .eq('id', group.circle_id)
       .single()
       .then(({ data }) => {
-        if (!cancelled) setCurrentCircleName(data?.name ?? null)
+        // An archived circle (still visible to its own manager, migration 045)
+        // shouldn't read as this trip's current circle.
+        if (!cancelled) setCurrentCircleName(data && !data.archived_at ? data.name : null)
       })
     return () => {
       cancelled = true
