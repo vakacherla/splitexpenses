@@ -19,6 +19,11 @@ Cleanup done: re-archived `P1 close` + `roadmap check (copy)` trips; deleted use
 appear. Needs owner OK on which item to purge. Spec note: per-row "Delete permanently" works at any age.
 Still open: AU-07 (needs user with only soft-deleted history, not a trip creator), AU-04/16/19 (need Jayashree
 live session / non-SU), second-account cases, phone cases, inbox cases. Not pushed: everything since a5b64e1.
+**Two-account batch (same day):** ACT-04/05, ATR-04, CIRC-08 PASS (Appendix T). NEW FINDING: removing a member with
+an unsettled balance shows "— paid" in the ledger and a blank creditor in Balances (names only from current members);
+needs a design decision (block removal vs. keep former-member names). AU-04 blocked by the auto-mode classifier
+(suspending a real account) — owner to decide. Test data not yet archived: `E2E-TEST two-user` trip, `two-user circle`,
+`circ08 trip A/B` (need owner OK; SU account is a member). Chrome tab 454295720 = Jayashree (prod); built-in pane = SU account.
 Small UX nits: admin Circle dropdown lists archived circles; "Add to a trip" still offers trips user is in.
 
 ## Standing rules (from the owner — do not skip)

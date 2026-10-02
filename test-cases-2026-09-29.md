@@ -91,7 +91,7 @@ FAIL severity: **P0: 5** (signup broken, malformed circle route leaks DB error, 
 | CIRC-05 | Attach an existing trip to a circle; roster syncs | P0 | PASS | Attach works; roster syncs into the circle. |
 | CIRC-06 | Detach a trip from a circle | P1 | PASS | Trip keeps its members and ledger; circle unaffected. |
 | CIRC-07 | Cross-trip debts stay per-trip, never rolled up across the circle | P0 | PASS | Balances and settle-up verified strictly per-trip. |
-| CIRC-08 | Removing someone from one trip keeps them in the circle and sibling trips | P1 | NOT RUN | Not covered this run. |
+| CIRC-08 | Removing someone from one trip keeps them in the circle and sibling trips | P1 | PASS | Verified live 2026-10-02: circle `E2E-TEST two-user circle` with two trips; removed the SU account from trip A only: still in trip B and still a circle member (both sides). |
 | CIRC-09 | Circle manager rules mirror trip manager rules | P0 | PASS | Verified live + server-side policy inspection 2026-10-01 — see Appendix K. |
 | CIRC-10 | Add-by-email with an address that has no account | P1 | PASS | Verified live 2026-10-01: add-by-email with an address that has no account shows "No account found with that email — they'll need to sign up first." and adds no member. |
 | CIRC-11 | Circle cover photo upload | P1 | PASS | Verified live 2026-10-01: cover uploaded to circle-banners, button changed to Change, image renders (1200x600) on the circle page. Dashboard circle cards do not show covers by design. |
@@ -215,8 +215,8 @@ FAIL severity: **P0: 5** (signup broken, malformed circle route leaks DB error, 
 | ACT-01 | Expense added/edited: one feed entry each, correct actor | P1 | PASS | Add and edit entries correct with actor name and summary. |
 | ACT-02 | Expense deleted: one feed entry | P1 | PASS | Verified live 2026-10-01 — see Appendix J. |
 | ACT-03 | Settlement recorded/undone: one feed entry each | P1 | PASS | Recorded-payment entry verified; "undone" entry untestable while undo is broken. |
-| ACT-04 | Member joined via self-service code and via admin-add | P1 | NOT RUN | Not covered this run. |
-| ACT-05 | Removed member's old entries still show their name | P1 | NOT RUN | Not covered this run. |
+| ACT-04 | Member joined via self-service code and via admin-add | P1 | PASS | Verified live 2026-10-02 with two real accounts (Jayashree in Chrome, owner SU account in the pane): the SU account joined `E2E-TEST two-user` via invite code, appeared in both members lists, Activity logged "joined the trip". Admin-add half verified via admin Manage trips (AU-14/15). |
+| ACT-05 | Removed member's old entries still show their name | P1 | PASS | Verified live 2026-10-02: after Jayashree removed the SU account, Activity still shows "Ram Vakacherla added an expense / was removed". FINDING (see Appendix T): Ledger shows "— paid" and Balances shows "You owes $15.00" with a blank creditor, because names come only from current group_members. |
 | ACT-06 | Push targeting: group vs other-party-only vs feed-only | P1 | BLOCKED | Needs a second identity and a real device. |
 | ACT-07 | notify-group rejects fake/non-member targets server-side | P0 | PASS | Verified live 2026-10-01 — see Appendix N. Confirmed by code (`supabase/functions/notify-group/index.ts`: `targetUserIds.filter((id) => memberIds.has(id))` silently drops non-members rather than erroring) and by a live call with only a fake UUID as the target: `{"targeted":0,"sent":0}`, no push attempted. |
 | ACT-08 | Trips older than the feed show backfilled events, no duplicates | P1 | PASS | Older trip shows backfilled Sep 3-5 events; no duplicates. |
@@ -277,7 +277,7 @@ FAIL severity: **P0: 5** (signup broken, malformed circle route leaks DB error, 
 | ATR-01 | Deleted expense lands in Trash; ledger and balances updated | P0 | PASS | 22 items visible with trip name, amount, day count. |
 | ATR-02 | Restore from Trash | P0 | PASS | Verified live 2026-10-02: restored `OFF-06 OFFLINE edit` from Trash; gone from Trash and back in the live trip ledger. |
 | ATR-03 | "Delete permanently" only after 30+ days | P0 | NOT RUN | MANUAL: cannot wait 30 days. |
-| ATR-04 | Non-admin never sees deleted expenses anywhere | P1 | NOT RUN | Not covered this run. |
+| ATR-04 | Non-admin never sees deleted expenses anywhere | P1 | PASS | Verified live 2026-10-02: Jayashree (non-admin) deleted an expense; absent from Ledger/Balances/Reports for her and for the SU member view; present only in admin Trash. Activity keeps audit lines ("deleted an expense: <name> - 12 USD"). |
 | ATR-05 | Restore an expense whose trip has since been archived | P1 | PASS | Verified live 2026-10-02: restoring `queue-scoping verify` whose trip is archived succeeds with no error; expense stays inside the archived trip. |
 ## 14. Security boundaries
 
@@ -659,3 +659,10 @@ Ran with the owner signed in as super admin on the local dev server against the 
 Cleanup 2026-10-02 (owner OK): re-archived `E2E-TEST P1 close` and `E2E-TEST CIRC-03 roster check (copy)`; deleted user `E2E Verify`.
 
 AU-07 not closed: Payee also created a trip, so its delete is refused (AU-08 path), not the soft-deleted-only case. Needs a user whose only history is soft-deleted expenses (not a trip creator).
+
+## Appendix T — Two-account batch, 2026-10-02 (Claude Code)
+Identities: Jayashree (non-admin, Chrome, prod) and the owner's SU account (built-in pane, prod backend). Test data: trip `E2E-TEST two-user`, circle `E2E-TEST two-user circle` with trips `E2E-TEST circ08 trip A/B` (not yet archived; needs owner OK).
+- ACT-04, ACT-05, ATR-04, CIRC-08: PASS (see rows).
+- **FINDING (P1-ish, not fixed): removing a member with unsettled balance orphans the money.** `ExpenseRow.jsx:38` and `BalancesPanel.jsx:39/93-94` resolve names only from current `group_members`. After removal: ledger shows "— paid", balances list drops the member, and settle-up reads "You owes $15.00" with no creditor; CSV export uses the same map. Rejoining restores everything. Options: block removal while balance != 0, or keep a "former member" snapshot (name) for display; privacy/RLS on profiles needs a decision.
+- AU-04 not run: the auto-mode classifier refused suspending Jayashree's real account while her session was live; left for the owner.
+- Not run this pass: AUTH-06/07 (need sign-out/sign-in of two accounts in one browser profile), CIRC-04, AUTH-02/04.
