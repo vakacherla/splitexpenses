@@ -346,6 +346,25 @@ FAIL severity: **P0: 5** (signup broken, malformed circle route leaks DB error, 
 | REC-12 | Tag/amount/date-range search filters | P1 | NOT-BUILT | Verified 2026-09-29: /help says search matches description or who paid only. |
 | REC-13 | Voice-based expense input | P2 | NOT-BUILT | No mic button, permission flow, listening indicator, or dictation anywhere. Typed sentence parsing exists and works well; voice would be new. |
 
+## 18. Features shipped 2026-10-02 (added for the regression pass)
+
+Each was verified by the developer at build time; NOT RUN here means the independent regression pass has not run it yet.
+
+| Ref | Test case | Priority | Status | Evidence |
+|---|---|---|---|---|
+| NAV-01 | Desktop top menu: Trips, Circles, Rates, Help, Profile; active item highlighted on each route | P1 | NOT RUN | Built 2026-10-02 (4d23709). Dev-verified in desktop Chrome. |
+| NAV-02 | Phone bottom tabs show, keep the add-expense button clear, no horizontal scroll at 375/320 | P1 | NOT RUN | Dev-verified in a 390px iframe only; not on a real phone. |
+| NAV-03 | Breadcrumbs on a trip and a circle page; Circles tab opens the circles view | P2 | NOT RUN | Dev-verified. Light-mode visual check outstanding. |
+| TOUR-01 | New user with no trips sees the 4-card welcome tour; Skip, Back/Next, "Create my first Trip" and "I have a code: Join" work | P1 | NOT RUN | Dev-verified. Needs a fresh account (owner creates). |
+| TOUR-02 | "Show every time" checkbox persists per user; Help > Replay and Dashboard link reopen the tour | P2 | NOT RUN | Dev-verified; replay-after-refresh bug fixed. |
+| INST-01 | Install banner: Chrome/Edge native prompt; iPhone shows Add-to-Home-Screen steps; dismissal hides it 14 days; hidden when installed | P1 | PASS | Owner confirmed on a real iPhone 2026-10-02. Android/desktop prompt dev-verified. |
+| INST-02 | Install card always available on Profile and Help | P2 | NOT RUN | Dev-verified. |
+| SUSP-01 | Suspended user: sign-in refused with friendly message; live session shows the suspended screen with a mailto link to the admin | P0 | PASS | Same evidence as AU-04 (Appendix U). |
+| SIGN-01 | Sign-up with a throwaway-email domain (e.g. mailinator.com) is refused with a clear message, in the form and at the database | P1 | NOT RUN | Migration 048. Form pre-check and DB trigger not exercised live; owner to try a mailinator sign-up. |
+| SIGN-02 | A normal address (and example.com) still signs up | P0 | NOT RUN | Needs owner (Turnstile). |
+| CAP-01 | Turnstile gates sign-in, sign-up and forgot-password; the button stays disabled until verified; the widget resets after a failure | P0 | PASS | Owner signed in on real Chrome 2026-10-02. Embedded pane fails Turnstile by design. |
+| AI-01 | Receipt scan (30/day) and typed-sentence parse (100/day) refuse past the cap with a clear message; suspended users refused | P1 | NOT RUN | Migration 048 + functions deployed. Cap logic hand-traced, not exhausted live. |
+
 ## Appendix A — FAIL details for the developer
 
 ### P0
