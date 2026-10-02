@@ -257,7 +257,7 @@ Status: Fixed (verified on production), Open, Partial. "Layer" is where the fix 
 | DEF-026 | EXP-16 | RES-09 | Dropped connection mid-save can leave a phantom expense. | Needs an atomic-RPC migration | Open |
 | DEF-027 | AUTH-05 | AUTH-20 | Admin link and name missing right after a fresh load. | See Sheet | Fixed |
 | DEF-028 | ACT-05 | BAL-11 | iOS web push disappears after display. | Diagnostic logging in `sw.js`; cause unconfirmed | Open |
-| DEF-029 | CIRC-08 | CIRC-12 | The "Viewing as admin" banner wrongly shows for a non-joined Circle member. | Copy only | Open (minor) |
+| DEF-029 | CIRC-08 | CIRC-12 | The "Viewing as admin" banner wrongly shows for a non-joined Circle member. | Fixed in 1059afb (2026-10-01) | Fixed |
 | DEF-030 | OFF-04 | OFF-16 | Sign out offline with queued ops only partly fixed. | Partial | Partial |
 | DEF-031 | ADM-10 | AU-08 | A user cannot be deleted if their archived circle still exists; admin has no circle purge. | Backlog | Open |
 | DEF-032 | AUTH-06 | AUTH-18 | Malformed trip id showed a raw Postgres error. | `TripView.jsx` | Fixed |
@@ -295,3 +295,19 @@ Board: Jira-lite, project SplitExpenses (key SE), imported 2026-10-02. Every sto
 | Epics | EP-01 = SE-1, EP-02 = SE-2, EP-03 = SE-3, EP-04 = SE-4, EP-05 = SE-5, EP-06 = SE-6, EP-07 = SE-7, EP-08 = SE-8, EP-09 = SE-9, EP-10 = SE-10, EP-11 = SE-11, EP-12 = SE-12, EP-13 = SE-13 |
 | Stories | REQ-AUTH-01 = SE-14, REQ-AUTH-02 = SE-15, REQ-AUTH-03 = SE-16, REQ-AUTH-04 = SE-17, REQ-AUTH-05 = SE-18, REQ-AUTH-06 = SE-19, REQ-AUTH-07 = SE-20, REQ-AUTH-08 = SE-21, REQ-AUTH-09 = SE-22, REQ-AUTH-10 = SE-23, REQ-AUTH-11 = SE-24, REQ-TRIP-01 = SE-25, REQ-TRIP-02 = SE-26, REQ-TRIP-03 = SE-27, REQ-TRIP-04 = SE-28, REQ-TRIP-05 = SE-29, REQ-TRIP-06 = SE-30, REQ-TRIP-07 = SE-31, REQ-TRIP-08 = SE-32, REQ-TRIP-09 = SE-33, REQ-TRIP-10 = SE-34, REQ-TRIP-11 = SE-35, REQ-TRIP-12 = SE-36, REQ-CIRC-01 = SE-37, REQ-CIRC-02 = SE-38, REQ-CIRC-03 = SE-39, REQ-CIRC-04 = SE-40, REQ-CIRC-05 = SE-41, REQ-CIRC-06 = SE-42, REQ-CIRC-07 = SE-43, REQ-CIRC-08 = SE-44, REQ-CIRC-09 = SE-45, REQ-EXP-01 = SE-46, REQ-EXP-02 = SE-47, REQ-EXP-03 = SE-48, REQ-EXP-04 = SE-49, REQ-EXP-05 = SE-50, REQ-EXP-06 = SE-51, REQ-EXP-07 = SE-52, REQ-EXP-08 = SE-53, REQ-EXP-09 = SE-54, REQ-EXP-10 = SE-55, REQ-EXP-11 = SE-56, REQ-EXP-12 = SE-57, REQ-EXP-13 = SE-58, REQ-EXP-14 = SE-59, REQ-EXP-15 = SE-60, REQ-EXP-16 = SE-61, REQ-BAL-01 = SE-62, REQ-BAL-02 = SE-63, REQ-BAL-03 = SE-64, REQ-BAL-04 = SE-65, REQ-BAL-05 = SE-66, REQ-BAL-06 = SE-67, REQ-BAL-07 = SE-68, REQ-BAL-08 = SE-69, REQ-BAL-09 = SE-70, REQ-REP-01 = SE-71, REQ-REP-02 = SE-72, REQ-REP-03 = SE-73, REQ-REP-04 = SE-74, REQ-REP-05 = SE-75, REQ-REP-06 = SE-76, REQ-ACT-01 = SE-77, REQ-ACT-02 = SE-78, REQ-ACT-03 = SE-79, REQ-ACT-04 = SE-80, REQ-ACT-05 = SE-81, REQ-OFF-01 = SE-82, REQ-OFF-02 = SE-83, REQ-OFF-03 = SE-84, REQ-OFF-04 = SE-85, REQ-OFF-05 = SE-86, REQ-ADM-01 = SE-87, REQ-ADM-02 = SE-88, REQ-ADM-03 = SE-89, REQ-ADM-04 = SE-90, REQ-ADM-05 = SE-91, REQ-ADM-06 = SE-92, REQ-ADM-07 = SE-93, REQ-ADM-08 = SE-94, REQ-ADM-09 = SE-95, REQ-ADM-10 = SE-96, REQ-ONB-01 = SE-97, REQ-ONB-02 = SE-98, REQ-ONB-03 = SE-99, REQ-ONB-04 = SE-100, REQ-SEC-01 = SE-101, REQ-SEC-02 = SE-102, REQ-SEC-03 = SE-103, REQ-SEC-04 = SE-104, REQ-SEC-05 = SE-105, REQ-SEC-06 = SE-106, REQ-GRO-01 = SE-107, REQ-GRO-02 = SE-108, REQ-GRO-03 = SE-109, REQ-GRO-04 = SE-110, REQ-FUND-01 = SE-111 |
 | Bugs | DEF-001 = SE-112, DEF-002 = SE-113, DEF-003 = SE-114, DEF-004 = SE-115, DEF-005 = SE-116, DEF-005b = SE-117, DEF-006 = SE-118, DEF-007 = SE-119, DEF-008 = SE-120, DEF-009 = SE-121, DEF-010 = SE-122, DEF-011 = SE-123, DEF-012 = SE-124, DEF-013 = SE-125, DEF-013b = SE-126, DEF-014 = SE-127, DEF-015 = SE-128, DEF-016 = SE-129, DEF-017 = SE-130, DEF-018 = SE-131, DEF-019 = SE-132, DEF-020 = SE-133, DEF-020b = SE-134, DEF-021b = SE-135, DEF-022 = SE-136, DEF-023 = SE-137, DEF-024 = SE-138, DEF-025 = SE-139, DEF-026 = SE-140, DEF-027 = SE-141, DEF-028 = SE-142, DEF-029 = SE-143, DEF-030 = SE-144, DEF-031 = SE-145, DEF-032 = SE-146, DEF-033 = SE-147, DEF-034 = SE-148, DEF-035 = SE-149, DEF-036 = SE-150, DEF-037 = SE-151 |
+
+## 11. Sprint plan
+
+Sprints are working bursts, assigned by the date a story or bug first shipped (from git history). Pushes are release markers, not sprints. Closed sprints hold only completed work; open items stay in the backlog. From Sprint 6 onward every new feature is assigned to a sprint with a goal before it is built.
+
+| Sprint | Dates | Goal | Issues |
+|---|---|---|---|
+| Sprint 0 | 2 to 4 Sep | Core functionality: accounts, trips, expenses and splits, balances, reports, offline, platform admin, security baseline | 49 |
+| Sprint 1 | 5 to 7 Sep | CSV import, typed-sentence expenses, push and activity feed, cover photos, Circles, Trip rename, Help | 17 |
+| Sprint 2 | 13 Sep | Shares and Adjustment splits, Circle sync and settings, public overview page | 4 |
+| Sprint 3 | 30 Sep | QA fixes round 1 | 15 |
+| Sprint 4 | 1 Oct | QA fixes round 2 | 13 (DEF-009 is partial, so it returned to the backlog on close) |
+| Sprint 5 | 2 Oct | Abuse protection, onboarding, navigation, install prompt, removal-with-balance block | 15 |
+| Sprint 6 | 3 Oct onward (planned) | Regression sweep, AT-09 and ATR-03, settlement summary, amount calculator, DEF-025, DEF-026 | 4 |
+
+Not in any sprint: parked and not-built requirements, and open bugs DEF-028, DEF-030, DEF-031, DEF-035, DEF-036. Story dates for requirements are estimates from the roadmap and commit history; bug dates come from their fix commits.
