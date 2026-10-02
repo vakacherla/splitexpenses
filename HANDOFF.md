@@ -35,10 +35,12 @@ Avatar upload + SettleUpModal not exercised live.
 - `<next commit>`: RES-10 fix — `useLiveRate` keyed rate (stale rate 1.0 saved EUR as USD when FX down) +
   accurate Save-blocked message (287/287 tests). Verified live; SettleUpModal (same hook) not exercised live.
 
-## Test data currently on production (archive when told OK)
-- Trip `E2E-TEST P1 sweep trip` 32ddaebf-13de-48b2-8c3b-b42fc74cd7b6
-- Circle `E2E-TEST P1 sweep circle` 97f0d561-012a-4814-b6e6-2d85933e256c (trip attached)
-- Older: $5 expense inside already-archived copy trip (unreachable; harmless).
+## Test data on production
+- Archived 2026-10-02 (owner OK): `E2E-TEST P1 sweep trip` + `E2E-TEST P1 sweep circle`, CIRC-14 trip/circle,
+  duplicate-trip copy. Orphan storage objects (banner.jpg/png) remain in banners buckets; harmless.
+- Not archivable by Jayashree (not creator/manager): circle `E2E-TEST Circle 20260929-1055` (17c3af0a-...) and its
+  trip `E2E-TEST Circle Trip 20260929-1055` (46f95bfc-...), plus fixtures CSV Import Trip / Empty Trip. Needs the
+  owner or an admin session (tomorrow).
 
 ## Open findings (not fixed) — need a design/approval
 1. **RES-09 (P1, data integrity)**: expense create/edit = two writes; a connection drop leaves a phantom
