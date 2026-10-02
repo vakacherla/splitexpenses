@@ -547,7 +547,13 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
       currency !== editingExpense.currency ||
       date !== editingExpense.expense_date ||
       Math.abs(parsedAmount - editingExpense.amount) > 0.005
-    if (rateChanged && !rate) return setError('Still fetching the exchange rate — try again in a moment.')
+    if (rateChanged && !rate) {
+      return setError(
+        rateError
+          ? "Couldn't get the exchange rate — check your connection and try again."
+          : 'Still fetching the exchange rate — try again in a moment.'
+      )
+    }
 
     setSaving(true)
 

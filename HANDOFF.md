@@ -29,6 +29,9 @@ fixes (trip tab strip, Navbar, Profile), migration 045 (circle archive) + guards
   Verified live on trip banner (14.1MB -> 1.5MB). **Still to verify before push: avatar upload live**
   (changes the shared account avatar — ask first) and consumers. Then ask to push.
 
+- `<next commit>`: RES-10 fix — `useLiveRate` keyed rate (stale rate 1.0 saved EUR as USD when FX down) +
+  accurate Save-blocked message (287/287 tests). Verified live; SettleUpModal (same hook) not exercised live.
+
 ## Test data currently on production (archive when told OK)
 - Trip `E2E-TEST P1 sweep trip` 32ddaebf-13de-48b2-8c3b-b42fc74cd7b6
 - Circle `E2E-TEST P1 sweep circle` 97f0d561-012a-4814-b6e6-2d85933e256c (trip attached)
