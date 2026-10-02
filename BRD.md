@@ -311,3 +311,7 @@ Sprints are working bursts, assigned by the date a story or bug first shipped (f
 | Sprint 6 | 3 Oct onward (planned) | Regression sweep, AT-09 and ATR-03, settlement summary, amount calculator, DEF-025, DEF-026 | 4 |
 
 Not in any sprint: parked and not-built requirements, and open bugs DEF-028, DEF-030, DEF-031, DEF-035, DEF-036. Story dates for requirements are estimates from the roadmap and commit history; bug dates come from their fix commits.
+
+## 12. Release labels
+
+Every push to `main` deploys to production. Each shipped story and bug on the board carries a label `rel-<date>-<tip sha>` naming the push that first delivered it (114 issues, 32 releases). `RELEASES.md` lists all 60 pushes with the issues each one shipped; rebuild it with `jira/build_releases.py`. Sprints follow commit dates, labels follow push dates, so a fix committed late on 1 Oct and pushed after midnight sits in Sprint 4 with a 2 Oct label (DEF-008, DEF-019, REQ-BAL-07). REQ-ACT-05 moved to Sprint 1 to match its push. For new work, add the `rel-` label when the push is made.
