@@ -35,7 +35,7 @@ export default function ExpenseRow({
   // creator, the payer, or the trip's creator/manager (group-level
   // cleanup power, e.g. removing a duplicate someone else entered).
   const canEdit = expense.created_by === currentUserId || expense.paid_by === currentUserId || Boolean(canManage)
-  const payerName = expense.paid_by === currentUserId ? 'You' : membersMap[expense.paid_by]?.display_name ?? '—'
+  const payerName = expense.paid_by === currentUserId ? 'You' : membersMap[expense.paid_by]?.display_name ?? 'Former member'
   const dateLabel = new Date(expense.expense_date + 'T00:00:00').toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
@@ -148,7 +148,7 @@ export default function ExpenseRow({
                     {item.description}
                     {' — '}
                     {item.participant_ids
-                      .map((id) => (id === currentUserId ? 'You' : (membersMap[id]?.display_name ?? '—')))
+                      .map((id) => (id === currentUserId ? 'You' : (membersMap[id]?.display_name ?? 'Former member')))
                       .join(', ')}
                   </span>
                   <span className="num shrink-0">{formatMoney(item.amount, expense.currency)}</span>
@@ -171,7 +171,7 @@ export default function ExpenseRow({
           <ul className="space-y-1">
             {expense.expense_splits.map((s) => (
               <li key={s.user_id} className="flex justify-between text-sm text-ink-soft">
-                <span>{s.user_id === currentUserId ? 'You' : membersMap[s.user_id]?.display_name ?? 'Unknown'}</span>
+                <span>{s.user_id === currentUserId ? 'You' : membersMap[s.user_id]?.display_name ?? 'Former member'}</span>
                 <span className="num">
                   {formatMoney(s.share_amount, expense.currency)}
                   {expense.split_type === 'percentage' && s.percentage != null && (

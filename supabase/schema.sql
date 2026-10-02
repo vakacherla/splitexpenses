@@ -644,3 +644,49 @@ create policy "avatars: owner can delete" on storage.objects
   for delete using (
     bucket_id = 'avatars' and (storage.filename(name))::text like auth.uid()::text || '.%'
   );
+
+-- Migration 046: refuse to remove a member who still has an unsettled
+-- balance, for every removal path (manager, admin RPC, leaving).
+create or replace function public.group_member_net_balance(gid uuid, uid uuid)
+returns numeric
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    coalesce((select sum(e.amount_in_home) from public.expenses e
+              where e.group_id = gid and e.deleted_at is null and e.paid_by = uid), 0)
+    - coalesce((select sum(s.share_in_home) from public.expense_splits s
+                join public.expenses e on e.id = s.expense_id
+                where e.group_id = gid and e.deleted_at is null and s.user_id = uid), 0)
+    + coalesce((select sum(st.amount_in_home) from public.settlements st
+                where st.group_id = gid and st.from_user = uid), 0)
+    - coalesce((select sum(st.amount_in_home) from public.settlements st
+                where st.group_id = gid and st.to_user = uid), 0);
+$$;
+
+create or replace function public.block_member_removal_with_balance()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not exists (select 1 from public.groups g where g.id = old.group_id) then
+    return old;
+  end if;
+
+  if abs(public.group_member_net_balance(old.group_id, old.user_id)) > 0.01 then
+    raise exception 'Can''t remove this person — they still have an unsettled balance in this trip. Settle up first.';
+  end if;
+
+  return old;
+end;
+$$;
+
+drop trigger if exists group_members_block_removal_with_balance on public.group_members;
+create trigger group_members_block_removal_with_balance
+  before delete on public.group_members
+  for each row execute function public.block_member_removal_with_balance();
+

@@ -1143,7 +1143,7 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
                                   : 'border-line text-ink-soft hover:border-primary'
                               }`}
                             >
-                              {id === currentUserId ? 'You' : (member?.display_name ?? '—')}
+                              {id === currentUserId ? 'You' : (member?.display_name ?? 'Former member')}
                             </button>
                           )
                         })}

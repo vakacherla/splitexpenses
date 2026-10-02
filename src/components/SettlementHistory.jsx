@@ -8,8 +8,8 @@ export default function SettlementHistory({ settlements, membersMap, currentUser
       <h3 className="font-display text-lg text-ink mb-3">Recent payments</h3>
       <ul className="divide-y divide-line border-y border-line">
         {settlements.map((s) => {
-          const fromName = s.from_user === currentUserId ? 'You' : membersMap[s.from_user]?.display_name ?? '—'
-          const toName = s.to_user === currentUserId ? 'You' : membersMap[s.to_user]?.display_name ?? '—'
+          const fromName = s.from_user === currentUserId ? 'You' : membersMap[s.from_user]?.display_name ?? 'Former member'
+          const toName = s.to_user === currentUserId ? 'You' : membersMap[s.to_user]?.display_name ?? 'Former member'
           const dateLabel = new Date(s.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
           return (
             <li key={s.id} className="flex items-center justify-between py-3 gap-3">

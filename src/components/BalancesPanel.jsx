@@ -90,8 +90,8 @@ export default function BalancesPanel({
         ) : (
           <ul className="space-y-2.5">
             {transactions.map((t, i) => {
-              const from = t.from === currentUserId ? 'You' : membersMap[t.from]?.display_name
-              const to = t.to === currentUserId ? 'You' : membersMap[t.to]?.display_name
+              const from = t.from === currentUserId ? 'You' : membersMap[t.from]?.display_name ?? 'Former member'
+              const to = t.to === currentUserId ? 'You' : membersMap[t.to]?.display_name ?? 'Former member'
               return (
                 <li
                   key={i}

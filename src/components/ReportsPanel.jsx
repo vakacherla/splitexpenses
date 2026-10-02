@@ -66,7 +66,7 @@ export default function ReportsPanel({ expenses, members, homeCurrency, currentU
 
   const personData = Object.entries(byPerson)
     .map(([id, value]) => ({
-      name: id === currentUserId ? 'You' : (membersMap[id]?.display_name ?? 'Unknown'),
+      name: id === currentUserId ? 'You' : (membersMap[id]?.display_name ?? 'Former member'),
       value,
     }))
     .sort((a, b) => b.value - a.value)

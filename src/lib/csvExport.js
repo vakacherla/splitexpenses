@@ -7,7 +7,7 @@ function csvEscape(value) {
 // single semicolon-separated column — keeps the file one-row-per-expense
 // (matches how people actually read it) rather than one-row-per-split.
 export function expensesToCSV(expenses, membersMap, homeCurrency) {
-  const nameOf = (id) => membersMap[id]?.display_name ?? id
+  const nameOf = (id) => membersMap[id]?.display_name ?? 'Former member'
 
   const header = [
     'Date',

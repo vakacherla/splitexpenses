@@ -262,3 +262,16 @@ describe('validateImportRows', () => {
     expect(rows).toHaveLength(MAX_IMPORT_ROWS)
   })
 })
+
+describe('expensesToCSV removed members', () => {
+  it('labels a payer who is no longer a member instead of printing their id', () => {
+    const expenses = [{
+      id: 'e1', description: 'Dinner', paid_by: 'gone', amount: 10, currency: 'USD', exchange_rate: 1,
+      amount_in_home: 10, expense_date: '2026-10-02', category: 'Food', note: '',
+      expense_splits: [{ user_id: 'gone', share_amount: 5, share_in_home: 5 }, { user_id: 'u1', share_amount: 5, share_in_home: 5 }],
+    }]
+    const csv = expensesToCSV(expenses, { u1: { display_name: 'Alice' } }, 'USD')
+    expect(csv).toContain('Former member')
+    expect(csv).not.toContain('gone')
+  })
+})
