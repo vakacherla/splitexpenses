@@ -151,3 +151,7 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 
 ## DEF-025 fixed (3 Oct 2026, Sprint 6, SE-139)
 - Migration 062 applied (SQL editor): `is_group_archived(gid)` helper (needed because members cannot see an archived trip, so a plain check inside the policy would let them through) and stricter insert rules on `expenses`, `expense_splits`, `settlements`. Side effect by design: an existing expense in an archived trip cannot be re-saved either. Soft-delete and admin restore still work. Verified live with a stale tab: save refused with the row-level-security error, nothing left behind, live trips unaffected. Test data: archived trip `E2E-TEST 062 archived trip` (archived with owner OK) and one expense `E2E-TEST 062 live trip still works` in `E2E-TEST 047 write check`. App unchanged. Not yet committed/pushed until the owner approves.
+
+## Settlement summary built (3 Oct 2026, Sprint 6, SE-69)
+- App-only change, committed, not yet pushed: `src/lib/settlementSummary.js`, `src/lib/shareText.js`, a "Share summary" button on Balances (`BalancesPanel.jsx`, trip name passed from `TripView.jsx`). Test cases BAL-17..22 added (md and Sheet rows 253-258). Owner to run on a phone: BAL-20 (iPhone Safari share sheet) and BAL-21 (Android Chrome); BAL-22 offline not run.
+- Found, not fixed: the Balances screen says "You owes Jayashree" (should be "You owe"); it predates this change. Only the amount calculator (SE-58) is left in Sprint 6 before the regression sweep.

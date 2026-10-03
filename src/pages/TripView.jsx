@@ -618,6 +618,7 @@ export default function TripView() {
 
       {tab === 'balances' && (
         <BalancesPanel
+          tripName={group.name}
           members={members}
           expenses={displayExpenses}
           settlements={displaySettlements}

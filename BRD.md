@@ -135,7 +135,7 @@ Status key: **S** Shipped, **Q** Planned quick win, **P** Parked, **B** Blocked,
 | REQ-BAL-05 | Settle-up deep links (UPI, Venmo, PayPal) with pre-filled amount, gated on the recipient's handle. | S | BAL-09 (not run), BAL-10 (not run) | | `upi-pay-link-fixes-2026-09-29.md` |
 | REQ-BAL-06 | Reminders: automatic after the trip end date, every 3 days, plus a manual Remind button; email and web push. | S | BAL-11..16 (blocked or not run) | | `trip-reminders-cron`, `remind` |
 | REQ-BAL-07 | Stale-rate protection when saving. | S | RES-10, RES-11 | DEF-019 | Appendix S |
-| REQ-BAL-08 | One-tap plain-text settlement summary (share sheet or copy; no invite code). | Q | none yet | | `brief-settlement-summary.md` |
+| REQ-BAL-08 | One-tap plain-text settlement summary (share sheet or copy; no invite code). | S | BAL-17..22; `settlementSummary.test.js` (15 unit tests) | | `brief-settlement-summary.md`. Built 3 Oct 2026, app only (no migration). Real names, never "You"; same-name members numbered; footer is the app address only. BAL-20, 21 (phone share sheets) and BAL-22 (offline) are the owner's to run. Pushed with the next release |
 | REQ-BAL-09 | Neutral "paid so far vs. share" bar per person. | P | none yet | | Polish list |
 
 ### EP-06 Reports and data portability

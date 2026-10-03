@@ -365,6 +365,17 @@ Each was verified by the developer at build time; NOT RUN here means the indepen
 | CAP-01 | Turnstile gates sign-in, sign-up and forgot-password; the button stays disabled until verified; the widget resets after a failure | P0 | PASS | Owner signed in on real Chrome 2026-10-02. Embedded pane fails Turnstile by design. |
 | AI-01 | Receipt scan (30/day) and typed-sentence parse (100/day) refuse past the cap with a clear message; suspended users refused | P1 | NOT RUN | Migration 048 + functions deployed. Cap logic hand-traced, not exhausted live. |
 
+## 19. Settlement summary (added 2026-10-03)
+
+| Ref | Test case | Priority | Status | Evidence |
+|---|---|---|---|---|
+| BAL-17 | Share summary on a trip with a debt: text lists who pays whom with the date, currency and the app address; no invite code, trip link or payment link; real names, never "You" | P1 | PASS | 2026-10-03, dev server against production data (E2E-TEST Empty Trip, Ram owes Jayashree $5.00): "E2E-TEST Empty Trip — who pays whom (as of 3 Oct 2026) / Ram Vakacherla pays Jayashree $5.00 / Amounts in USD. / via Split Expenses · <app address>". 15 unit tests cover multi-payment, JPY, duplicate names (numbered), long titles, a person owing several. |
+| BAL-18 | Share summary when everyone is square: a short "everyone's settled up" text, not an empty list | P2 | PASS | 2026-10-03 on E2E-TEST CSV Import Trip: "... — everyone's settled up (as of 3 Oct 2026) / via Split Expenses · <app address>". |
+| BAL-19 | Desktop with no share sheet: the summary is copied and "Copied" shows briefly; a closed share sheet is silent; if sharing and copying both fail a message shows | P1 | PASS | 2026-10-03: share and clipboard stubbed in the live page (a real desktop share dialog would hang automation): copy path showed Copied then cleared after ~2.5 s; AbortError showed nothing and did not copy; both failing showed "Couldn't share or copy". |
+| BAL-20 | iPhone Safari: the share sheet opens with the summary and sending to WhatsApp works | P1 | NOT RUN | OWNER, PHONE: real share sheet cannot be driven from the agent. |
+| BAL-21 | Android Chrome: the share sheet opens with the summary | P1 | NOT RUN | OWNER, PHONE. |
+| BAL-22 | Offline: Share summary still works (balances are computed on the device) | P2 | NOT RUN | Not run. Code path has no network call. |
+
 ## Appendix A — FAIL details for the developer
 
 ### P0

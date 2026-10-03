@@ -1,10 +1,14 @@
 import { useState } from 'react'
 import { computeNetBalances, simplifyDebts } from '../lib/balances'
 import { formatMoney } from '../lib/fx'
+import { publicAppUrl } from '../lib/invite'
+import { buildSettlementSummary } from '../lib/settlementSummary'
+import { shareOrCopy } from '../lib/shareText'
 import SettlementHistory from './SettlementHistory'
 import Avatar from './Avatar'
 
 export default function BalancesPanel({
+  tripName,
   members,
   expenses,
   settlements,
@@ -17,6 +21,7 @@ export default function BalancesPanel({
   const [reminding, setReminding] = useState(null) // debtor user_id currently in flight
   const [reminded, setReminded] = useState({}) // debtor user_id -> true, once sent
   const [remindError, setRemindError] = useState('')
+  const [shareNote, setShareNote] = useState('') // '' | 'copied' | 'failed'
 
   async function handleRemind(debtorUserId) {
     setReminding(debtorUserId)
@@ -36,6 +41,24 @@ export default function BalancesPanel({
     settlements.map((s) => ({ from_user: s.from_user, to_user: s.to_user, amount_in_home: s.amount_in_home }))
   )
   const transactions = simplifyDebts(net)
+
+  // Plain-text "who pays whom" for the group chat (REQ-BAL-08). Uses the phone's
+  // share sheet when there is one, otherwise copies it. No invite code or trip link.
+  async function handleShareSummary() {
+    setShareNote('')
+    const text = buildSettlementSummary({
+      tripName,
+      homeCurrency,
+      transactions,
+      members,
+      appUrl: publicAppUrl(),
+    })
+    const result = await shareOrCopy({ title: `${tripName ?? 'Trip'}: who pays whom`, text })
+    if (result === 'copied' || result === 'failed') {
+      setShareNote(result)
+      setTimeout(() => setShareNote(''), 2500)
+    }
+  }
   const membersMap = Object.fromEntries(members.map((m) => [m.user_id, m]))
   const maxAbsBalance = Math.max(0.01, ...members.map((m) => Math.abs(net.get(m.user_id) ?? 0)))
 
@@ -83,7 +106,30 @@ export default function BalancesPanel({
       </div>
 
       <div>
-        <h3 className="font-display text-lg text-ink mb-3">Suggested settle-up</h3>
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <h3 className="font-display text-lg text-ink">Suggested settle-up</h3>
+          {members.length > 0 && (
+            <div className="flex items-center gap-2 shrink-0">
+              {shareNote === 'copied' && (
+                <span className="text-xs text-owed" role="status">
+                  Copied
+                </span>
+              )}
+              {shareNote === 'failed' && (
+                <span className="text-xs text-owe" role="status">
+                  Couldn't share or copy
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={handleShareSummary}
+                className="rounded-full border border-line px-3.5 py-1.5 text-sm text-ink transition-colors hover:border-primary"
+              >
+                Share summary
+              </button>
+            </div>
+          )}
+        </div>
         {remindError && <p className="text-sm text-owe mb-2">{remindError}</p>}
         {transactions.length === 0 ? (
           <p className="text-sm text-ink-soft">Everyone's square — nothing to settle.</p>
