@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { pushSupported, getExistingSubscription, enablePush, disablePush } from '../lib/push'
+import { track } from '../lib/track'
 
 export default function NotificationSettings({ userId }) {
   const [subscribed, setSubscribed] = useState(false)
@@ -26,6 +27,7 @@ export default function NotificationSettings({ userId }) {
         setSubscribed(false)
       } else {
         await enablePush(userId)
+        track('feature_used', { feature: 'push_optin' })
         setSubscribed(true)
       }
     } catch (err) {

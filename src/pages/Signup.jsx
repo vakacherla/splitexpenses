@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient'
 import ThemeToggle from '../components/ThemeToggle'
 import TurnstileWidget from '../components/TurnstileWidget'
 import { captchaOptions } from '../lib/turnstile'
+import { USAGE_NOTICE } from '../lib/usageNotice'
 import { signupErrorMessage, THROWAWAY_EMAIL_MESSAGE } from '../lib/signup'
 
 export default function Signup() {
@@ -148,6 +149,9 @@ export default function Signup() {
           >
             {busy ? 'Creating account…' : 'Create account'}
           </button>
+          <p className="text-xs text-ink-soft">
+            {USAGE_NOTICE} You can switch this off any time in your profile.
+          </p>
         </form>
 
         <p className="mt-6 text-center text-sm text-ink-soft">

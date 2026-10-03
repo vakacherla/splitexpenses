@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext'
 import { PAYMENT_PROVIDERS } from '../lib/paymentLinks'
 import Avatar from '../components/Avatar'
 import NotificationSettings from '../components/NotificationSettings'
+import UsageSettings from '../components/UsageSettings'
 import HelpLink from '../components/HelpLink'
 
 export default function ProfilePage() {
@@ -265,6 +266,10 @@ export default function ProfilePage() {
 
       <div className="mt-10 pt-6 border-t border-line">
         <NotificationSettings userId={user.id} />
+      </div>
+
+      <div className="mt-10 pt-6 border-t border-line">
+        <UsageSettings userId={user.id} />
       </div>
 
       {memberships && memberships.length > 0 && (

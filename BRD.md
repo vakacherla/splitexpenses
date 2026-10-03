@@ -34,7 +34,7 @@ Rules for keeping it traceable:
 | Epic | Title | Requirements | Shipped | Open |
 |---|---|---|---|---|
 | EP-01 | Accounts, access and abuse protection | 11 | 10 | 1 (blocked: email confirmation) |
-| EP-02 | Trips | 12 | 11 | 1 (invite link, not built) |
+| EP-02 | Trips | 14 | 11 | 3 (invite link and per-invite links not built, 1 blocked: email invites) |
 | EP-03 | Circles | 9 | 8 | 1 (circle balances, not built) |
 | EP-04 | Expenses and splits | 16 | 12 | 4 (1 quick win, 1 parked, 1 not built, 1 blocked) |
 | EP-05 | Balances and settling up | 9 | 7 | 2 (1 quick win, 1 parked) |
@@ -46,6 +46,7 @@ Rules for keeping it traceable:
 | EP-11 | Security and data integrity | 6 | 6 | 0 |
 | EP-12 | Growth (parked) | 4 | 0 | 4 |
 | EP-13 | Shared Fund mode (blocked) | 1 | 0 | 1 |
+| EP-14 | Usage insights (admin) | 24 | 0 | 24 (14 not built, 10 parked) |
 
 ## 4. Requirements by epic
 
@@ -83,6 +84,8 @@ Status key: **S** Shipped, **Q** Planned quick win, **P** Parked, **B** Blocked,
 | REQ-TRIP-10 | Optional start and end dates, validated (end after start, plausible years). | S | TRIP-24, TRIP-25 | DEF-033 | Migrations 027, 028 |
 | REQ-TRIP-11 | UI uses the word "Trip" (formerly Group) with no schema change. | S | AUTH-17 | | Roadmap 2026-09-07 |
 | REQ-TRIP-12 | Shareable invite link in addition to the code. | N | FEAT-04 | | See REQ-GRO-01 |
+| REQ-INV-01 | Per-invite share links: each invite is a unique, expiring, revocable link (own token, not the trip code) shared via the device share sheet, copy, or a prefilled `mailto:` "Email" option; optional "Who is this for?" label (name only); `invites` table records creator, label, accepted-by and time; accept via a `SECURITY DEFINER` function; per-user daily cap. Feeds the Usage funnel (shared vs joined). | N | none yet | | `USAGE-INSIGHTS-STORIES.md`. Builds on REQ-TRIP-12 and REQ-GRO-01 (shares the join route); see section 7 item 7. |
+| REQ-INV-02 | Email invites and one reminder, sent from the app address with the inviter's name as display name (never the inviter's address as sender), opt-in reply-to, unsubscribe and suppression list, daily cap, friend's email deleted on join or after 30 days. | B | none yet | | Blocked on a verified sending domain in Resend (as REQ-AUTH-11). `USAGE-INSIGHTS-STORIES.md`. |
 
 ### EP-03 Circles
 
@@ -214,6 +217,37 @@ Status key: **S** Shipped, **Q** Planned quick win, **P** Parked, **B** Blocked,
 |---|---|---|---|
 | REQ-FUND-01 | Shared Fund mode (family fund). | B | Blocked on a family verdict on its separate BRD. |
 
+### EP-14 Usage insights (admin)
+
+Design and mockups: https://claude.ai/artifact/2AjyRgZHFTwj1YTGGmy3re. Full acceptance criteria, definitions and open questions: `USAGE-INSIGHTS-STORIES.md`. Delivery is parallel: Track A collection (USE-01..04), Track B reports from existing data (USE-05, 07, 08, 09), Track C reports that read tracking data (USE-06, 10, 11, 12, 23, 24). Phases 3 to 5 are parked until the user base reaches a few hundred.
+
+| ID | Requirement | St | Tests | Bugs | Source |
+|---|---|---|---|---|---|
+| REQ-USE-01 | Usage notice at sign-up, Help and Profile, and a "Share usage data" switch (default on) enforced in RLS, not only the UI. | N | none yet | | Track A |
+| REQ-USE-02 | `app_events` table (migration 049) with allowlisted names and props, insert-only RLS for the user's own rows, no read access through the API, cascade delete with the account. | N | none yet | | Track A |
+| REQ-USE-03 | `track()` helper and first events (`app_open`, `page_view`, milestones, `invite_shared`) plus coarse device labels (form factor, install mode, OS, browser) from a tested `detectDevice`; no raw user agent, no content. | N | none yet | | Track A |
+| REQ-USE-04 | `last_seen_at` throttled to once per 5 minutes; admin-only; powers "Active now"; respects the switch. | N | none yet | | Track A |
+| REQ-USE-05 | Usage tab in Admin with period and exclude-admins/test-accounts filters; data only via `admin_usage_*` `SECURITY DEFINER` functions that check `is_platform_admin()` and return names and avatars, never emails; chart/table toggle. | N | none yet | | Track B |
+| REQ-USE-06 | Overview: Active now, DAU, WAU, MAU, stickiness (average DAU over MAU), DAU/WAU chart, in the admin's browser timezone with UTC fallback. | N | none yet | | Track C |
+| REQ-USE-07 | Activation funnel: signed up, trip, expense, shared an invite, someone joined, settled up; drop-off user lists; median step times. | N | none yet | | Track B. Reads `invites` after REQ-INV-01. |
+| REQ-USE-08 | Time to first expense: median, p90 and histogram including "never". | N | none yet | | Track B |
+| REQ-USE-09 | Stuck users by segment (no trip, no expense, never invited, quiet 14+ days); names and avatars only; CSV export without emails. | N | none yet | | Track B |
+| REQ-USE-10 | Feature adoption: tried vs repeated (2+ days), discovery gap and quality gap diagnosis, minimum-sample rule. | N | none yet | | Track C |
+| REQ-USE-11 | Top events this week by distinct users. | N | none yet | | Track C |
+| REQ-USE-12 | Per-user activity timeline for admins; names and avatars only. | N | none yet | | Track C |
+| REQ-USE-13 | Trip pulse for trip creators (who has not added an expense, who has not joined, who is owed). | P | none yet | | Later, after REQ-INV-01. Belongs to Trips. |
+| REQ-USE-14 | Weekly retention cohorts. | P | none yet | | Parked until a few hundred users |
+| REQ-USE-15 | "Tried feature X vs not" retention comparison. | P | none yet | | Parked until a few hundred users |
+| REQ-USE-16 | Active hours heatmap. | P | none yet | | Parked until a few hundred users |
+| REQ-USE-17 | Weekly adoption digest emailed to the admin. | P | none yet | | Parked; needs a verified domain |
+| REQ-USE-18 | In-app tips and push or email nudges for stuck and non-joined users, with a send log. | P | none yet | | Parked; depends on REQ-INV-02 |
+| REQ-USE-19 | Threshold alerts. | P | none yet | | Parked |
+| REQ-USE-20 | Daily rollup tables and 180-day raw event cleanup job. | P | none yet | | Parked until volume grows |
+| REQ-USE-21 | Test-account exclusion list managed in the UI. | P | none yet | | Parked; the `E2E-TEST` prefix rule is enough for now |
+| REQ-USE-22 | Admin action audit log. | P | none yet | | Parked; separate security story |
+| REQ-USE-23 | Devices and install mode report (device type, installed app vs browser, iOS vs Android and others). | N | none yet | | Track C |
+| REQ-USE-24 | Device filter across usage views. | N | none yet | | Track C |
+
 ## 5. Quick wins (planned, not started)
 
 1. **REQ-BAL-08** one-tap settlement summary, effort small.
@@ -275,6 +309,7 @@ Status: Fixed (verified on production), Open, Partial. "Layer" is where the fix 
 4. Which "Not built" expense items (REQ-EXP-15) testers actually want.
 5. Native store app: Capacitor wrapper needs an Apple developer account, review, and retest of push and UPI deep links on iOS.
 6. Confirm the Gemini API tier (see `website-sync-notes.md`) since the AI caps assume the free quota.
+7. REQ-INV-01 (per-invite links) overlaps REQ-TRIP-12 and REQ-GRO-01 (join by link). Decide whether INV-01 replaces the link part of those two, or ships after them and only adds per-invite tokens, labels and tracking on the same `/join` route.
 
 ## 8. Out of scope (deliberately)
 
@@ -309,6 +344,8 @@ Sprints are working bursts, assigned by the date a story or bug first shipped (f
 | Sprint 4 | 1 Oct | QA fixes round 2 | 13 (DEF-009 is partial, so it returned to the backlog on close) |
 | Sprint 5 | 2 Oct | Abuse protection, onboarding, navigation, install prompt, removal-with-balance block | 15 |
 | Sprint 6 | 3 Oct onward (planned) | Regression sweep, AT-09 and ATR-03, settlement summary, amount calculator, DEF-025, DEF-026 | 4 |
+| Sprint 7 | proposed, may run in parallel with Sprint 6 | Usage insights tracks A and B: start collecting usage data and ship the Usage tab with funnel, time to first expense and stuck users | 8 (REQ-USE-01..05, 07, 08, 09) |
+| Sprint 8 | proposed, movable | Usage insights track C: true active-user numbers, feature adoption, top events, user timeline, devices, device filter | 6 (REQ-USE-06, 10, 11, 12, 23, 24) |
 
 Not in any sprint: parked and not-built requirements, and open bugs DEF-028, DEF-030, DEF-031, DEF-035, DEF-036. Story dates for requirements are estimates from the roadmap and commit history; bug dates come from their fix commits.
 

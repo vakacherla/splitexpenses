@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
+import { track } from '../lib/track'
 import { useAuth } from '../context/AuthContext'
 import CurrencySelect from '../components/CurrencySelect'
 import { SkeletonRows } from '../components/Skeleton'
@@ -156,6 +157,7 @@ export default function Dashboard() {
       setError(memberError.message)
       return
     }
+    track('trip_created')
     navigate(`/trips/${group.id}`)
   }
 

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { track } from '../lib/track'
 import { Link } from 'react-router-dom'
 import Avatar from './Avatar'
 import { paymentProviderLabel } from '../lib/paymentLinks'
@@ -17,6 +18,7 @@ export default function TripMembersPanel({
   async function copyCode() {
     try {
       await navigator.clipboard.writeText(group.invite_code)
+      track('invite_shared')
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
     } catch {

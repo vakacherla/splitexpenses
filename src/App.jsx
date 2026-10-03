@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-do
 import { lazy, Suspense } from 'react'
 import { useAuth } from './context/AuthContext'
 import { shouldForceResetPassword } from './lib/authRecovery'
+import { useUsageTracking } from './lib/useUsageTracking'
 import ConfigGate from './components/ConfigGate'
 import ProtectedRoute from './components/ProtectedRoute'
 import AdminRoute from './components/AdminRoute'
@@ -25,6 +26,7 @@ const RatesPage = lazy(() => import('./pages/RatesPage'))
 
 function AppShell({ children }) {
   const { user, suspended } = useAuth()
+  useUsageTracking()
   // A suspended person only gets the suspended screen: no menu to click into.
   const showNav = Boolean(user) && !suspended
   return (
