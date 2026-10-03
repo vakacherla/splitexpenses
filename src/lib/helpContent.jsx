@@ -60,9 +60,14 @@ export const HELP_SECTIONS = [
     body: (
       <>
         <p>
-          A Circle sits above your Trips — join once with one invite code, then anyone in the Circle can
+          A Circle sits above your Trips — join once with one invite link (or code), then anyone in the Circle can
           create or join any Trip inside it without a fresh invite each time. Each Trip still has its own
           completely separate ledger and balances; nothing about money ever combines across a Circle.
+        </p>
+        <H>Inviting people to a Circle</H>
+        <p>
+          Works just like a trip: on the Circle's members tab, tap "Create invite link" and share it. Whoever
+          joins is added to the Circle, and can then see and join the Trips inside it.
         </p>
         <H>Creating a Trip inside a Circle</H>
         <p>
@@ -279,8 +284,38 @@ export const HELP_SECTIONS = [
     title: 'Members',
     body: (
       <>
+        <H>Inviting someone with a link</H>
+        <p>
+          Tap <strong className="text-ink">Create invite link</strong>, then share it with{' '}
+          <strong className="text-ink">Share…</strong> (your phone's own share sheet), WhatsApp, Email, or Copy
+          link. Your friend taps it, signs up if they need to, and lands right inside the trip. No code to
+          type.
+        </p>
+        <p>
+          <strong className="text-ink">Who is this for?</strong> is optional, and only you can see it. It's just
+          a note to yourself so you can tell your invites apart. It is never sent with the link.
+        </p>
+        <p>
+          One link works for up to <strong className="text-ink">20 people</strong> for{' '}
+          <strong className="text-ink">14 days</strong>, so you can drop it in a group chat. Each person can use
+          a link once, and someone who has been removed from the trip can't use the same link to come back.
+          Need another? Tap "Make another invite".
+        </p>
+        <p>
+          Before they join, your friend sees only the trip's name and photo and your first name and photo,
+          nothing about who is in it or what has been spent.
+        </p>
         <H>Invite code</H>
-        <p>Tap "Copy" to share it — anyone with the code can join this trip from their dashboard.</p>
+        <p>
+          The six-letter code under the link still works too — tap "Copy code". On the dashboard, "Join with a
+          code" also accepts a pasted link, or a whole chat message that contains one.
+        </p>
+        <H>If a link doesn't work</H>
+        <p>
+          The page says why: <strong className="text-ink">expired</strong> (older than 14 days),{' '}
+          <strong className="text-ink">full</strong> (20 people have used it), turned off, or the trip has been
+          archived. Ask whoever invited you for a new one. If you're already in the trip, it simply opens it.
+        </p>
         <H>Managers</H>
         <p>
           Only the trip's owner can promote or demote a manager, and can't do it to themselves or to
@@ -349,6 +384,13 @@ export const HELP_SECTIONS = [
         <p>
           Set a different display name for one specific trip without changing your name anywhere else —
           only that trip sees it. Clear it to go back to your regular name.
+        </p>
+        <H>Usage data</H>
+        <p>
+          The "Share usage data" switch controls whether the app records which features you use and the
+          general kind of device you use (phone, tablet or computer). It never records what you spend or who
+          you split with. Turn it off and nothing about how you use the app is recorded from then on. Your
+          trips and expenses are not affected either way.
         </p>
         <H>Notifications</H>
         <p>
@@ -419,6 +461,51 @@ export const HELP_SECTIONS = [
     ),
   },
   {
+    id: 'admin-usage',
+    title: 'For the app\'s admin: the Usage tab',
+    adminOnly: true,
+    body: (
+      <>
+        <p>
+          <strong className="text-ink">Admin → Usage</strong> shows who is using the app and where new people
+          get stuck. It only shows names and totals, never email addresses. Days are in your own timezone.
+        </p>
+        <H>Overview</H>
+        <p>
+          <strong className="text-ink">Active now</strong> is people seen in the last 5 minutes.{' '}
+          <strong className="text-ink">DAU, WAU and MAU</strong> count each person once for the day, the last 7
+          days and the last 30 days. <strong className="text-ink">Stickiness</strong> is the average daily
+          users divided by monthly users: how often monthly users come back. "Active" means any action (adding
+          an expense, joining a trip, settling up) or any tracked visit. With few users, one person moves
+          these a lot, and the screen says so.
+        </p>
+        <H>Funnel</H>
+        <p>
+          Of the people who signed up in the period: how many created or joined a trip, added an expense, then,
+          out of those who added one, how many shared an invite, had someone join, and settled up. Tap a step
+          to see who stopped before it. <strong className="text-ink">Time to first expense</strong> shows how
+          long that took, including the people who never did.
+        </p>
+        <H>Stuck users</H>
+        <p>
+          <strong className="text-ink">Never signed in</strong>: an account created over an hour ago that has
+          never done anything. It says whether their email was ever confirmed, so you can tell a lost email
+          from someone who just didn't come back. <strong className="text-ink">No trip yet</strong>,{' '}
+          <strong className="text-ink">Trip, no expense</strong>,{' '}
+          <strong className="text-ink">Never invited</strong> (adding expenses alone, nobody else in the trip) and{' '}
+          <strong className="text-ink">Quiet 14+ days</strong> are the others. A person can be in more than one.
+          "Export CSV" downloads the list you are looking at.
+        </p>
+        <H>Who is counted</H>
+        <p>
+          By default the screen leaves out admins and test accounts (an email at example.com, or a name that
+          starts with E2E-TEST). Untick the box to include them. People who turn off "Share usage data" are
+          still counted from what they do in trips, but not from page views.
+        </p>
+      </>
+    ),
+  },
+  {
     id: 'faq',
     title: 'A few common questions',
     body: (
@@ -437,6 +524,16 @@ export const HELP_SECTIONS = [
           <strong className="text-ink">I forgot my password.</strong> Use the sign-in screen's password
           reset — if that email doesn't arrive, the trip's admin (if it has one) can help directly, since
           self-service email delivery isn't guaranteed for every account.
+        </p>
+        <p>
+          <strong className="text-ink">My friend says the invite link doesn't work.</strong> Ask them what the
+          page says. "Expired" or "full" means you need to make a new link; "already in" means they're set. If
+          they signed up but never got in, ask them to check their email, including spam, for a confirmation
+          message.
+        </p>
+        <p>
+          <strong className="text-ink">Can I stop the app recording how I use it?</strong> Yes. Turn off
+          "Share usage data" in your profile.
         </p>
         <p>
           <strong className="text-ink">Is my data private?</strong> Only people in a trip can see that

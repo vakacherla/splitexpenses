@@ -31,7 +31,7 @@ function Section({ id, title, defaultOpen, children }) {
 }
 
 export default function HelpPage() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -94,7 +94,7 @@ export default function HelpPage() {
           <InstallCard />
         </div>
 
-        {HELP_SECTIONS.map((section) => (
+        {HELP_SECTIONS.filter((section) => !section.adminOnly || profile?.is_admin).map((section) => (
           <Section key={section.id} id={section.id} title={section.title} defaultOpen={section.defaultOpen}>
             {section.body}
           </Section>

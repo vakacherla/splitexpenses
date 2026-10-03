@@ -19,6 +19,7 @@ import {
   timeAgo,
 } from '../lib/usageStats'
 import Avatar from './Avatar'
+import HelpLink from './HelpLink'
 import EmptyState from './EmptyState'
 import { Skeleton, SkeletonChart, SkeletonStatGrid } from './Skeleton'
 
@@ -639,6 +640,7 @@ export default function UsagePanel() {
           >
             Features · soon
           </span>
+          <HelpLink to="admin-usage" className="self-center" />
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-ink-soft">
