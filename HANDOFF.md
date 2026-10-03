@@ -29,7 +29,7 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 - **`TESTING-AGENT-BRIEF.md`:** what the testing agent can run vs what needs the owner or a phone.
 - **Jira-lite board** (the owner's own app): `http://localhost:5173/board`, project **SplitExpenses (key SE)**. Code in `../Proj Mgmt Tool` (Docker compose; `docker compose up -d`),
   private GitHub repo `vakacherla/jira-lite` (`f7076fa`). 172 issues (SE-1..13 epics, SE-14..111 stories, SE-112..151 bugs, SE-152 epic EP-14 and SE-153..172 usage/invite stories), stories/bugs linked to epics.
-  Sprints: **S0** core (2-4 Sep), **S1** 5-7 Sep, **S2** 13 Sep, **S3** 30 Sep, **S4** 1 Oct, **S5** 2 Oct, **S7** 3 Oct (usage insights + invite links; 11 issues, all closed), **S6** 3 Oct onward (planned: regression sweep,
+  Sprints: **S0** core (2-4 Sep), **S1** 5-7 Sep, **S2** 13 Sep, **S3** 30 Sep, **S4** 1 Oct, **S5** 2 Oct, **S8** 3 Oct (usage insights phase 2, ACTIVE, SE-162..166), **S7** 3 Oct (usage insights + invite links; 11 issues, all closed), **S6** 3 Oct onward (planned: regression sweep,
   AT-09/ATR-03, settlement summary, amount calculator, DEF-025, DEF-026). Epic status rolls up from children (Done only when all children Done). Epics hidden from the
   Kanban board; Epics page `/epics`, Bugs page `/bugs`. Bug reporter defaults to **Ganesha - Testing Agent**; fixer on fixed bugs is **Vishwakarma - Fixer Agent**
   (both non-login viewer identities; script `backend/scripts/seed_testing_agent.py`).
@@ -117,3 +117,6 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 - `supabase db push` would also re-run 049-054 (applied by hand in the SQL editor, so absent from the remote migration history). 055 was pasted into the SQL editor instead. To use `db push` again, first run `supabase migration repair --status applied 049 050 051 052 053 054` (a production write; ask first).
 - Scratch Postgres test: `supabase/tests/055_atomic_expense_save.test.sql` (12 checks). There is no local psql; a throwaway `postgres:16` container runs `schema.sql` plus the migrations, started from the owner's terminal (Docker is blocked in the sandbox). Container `se-scratch` may still be running.
 - Live test rows (prefix `E2E-TEST 055`) sit in the trip `E2E-TEST 047 write check`, which is still not archived. The Members tab there also created a per-invite link.
+
+## Sprint 8 started (3 Oct 2026)
+- **Sprint 8 - Usage insights phase 2** is **active** on the board with REQ-USE-10, 11, 12, 23, 24 (SE-162..166). The board allows one active sprint, so **Sprint 6 (regression sweep, settlement summary, amount calculator, DEF-025) cannot be started until Sprint 8 is closed.** REQ-INV-03 (SE-169, invite visibility) is not in Sprint 8 yet.
