@@ -204,6 +204,31 @@ The existing per-trip Reports tab is already visible to every member of a trip, 
 | REQ-USE-21 | Test-account exclusion list managed in the UI | The `E2E-TEST` prefix rule is enough for now |
 | REQ-USE-22 | Admin action audit log | Separate security story |
 
+## Build notes: where the Phase 1 build differs from the stories above
+
+Recorded 3 Oct 2026 on branch `feat/usage-insights-phase1`. Nothing here is applied to any database or pushed to `main`.
+
+| Story | Written as | Built as | Why |
+|---|---|---|---|
+| REQ-USE-02 | insert-only RLS policy for the user's own rows | no policies at all; rows arrive only through `track_events()` | A function can enforce a 25-per-call and 2000-per-day cap, take the timestamp from the server so nobody can backdate, and drop invalid events silently. A direct insert policy could do none of that. |
+| REQ-USE-04 | heartbeat at most every 5 minutes, "active now" = last 5 minutes | client beats every 2 minutes while the tab is visible; server ignores writes within 1 minute; "active now" is still the last 5 minutes | With a 5-minute heartbeat and a 5-minute window, a user who is actively using the app would flicker in and out of "active now". |
+| REQ-USE-04 | `profiles.last_seen_at` | separate `user_activity` table with no policies | Profiles are readable by trip-mates, so a column there would let them see when you were last online. |
+| Test accounts | "email prefix E2E-TEST" | email at `@example.com` (QA accounts, see migration 048) or display name starting `E2E-TEST` | The `E2E-TEST` prefix in HANDOFF.md names trips and circles, not accounts. My earlier wording was wrong. |
+| REQ-USE-06 | Track C (needs weeks of tracking data) | built now; "active" = any tracked event plus writes, joins, the activity feed, the heartbeat and the latest sign-in | Works from day one and gets more accurate as events accumulate; the tab says so while no tracking data exists. |
+| REQ-USE-07 | stage 2 "created a trip"; stages chained | stage 2 is "created or joined a trip"; stages 1 to 3 are chained; stages 4 to 6 (shared an invite, someone joined, settled up) are each measured among people who added an expense | People invited into a trip are users too and should not count as a drop-off for never creating one; and an invite can be shared outside the app, so the later stages are not strictly ordered. |
+| REQ-USE-07 | "shared an invite" read from `invites` | read from the `invite_shared` event until REQ-INV-01 exists; shows "No data yet" rather than 0 before any such event | Matches the story note; avoids a misleading zero. |
+| REQ-USE-09 | "never invited" | added expenses, nobody else is in any trip they created, and no `invite_shared` event | Does not depend on tracking data existing. |
+| REQ-USE-03 | events listed | also fires `feature_used` for receipt scan, text parse, CSV import and export, push opt-in and opening a trip's Reports tab | Collection cannot be backfilled, so the cheap ones start now; the Phase 2 adoption report needs them. |
+
+Feature adoption (REQ-USE-10), devices (REQ-USE-23) and the device filter (REQ-USE-24) are not built; their data is already being collected by REQ-USE-03.
+
+### Verification done
+
+- `supabase/tests/049_usage_insights.test.sql`: 10 checks. `supabase/tests/050_usage_admin_reports.test.sql`: 12 checks with hand-computed expectations. Both run against a scratch Postgres 16 with Supabase-style roles, and were checked to fail when a leaking policy or the admin guard is removed.
+- 99 new unit tests (device, tracker, notice, stats). Full suite 278 passing; lint at the 20-warning baseline; build clean.
+- The Usage tab was driven in a real browser (light, dark, phone width) against a mocked backend, and the tracker's real network traffic was captured against a production build: with the switch on, one batched request carries `app_open` and `page_view` with phone/browser/ios/safari labels and route patterns only; with it off, no events and no heartbeat are sent.
+- Not verified: anything against the real Supabase project. Migrations 049 and 050 have not been applied anywhere except the scratch database.
+
 ## Definition of done for every story (from HANDOFF.md)
 
 1. Assigned to the sprint above with its goal before work starts.
