@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { nextPasswordRecoveryState } from '../lib/authRecovery'
 import { setCurrentUserId } from '../lib/offlineQueue'
+import { fetchProfileRow } from '../lib/profileFetch'
 
 const AuthContext = createContext(null)
 
@@ -137,15 +138,7 @@ export function AuthProvider({ children }) {
   }, [userId])
 
   function fetchProfile(userId) {
-    return supabase
-      .from('profiles')
-      .select('id, display_name, email, is_admin, is_super_admin, avatar_path, share_usage')
-      .eq('id', userId)
-      .single()
-      .then(({ data, error }) => {
-        if (error) throw error
-        return data
-      })
+    return fetchProfileRow(supabase, userId)
   }
 
   const value = {
