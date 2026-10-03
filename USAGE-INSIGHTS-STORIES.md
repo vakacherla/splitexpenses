@@ -166,7 +166,8 @@ These are product features, not admin analytics, so they belong under EP-02 Trip
 As a trip member I can invite a friend with a link made just for that invite, and share it through any app on my phone.
 - "Invite a friend" in the trip members panel creates a unique, unguessable link (random token, not the trip's invite code).
 - Share through the device share sheet (WhatsApp, text and so on) or copy the link. Where the share sheet is unavailable, copy only.
-- Optional "Who is this for?" label (a first name or nickname, never an email). Shown only to the inviter and the trip creator. **Default included; owner has not confirmed, easy to drop.**
+- Includes an **"Email"** option that opens the user's own mail app with the message and the unique link already filled in (a `mailto:` link). It is sent from the user's real address by their own mail app, so there is no spam risk, no sending cost and no dependency on a sending domain. The app cannot see whether the email was actually sent; it sees whether the link is accepted. The message text names the inviter and the app, for example: "Priya invited you to 'Goa weekend' on SplitExpenses".
+- Optional "Who is this for?" label (a first name or nickname, never an email). Shown only to the inviter and the trip creator. Kept as the default (owner asked for a plain explanation 3 Oct 2026 and did not object); easy to drop.
 - New table `invites(id, token, group_id, inviter_id, label, created_at, accepted_by, accepted_at, expires_at)`. One invite is one link; accepting it joins the trip like the existing code does and records who accepted. Links expire (default 14 days) and can be revoked by the inviter.
 - RLS: members can create and see invites for their own trips; accept goes through a `SECURITY DEFINER` function (same pattern as `join_group_by_code`) that checks expiry, revocation, suspended users, and that the person is not already a member. The existing trip code keeps working.
 - Respects abuse rules: per-user daily cap on created links (default 20), suspended users refused.
@@ -178,14 +179,16 @@ As a trip member I can invite a friend with a link made just for that invite, an
 As a trip member I can enter my friends' email addresses and the app sends each an invite, and one reminder if they have not joined.
 - Blocked by: domain bought and verified in Resend (same blocker as REQ-AUTH-11); until then Resend only delivers to the owner's own address.
 - Builds on REQ-INV-01: an email invite is a link invite with a recipient email attached, so sent vs accepted per person comes for free.
-- Guardrails (all required, none optional): daily cap per user; reuse the blocked-email-domain list; reply-to is the inviter; unsubscribe link in every message and a suppression list that is checked before every send; at most one reminder, after 3 days, only if not joined; a friend's email is deleted when they join or after 30 days, whichever comes first; the address is never used for anything else; the usage and privacy notice says so.
+- Sender rules: the message is sent **from the app's own address on the verified domain, with the inviter's name as the display name** (for example "Priya via SplitExpenses"), subject "Priya invited you to 'Goa weekend' on SplitExpenses". **It never uses the inviter's own email address as the sender**: Gmail, Outlook and Yahoo reject or spam mail that falsely claims their domain, Resend refuses unverified sender domains, and it would be impersonation. The inviter's address appears as reply-to **only if the inviter ticks an opt-in box**, because it reveals their address to the recipient.
+- Guardrails (all required, none optional): daily cap per user; reuse the blocked-email-domain list; unsubscribe link in every message and a suppression list that is checked before every send; at most one reminder, after 3 days, only if not joined; a friend's email is deleted when they join or after 30 days, whichever comes first; the address is never used for anything else; the usage and privacy notice says so.
 - Enables the "invited but did not join" list in the admin and REQ-USE-18 nudges.
+- Until the domain exists, the "Email" option in REQ-INV-01 covers the same need through the user's own mail app. A domain costs roughly 10 to 15 USD a year and also unblocks REQ-AUTH-11 (email confirmation) and more reliable password-reset email, so buying one is recommended regardless of this story.
 - Not sized or scheduled. Revisit when the domain exists.
 
 ## Backlog candidate: awaiting a decision
 
 ### REQ-USE-13 Trip pulse for trip creators (candidate, later)
-The existing per-trip Reports tab is already visible to every member of a trip, creators included. Trip pulse would be a small panel only the trip creator sees in their own trip, for example: "Dev and Anita have not added an expense", "Priya has not joined, the invite code is unused", "Maya has been owed money for 12 days". It uses data creators can already read (`activity_events`, `group_members`, balances), needs no tracking, and would be built under EP-02 Trips, not admin analytics. Not sized or scheduled; owner has not yet decided.
+The existing per-trip Reports tab is already visible to every member of a trip, creators included. Trip pulse would be a small panel only the trip creator sees in their own trip, for example: "Dev and Anita have not added an expense", "Priya has not joined, the invite code is unused", "Maya has been owed money for 12 days". It uses data creators can already read (`activity_events`, `group_members`, balances), needs no tracking, and would be built under EP-02 Trips, not admin analytics. Not sized or scheduled. Owner delegated the call (3 Oct 2026); decision: later, after REQ-INV-01 ships, because it is most useful once invites carry a "who is this for?" label.
 
 ## Parked until the base reaches a few hundred users (phases 3 to 5)
 
@@ -216,6 +219,6 @@ The existing per-trip Reports tab is already visible to every member of a trip, 
 Resolved 3 Oct 2026: device tracking by coarse browser-derived labels, no raw user agent (collection in REQ-USE-03, report in REQ-USE-23); day boundary (admin browser timezone, UTC fallback), invites (show shared and joined), switch (applies to last seen and active now), delivery (parallel tracks, flexible sprints).
 
 Still open:
-1. Trip pulse (REQ-USE-13): yes, no, or later?
+1. ~~Trip pulse (REQ-USE-13)~~ Decided: later, after REQ-INV-01.
 2. Device filter (`REQ-USE-24`): drafted for Track C as recommended; confirm or drop.
 3. Confirm the epic name and key (EP-14) when the board issues are created.
