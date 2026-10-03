@@ -348,7 +348,7 @@ Sprints are working bursts, assigned by the date a story or bug first shipped (f
 | Sprint 3 | 30 Sep | QA fixes round 1 | 15 |
 | Sprint 4 | 1 Oct | QA fixes round 2 | 13 (DEF-009 is partial, so it returned to the backlog on close) |
 | Sprint 5 | 2 Oct | Abuse protection, onboarding, navigation, install prompt, removal-with-balance block | 15 |
-| Sprint 6 | 3 Oct onward (planned) | Regression sweep, AT-09 and ATR-03, settlement summary, amount calculator, DEF-025, DEF-026 | 4 |
+| Sprint 6 | 3 to 9 Oct (active, started 3 Oct 2026) | Quick wins and the last safety fixes, then a full regression sweep: settlement summary, amount calculator, DEF-025 (archived-trip expense inserts). AT-09 and ATR-03 passed and DEF-026 shipped on 3 Oct | 4 (REQ-BAL-08, REQ-EXP-13, DEF-025, DEF-026) |
 | Sprint 7 | 3 Oct (closed) | Usage insights phase 1, the never-signed-in group and per-invite share links. Shipped in pushes 24e35ae (migrations 049 to 051 fixes in b8972d5), 9a14398 (REQ-USE-25) and e3e3cfd (REQ-INV-01, migration 054) | 11 (REQ-USE-01..09, REQ-USE-25, REQ-INV-01) |
 | Sprint 8 | 3 Oct (closed) | Usage insights phase 2: feature adoption, top events this week, per-user timeline, devices and install mode, device filter, live users now (REQ-USE-26, added at the owner's request) (their data is already being collected). Started and closed on the board 3 Oct 2026; all six issues shipped in pushes 590398c, 8e13de0, 39e82de, 14e5aa5, 758a1cd and 0bbad9b | 6 (REQ-USE-10, 11, 12, 23, 24, 26) |
 

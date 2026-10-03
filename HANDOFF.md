@@ -145,3 +145,6 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 ## Sprint 8 closed (3 Oct 2026)
 - All six issues (SE-162..166 and SE-183) are done and pushed, release labels `rel-2026-10-03-590398c`, `-8e13de0`, `-14e5aa5`, `-758a1cd`, `-0bbad9b`, `-39e82de`. Sprint 8 is **closed**; no sprint is active, so **Sprint 6 can be started** (regression sweep, settlement summary, amount calculator, DEF-025; DEF-026 already done). `RELEASES.md` regenerated through `0bbad9b`.
 - Open after Sprint 8: REQ-INV-03 (invite visibility, SE-169) and the parked EP-14 ideas (REQ-USE-13..22); DEF-038 (raw "Failed to fetch" text, SE-182) is open in the backlog. Test rows `E2E-TEST 055/056 ...` remain in the trip `E2E-TEST 047 write check`; container `se-scratch` may still be running (`docker rm -f se-scratch`).
+
+## Sprint 6 started (3 Oct 2026)
+- **Sprint 6 - Regression sweep and quick wins** is **active** on the board (goal refreshed; 3 to 9 Oct): SE-69 settlement summary (REQ-BAL-08), SE-58 amount calculator (REQ-EXP-13), SE-139 DEF-025 (archived-trip expense inserts), SE-140 DEF-026 (already done). The regression sweep itself is test work, not a board issue. Briefs: `brief-settlement-summary.md`, `brief-amount-calculator.md`. Order proposed: DEF-025, settlement summary, amount calculator, then the sweep.
