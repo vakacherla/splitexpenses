@@ -314,12 +314,13 @@ cover (`supabase/tests/049_*`, `050_*`, and the unit tests named below).
       their own "Never" bar (automated: 050 SQL check 7)
 - [x] **P1** — **USE-08** Usage → Stuck users loads and lists people,
       admins excluded — verified 2026-10-03 (7 users)
-- [ ] **P1** — **USE-09** Stuck users: each of the four groups shows its
+- [x] **P1** — **USE-09** Stuck users: each of the four groups shows its
       count and matching people; "Export CSV" downloads a file with names and
       numbers and no email column; "Show more" loads further rows — CSV
       export verified 2026-10-03 (7 rows, header `Name,Segment,Signed
-      up,Last seen,Trips,Expenses,Days stuck`, no email); the other segments
-      and "Show more" (needs more than 20 people) not yet checked
+      up,Last seen,Trips,Expenses,Days stuck`, no email); all four segments
+      checked against their definitions 2026-10-03 (7, 2, 6 and 6 people);
+      "Show more" (needs more than 20 people) not yet checked
       (automated: 050 SQL check 8, `usageStats.test.js`)
 - [ ] **P1** — **USE-10** Untick "Exclude admins and test accounts" → your own
       use appears (Active now counts you); tick it again → you disappear —
