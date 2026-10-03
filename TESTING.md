@@ -277,6 +277,74 @@ own project, safe to make test data.
 - [ ] **P1** — A non-super-admin calling `admin_remove_user_from_group`
       directly gets rejected the same way as the add RPC
 
+## Admin — Usage
+
+Needs an admin account. Ticked items were checked by the owner in production
+on 2026-10-03; "automated" notes say which cases the repo's own tests already
+cover (`supabase/tests/049_*`, `050_*`, and the unit tests named below).
+
+- [x] **P0** — **USE-01** Admin → Usage tab appears for an admin and loads
+      real numbers (Overview: active now, DAU, WAU, MAU, stickiness, chart,
+      Table switch) — verified 2026-10-03
+- [x] **P0** — **USE-02** After using the app for a minute, the
+      `app_events` table holds `app_open` and `page_view` rows whose props
+      are only route patterns (`/trips/:id`, never a real id) and the four
+      device labels, and nothing else: no amounts, names, emails or trip
+      names — verified 2026-10-03 (automated: `track.test.js`,
+      `device.test.js`, 049 SQL checks 1 and 2)
+- [x] **P0** — **USE-03** Profile → Usage data: switch "Share usage data"
+      off, click around for a minute → no new `app_events` rows and
+      `user_activity.last_seen_at` stops moving; switch it back on → both
+      resume — verified in production 2026-10-03 (with it off, visiting Circles,
+      Trips and Help recorded nothing; after switching it back on, page views
+      and a `trip_reports` feature event appeared within seconds)
+      (automated: 049 SQL check 4, `track.test.js`)
+- [ ] **P0** — **USE-04** A signed-in non-admin calling an `admin_usage_*`
+      function (Network tab replay or console `supabase.rpc`) is refused with
+      "Admins only"; nobody can read `app_events` or `user_activity`
+      through the API (automated: 050 SQL checks 9 and 10, 049 SQL check 3)
+- [x] **P1** — **USE-05** Usage → Funnel loads in about a second with real
+      signups and no retry — verified 2026-10-03 after migration 051 (the
+      first version timed out; automated: 050 SQL check 13)
+- [ ] **P1** — **USE-06** Funnel: click a step → the list shows only people
+      who reached the step before it and not this one (names and avatars, no
+      email); Next/Previous paging works (automated: 050 SQL checks 3 to 6)
+- [ ] **P1** — **USE-07** Time to first expense: the bars add up to the
+      number of signups, and people who never added an expense appear in
+      their own "Never" bar (automated: 050 SQL check 7)
+- [x] **P1** — **USE-08** Usage → Stuck users loads and lists people,
+      admins excluded — verified 2026-10-03 (7 users)
+- [x] **P1** — **USE-09** Stuck users: each of the four groups shows its
+      count and matching people; "Export CSV" downloads a file with names and
+      numbers and no email column; "Show more" loads further rows — CSV
+      export verified 2026-10-03 (7 rows, header `Name,Segment,Signed
+      up,Last seen,Trips,Expenses,Days stuck`, no email); all four segments
+      checked against their definitions 2026-10-03 (7, 2, 6 and 6 people);
+      "Never invited" must not list anyone who joined someone else's trip
+      (the first version did; fixed in migration 052, verified 2026-10-03: the
+      list dropped from 6 to 4 and the two joiners left it);
+      "Show more" (needs more than 20 people) not yet checked
+      (automated: 050 SQL check 8, `usageStats.test.js`)
+- [x] **P1** — **USE-10** Untick "Exclude admins and test accounts" → your own
+      use appears (Active now counts you); tick it again → you disappear —
+      verified 2026-10-03 on both Overview ("Active now" counts you when
+      unticked) and Stuck users (unticking added 2 admin/test accounts)
+      (automated: 050 SQL checks 1 and 2)
+- [ ] **P1** — **USE-11** An already signed-in browser, open when an update
+      deploys, keeps working: profile loads, no error, even if the database
+      migration has not been applied yet (automated: `profileFetch.test.js`)
+- [ ] **P1** — **USE-14** Stuck users opens on "Never signed in": accounts
+      over an hour old that we have never seen do anything. Each row says
+      "Email never confirmed" or "Email confirmed, never signed in"; the CSV
+      has a yes/no "Email confirmed" column and no address. Apply migration 053
+      first. After the account `doinku` was deleted, SuhasC is expected here.
+      (automated: 050 SQL check 13, `usageStats.test.js`)
+- [ ] **P2** — **USE-12** Usage tab in dark mode and at phone width: the tab
+      bar scrolls sideways inside itself, the page does not, charts and
+      labels stay legible
+- [ ] **P2** — **USE-13** Overview with very few users shows the "Only N
+      users so far" note instead of looking authoritative
+
 ## Admin — Trips
 
 - [ ] **P0** — Admin → Trips lists every trip platform-wide with

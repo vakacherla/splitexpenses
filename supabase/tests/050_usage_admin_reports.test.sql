@@ -15,6 +15,8 @@
 --   u6     test account (example.com), trip and expense     -> excluded unless asked for
 --   u7     signed up d0-20, opted out, no activity          -> stuck: no_trip, quiet
 --   u8     signed up two hours ago, nothing                 -> too new to be "stuck"
+--   u9     signed up d0-40, JOINED T3 (so is not alone) and added an expense two days ago
+--          -> must NOT be "never invited" (found 3 Oct 2026: joiners were wrongly listed)
 -- Heartbeats: u4 seen 2 minutes ago, u3 seen 10 minutes ago.
 
 \set ON_ERROR_STOP on
@@ -36,7 +38,8 @@ insert into auth.users (id, email) values
   ('a5000000-0000-0000-0000-000000000005', 'u5@test.invalid'),
   ('a6000000-0000-0000-0000-000000000006', 'u6@example.com'),
   ('a7000000-0000-0000-0000-000000000007', 'u7@test.invalid'),
-  ('a8000000-0000-0000-0000-000000000008', 'u8@test.invalid');
+  ('a8000000-0000-0000-0000-000000000008', 'u8@test.invalid'),
+  ('a9000000-0000-0000-0000-000000000009', 'u9@test.invalid');
 
 update public.profiles set display_name = 'Admin Person', is_admin = true, created_at = pg_temp.at(30, 9) where id = 'a0000000-0000-0000-0000-000000000000';
 update public.profiles set display_name = 'Una One',   created_at = pg_temp.at(3, 12) where id = 'a1000000-0000-0000-0000-000000000001';
@@ -47,6 +50,10 @@ update public.profiles set display_name = 'Pia Five',  created_at = pg_temp.at(3
 update public.profiles set display_name = 'Test Six',  created_at = pg_temp.at(3, 12) where id = 'a6000000-0000-0000-0000-000000000006';
 update public.profiles set display_name = 'Sam Seven', created_at = pg_temp.at(20, 12), share_usage = false where id = 'a7000000-0000-0000-0000-000000000007';
 update public.profiles set display_name = 'Eli Eight', created_at = now() - interval '2 hours' where id = 'a8000000-0000-0000-0000-000000000008';
+update public.profiles set display_name = 'Vic Nine', created_at = pg_temp.at(40, 12) where id = 'a9000000-0000-0000-0000-000000000009';
+
+-- u1 confirmed their email but never signed in; u7 and u8 never confirmed.
+update auth.users set email_confirmed_at = now() - interval '2 days' where id = 'a1000000-0000-0000-0000-000000000001';
 
 -- Trips
 insert into public.groups (id, name, home_currency, created_by, created_at) values
@@ -58,12 +65,14 @@ insert into public.group_members (group_id, user_id, joined_at) values
   ('b3000000-0000-0000-0000-000000000003', 'a4000000-0000-0000-0000-000000000004', pg_temp.at(3, 12, 10)),
   ('b3000000-0000-0000-0000-000000000003', 'a2000000-0000-0000-0000-000000000002', pg_temp.at(2, 14)),
   ('b3000000-0000-0000-0000-000000000003', 'a5000000-0000-0000-0000-000000000005', pg_temp.at(2, 15)),
+  ('b3000000-0000-0000-0000-000000000003', 'a9000000-0000-0000-0000-000000000009', pg_temp.at(2, 16)),
   ('b6000000-0000-0000-0000-000000000006', 'a6000000-0000-0000-0000-000000000006', pg_temp.at(2, 9));
 
 -- Expenses
 insert into public.expenses (group_id, description, paid_by, currency, amount, exchange_rate, amount_in_home, created_by, created_at) values
   ('b2000000-0000-0000-0000-000000000002', 'x', 'a3000000-0000-0000-0000-000000000003', 'USD', 10, 1, 10, 'a3000000-0000-0000-0000-000000000003', pg_temp.at(2, 12, 30)),
   ('b3000000-0000-0000-0000-000000000003', 'x', 'a4000000-0000-0000-0000-000000000004', 'USD', 10, 1, 10, 'a4000000-0000-0000-0000-000000000004', pg_temp.at(3, 17)),
+  ('b3000000-0000-0000-0000-000000000003', 'x', 'a9000000-0000-0000-0000-000000000009', 'USD', 10, 1, 10, 'a9000000-0000-0000-0000-000000000009', pg_temp.at(2, 17)),
   ('b6000000-0000-0000-0000-000000000006', 'x', 'a6000000-0000-0000-0000-000000000006', 'USD', 10, 1, 10, 'a6000000-0000-0000-0000-000000000006', pg_temp.at(2, 10));
 
 insert into public.settlements (group_id, from_user, to_user, currency, amount, exchange_rate, amount_in_home, created_by, created_at)
@@ -93,19 +102,19 @@ begin
   assert (r->>'active_now')::int = 1, format('active_now %s', r->>'active_now');
   assert (r->>'dau')::int = 2, format('dau %s', r->>'dau');
   assert (r->>'dau_prev')::int = 1, format('dau_prev %s', r->>'dau_prev');
-  assert (r->>'wau')::int = 4, format('wau %s', r->>'wau');
+  assert (r->>'wau')::int = 5, format('wau %s', r->>'wau');
   assert (r->>'wau_prev')::int = 0, format('wau_prev %s', r->>'wau_prev');
-  assert (r->>'mau')::int = 4, format('mau %s', r->>'mau');
-  assert (r->>'avg_dau_30')::numeric = 0.2, format('avg_dau_30 %s', r->>'avg_dau_30');
-  assert (r->>'stickiness')::numeric = 5.8, format('stickiness %s', r->>'stickiness');
-  assert (r->>'total_users')::int = 7, format('total_users %s', r->>'total_users');
+  assert (r->>'mau')::int = 5, format('mau %s', r->>'mau');
+  assert (r->>'avg_dau_30')::numeric = 0.3, format('avg_dau_30 %s', r->>'avg_dau_30');
+  assert (r->>'stickiness')::numeric = 5.3, format('stickiness %s', r->>'stickiness');
+  assert (r->>'total_users')::int = 8, format('total_users %s', r->>'total_users');
   assert (r->>'opted_out')::int = 1, format('opted_out %s', r->>'opted_out');
   assert (r->>'has_tracking')::boolean, 'has_tracking';
   assert jsonb_array_length(r->'series') = 30, 'series length';
   today_row := r->'series'->29;
   assert (today_row->>'dau')::int = 2, 'series today dau';
   d2_row := r->'series'->27;
-  assert (d2_row->>'dau')::int = 3 and (d2_row->>'wau')::int = 4, format('series d-2 %s', d2_row);
+  assert (d2_row->>'dau')::int = 4 and (d2_row->>'wau')::int = 5, format('series d-2 %s', d2_row);
   raise notice 'PASS 1 overview: active now, DAU, WAU, MAU, stickiness, opted out, series';
 end $$;
 
@@ -117,8 +126,8 @@ begin
   perform pg_temp.as_user('a0000000-0000-0000-0000-000000000000');
   r := public.admin_usage_overview(30, 'UTC', false);
   perform pg_temp.as_owner();
-  assert (r->>'total_users')::int = 9, format('all users %s', r->>'total_users');
-  assert (r->>'mau')::int > 4, 'mau should include the test account when asked';
+  assert (r->>'total_users')::int = 10, format('all users %s', r->>'total_users');
+  assert (r->>'mau')::int > 5, 'mau should include the test account when asked';
   raise notice 'PASS 2 admins and test accounts excluded by default, counted on request';
 end $$;
 
@@ -318,7 +327,36 @@ begin
   raise notice 'PASS 12 bad segment/stage rejected, timezone fallback, day clamping';
 end $$;
 
--- 13. The reports stay fast with hundreds of users. (Found on 3 Oct 2026: a
+-- 13. Never signed in (migration 053): accounts over an hour old that we have
+--     never seen do anything. u1, u7 and u8 qualify; everyone else has a
+--     sign-in, heartbeat or action. The yes/no email flag is returned, the
+--     address is not.
+do $$
+declare c jsonb; names text; confirmed text;
+begin
+  perform pg_temp.as_user('a0000000-0000-0000-0000-000000000000');
+  c := public.admin_usage_stuck_counts(true);
+  assert (c->>'never_signed_in')::int = 3, format('never_signed_in count %s', c);
+  select string_agg(display_name, ',' order by display_name) into names
+    from public.admin_usage_stuck('never_signed_in', true);
+  assert names = 'Eli Eight,Sam Seven,Una One', format('never_signed_in: %s', names);
+  select string_agg(display_name || '=' || email_confirmed::text, ',' order by display_name) into confirmed
+    from public.admin_usage_stuck('never_signed_in', true);
+  assert confirmed = 'Eli Eight=false,Sam Seven=false,Una One=true', format('email flags: %s', confirmed);
+  -- a heartbeat takes someone out of the group
+  perform pg_temp.as_owner();
+  insert into public.user_activity (user_id, last_seen_at) values ('a1000000-0000-0000-0000-000000000001', now());
+  perform pg_temp.as_user('a0000000-0000-0000-0000-000000000000');
+  c := public.admin_usage_stuck_counts(true);
+  assert (c->>'never_signed_in')::int = 2, format('after heartbeat %s', c);
+  -- the old segments still work through the replaced function
+  select string_agg(display_name, ',' order by display_name) into names from public.admin_usage_stuck('trip_no_expense', true);
+  assert names = 'Dev Two,Pia Five', format('trip_no_expense after replace: %s', names);
+  perform pg_temp.as_owner();
+  raise notice 'PASS 13 never signed in: members, email flag, heartbeat removes, other segments intact';
+end $$;
+
+-- 14. (runs last: it adds 400 filler users) The reports stay fast with hundreds of users. (Found on 3 Oct 2026: a
 --     per-user timezone lookup made the funnel take ~6 s at 400 users and time
 --     out in production; migration 051 fixes it.) The limit is generous so the
 --     check is stable on a slow machine, but far below the database's limit.
@@ -336,7 +374,7 @@ begin
   secs := extract(epoch from clock_timestamp() - t0);
   perform pg_temp.as_owner();
   assert secs < 2.5, format('funnel, drop-off, time to first expense and stuck users took %s s with 400 users', round(secs, 2));
-  raise notice 'PASS 13 reports stay fast with 400 users (% s)', round(secs, 2);
+  raise notice 'PASS 14 reports stay fast with 400 users (% s)', round(secs, 2);
 end $$;
 
 rollback;

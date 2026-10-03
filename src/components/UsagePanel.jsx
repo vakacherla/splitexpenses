@@ -13,6 +13,7 @@ import {
   notEnoughData,
   periodRange,
   stageRows,
+  stoppedAtText,
   stuckForDays,
   stuckToCSV,
   timeAgo,
@@ -502,12 +503,11 @@ function FunnelView({ days, exclude, tz }) {
 // ------------------------------------------------------------- Stuck users
 
 function StuckView({ exclude }) {
-  const [segment, setSegment] = useState('no_trip')
+  const [segment, setSegment] = useState('never_signed_in')
   const [pages, setPages] = useState(1)
   const PAGE = 20
   const counts = useRpc('admin_usage_stuck_counts', { p_exclude: exclude })
   const list = useRpc('admin_usage_stuck', { p_segment: segment, p_exclude: exclude, p_limit: PAGE * pages, p_offset: 0 })
-  const meta = STUCK_SEGMENTS.find((s) => s.key === segment)
   const rows = list.data ?? []
   const total = rows[0]?.total ?? 0
 
@@ -546,6 +546,12 @@ function StuckView({ exclude }) {
           </button>
         ))}
       </div>
+      {segment === 'never_signed_in' && (
+        <p className="text-sm text-ink-soft">
+          Accounts we have never seen do anything. "Email never confirmed" usually means the confirmation email did not
+          reach them. "Confirmed, never signed in" means they got past email, so ask them what they saw.
+        </p>
+      )}
       {counts.error && <ErrorNote message={counts.error} onRetry={counts.reload} />}
       {list.error ? (
         <ErrorNote message={list.error} onRetry={list.reload} />
@@ -576,7 +582,7 @@ function StuckView({ exclude }) {
                         <span className="text-ink">{u.display_name}</span>
                       </span>
                     </td>
-                    <td className="py-2 pr-4 text-ink-soft">{meta?.stoppedAt}</td>
+                    <td className="py-2 pr-4 text-ink-soft">{stoppedAtText(u, segment)}</td>
                     <td className="py-2 pr-4 text-ink-soft whitespace-nowrap">{timeAgo(u.last_seen_at)}</td>
                     <td className="py-2 pr-4 num">{u.trips}</td>
                     <td className="py-2 pr-4 num">{u.expenses}</td>

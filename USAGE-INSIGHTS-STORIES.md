@@ -1,6 +1,6 @@
 # Usage Insights: epic and stories (draft for approval)
 
-Status: **DRAFT, nothing built.** Design and mockups: https://claude.ai/artifact/2AjyRgZHFTwj1YTGGmy3re
+Status: **Phase 1 (REQ-USE-01..09) shipped to production on 3 Oct 2026.** Phase 2 and the parked items are not built. Design and mockups: https://claude.ai/artifact/2AjyRgZHFTwj1YTGGmy3re
 
 Goal: give the platform admin a **Usage** tab in `/admin` that shows who is active, where new users get stuck, and which features get tried and repeated, so adoption work is driven by data. First-party only (Supabase), no paid third-party tools.
 
@@ -158,6 +158,15 @@ As an admin I can filter any usage view by form factor or install mode, for exam
 - A user's device for filtering is the one on their most recent `app_open` in the period; users with several devices are included if any session matches (stated in the tooltip).
 - Tests: filter combinations; users without device data (before tracking) shown as "unknown".
 
+### REQ-USE-25 "Never signed in" group (added 3 Oct 2026)
+As an admin I see people who created an account and never got in, so I can help them.
+- Why: two real users could not get past sign-up in September (confirmation emails that never arrived). The other groups all start from "signed in at least once", so they could not show this.
+- A person is in the group when their account is over an hour old and we have never seen them do anything: no sign-in, no heartbeat, no events, no writes.
+- Each row says whether their email was ever confirmed ("Email never confirmed" or "Email confirmed, never signed in"). The yes/no is returned; the address never is. CSV carries the same yes/no.
+- It is the first group on the Stuck users screen, with a short note explaining the two cases.
+- Migration 053; `admin_usage_stuck` gains a last column `email_confirmed`, so the app can deploy before or after the migration.
+- Tests: 050 SQL check 13 (members, email flag, a heartbeat removes someone, other groups still work after the function is replaced); unit tests for the CSV and the "stopped at" text.
+
 ## Invite stories (separate feature, feed the funnel)
 
 These are product features, not admin analytics, so they belong under EP-02 Trips (or EP-12 Growth, where join-by-link is already parked). They are listed here because REQ-USE-07 reads from them. Decision 3 Oct 2026: build links first, email later.
@@ -217,7 +226,7 @@ Recorded 3 Oct 2026 on branch `feat/usage-insights-phase1`. Nothing here is appl
 | REQ-USE-06 | Track C (needs weeks of tracking data) | built now; "active" = any tracked event plus writes, joins, the activity feed, the heartbeat and the latest sign-in | Works from day one and gets more accurate as events accumulate; the tab says so while no tracking data exists. |
 | REQ-USE-07 | stage 2 "created a trip"; stages chained | stage 2 is "created or joined a trip"; stages 1 to 3 are chained; stages 4 to 6 (shared an invite, someone joined, settled up) are each measured among people who added an expense | People invited into a trip are users too and should not count as a drop-off for never creating one; and an invite can be shared outside the app, so the later stages are not strictly ordered. |
 | REQ-USE-07 | "shared an invite" read from `invites` | read from the `invite_shared` event until REQ-INV-01 exists; shows "No data yet" rather than 0 before any such event | Matches the story note; avoids a misleading zero. |
-| REQ-USE-09 | "never invited" | added expenses, nobody else is in any trip they created, and no `invite_shared` event | Does not depend on tracking data existing. |
+| REQ-USE-09 | "never invited" | added expenses, is not in any trip that has someone else in it, and no `invite_shared` event | Does not depend on tracking data existing. The first version only looked at trips the person had created, so people who joined someone else's trip were wrongly listed; found by the owner on 3 Oct 2026 and fixed in migration 052. |
 | REQ-USE-03 | events listed | also fires `feature_used` for receipt scan, text parse, CSV import and export, push opt-in and opening a trip's Reports tab | Collection cannot be backfilled, so the cheap ones start now; the Phase 2 adoption report needs them. |
 
 Feature adoption (REQ-USE-10), devices (REQ-USE-23) and the device filter (REQ-USE-24) are not built; their data is already being collected by REQ-USE-03.

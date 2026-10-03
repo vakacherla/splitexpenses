@@ -18,6 +18,7 @@ export const PERIODS = [
 ]
 
 export const STUCK_SEGMENTS = [
+  { key: 'never_signed_in', label: 'Never signed in', stoppedAt: 'Account created, never signed in' },
   { key: 'no_trip', label: 'No trip yet', stoppedAt: 'Signed up, no trip' },
   { key: 'trip_no_expense', label: 'Trip, no expense', stoppedAt: 'In a trip, no expense added' },
   { key: 'never_invited', label: 'Never invited', stoppedAt: 'Adding expenses alone' },
@@ -131,6 +132,18 @@ export function biggestDrop(rows) {
   return worst
 }
 
+// What to show in the "Stopped at" column. For people who never signed in, the
+// useful detail is whether their email was ever confirmed: unconfirmed points
+// at email delivery, confirmed points at something else (ask them).
+export function stoppedAtText(row, segmentKey) {
+  const segment = STUCK_SEGMENTS.find((s) => s.key === segmentKey)
+  if (segmentKey === 'never_signed_in') {
+    if (row.email_confirmed === false) return 'Email never confirmed'
+    if (row.email_confirmed === true) return 'Email confirmed, never signed in'
+  }
+  return segment?.stoppedAt ?? ''
+}
+
 // Days a user has been in this state, for the "stuck for" column.
 export function stuckForDays(row, segmentKey, now = new Date()) {
   const from = segmentKey === 'quiet' ? row.last_seen_at ?? row.signed_up_at : row.signed_up_at
@@ -141,7 +154,10 @@ export function stuckForDays(row, segmentKey, now = new Date()) {
 // CSV for the stuck-users list: names and numbers only, never an email.
 export function stuckToCSV(rows, segmentKey, now = new Date()) {
   const segment = STUCK_SEGMENTS.find((s) => s.key === segmentKey)
+  // Only this group carries the email-confirmed yes/no (never the address).
+  const withEmailFlag = segmentKey === 'never_signed_in'
   const header = ['Name', 'Segment', 'Signed up', 'Last seen', 'Trips', 'Expenses', 'Days stuck']
+  if (withEmailFlag) header.push('Email confirmed')
   const lines = rows.map((r) => [
     r.display_name,
     segment?.label ?? segmentKey,
@@ -150,6 +166,7 @@ export function stuckToCSV(rows, segmentKey, now = new Date()) {
     r.trips ?? '',
     r.expenses ?? '',
     stuckForDays(r, segmentKey, now) ?? '',
+    ...(withEmailFlag ? [r.email_confirmed === true ? 'yes' : r.email_confirmed === false ? 'no' : ''] : []),
   ])
   return [header, ...lines].map((line) => line.map(csvEscape).join(',')).join('\n')
 }
