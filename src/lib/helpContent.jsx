@@ -7,6 +7,8 @@
 // actually on that screen (exact limits, defaults, validation messages) —
 // a generic overview doesn't answer "why won't this date save."
 
+import { USAGE_NOTICE } from './usageNotice'
+
 function H({ children }) {
   return <h4 className="font-display text-sm font-semibold text-ink pt-1 first:pt-0">{children}</h4>
 }
@@ -396,6 +398,13 @@ export const HELP_SECTIONS = [
         <p>
           Looking up a rate sends only a currency pair and a date to the Frankfurter API — no personal
           information.
+        </p>
+        <H>Usage data</H>
+        <p>{USAGE_NOTICE}</p>
+        <p>
+          It stays in the app's own database and is only seen by the app's administrator as totals and
+          names — never your email address. You can turn it off any time under{' '}
+          <strong className="text-ink">Profile → Usage data</strong>.
         </p>
       </>
     ),
