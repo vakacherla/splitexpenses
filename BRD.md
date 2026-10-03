@@ -46,7 +46,7 @@ Rules for keeping it traceable:
 | EP-11 | Security and data integrity | 6 | 6 | 0 |
 | EP-12 | Growth (parked) | 4 | 0 | 4 |
 | EP-13 | Shared Fund mode (blocked) | 1 | 0 | 1 |
-| EP-14 | Usage insights (admin) | 24 | 0 | 24 (14 not built, 10 parked) |
+| EP-14 | Usage insights (admin) | 24 | 9 | 15 (5 not built, 10 parked) |
 
 ## 4. Requirements by epic
 
@@ -219,19 +219,19 @@ Status key: **S** Shipped, **Q** Planned quick win, **P** Parked, **B** Blocked,
 
 ### EP-14 Usage insights (admin)
 
-Design and mockups: https://claude.ai/artifact/2AjyRgZHFTwj1YTGGmy3re. Full acceptance criteria, definitions and open questions: `USAGE-INSIGHTS-STORIES.md`. Delivery is parallel: Track A collection (USE-01..04), Track B reports from existing data (USE-05, 07, 08, 09), Track C reports that read tracking data (USE-06, 10, 11, 12, 23, 24). Phases 3 to 5 are parked until the user base reaches a few hundred.
+Design and mockups: https://claude.ai/artifact/2AjyRgZHFTwj1YTGGmy3re. Full acceptance criteria, definitions and open questions: `USAGE-INSIGHTS-STORIES.md`. REQ-USE-01..09 shipped on 3 Oct 2026 (push 24e35ae, fixes in b8972d5; migrations 049 to 051). REQ-USE-06 was built in the first push, not later, because it works from write activity until tracking data exists. Still to build: REQ-USE-10, 11, 12, 23, 24. Phases 3 to 5 are parked until the user base reaches a few hundred.
 
 | ID | Requirement | St | Tests | Bugs | Source |
 |---|---|---|---|---|---|
-| REQ-USE-01 | Usage notice at sign-up, Help and Profile, and a "Share usage data" switch (default on) enforced in RLS, not only the UI. | N | none yet | | Track A |
-| REQ-USE-02 | `app_events` table (migration 049) with allowlisted names and props, insert-only RLS for the user's own rows, no read access through the API, cascade delete with the account. | N | none yet | | Track A |
-| REQ-USE-03 | `track()` helper and first events (`app_open`, `page_view`, milestones, `invite_shared`) plus coarse device labels (form factor, install mode, OS, browser) from a tested `detectDevice`; no raw user agent, no content. | N | none yet | | Track A |
-| REQ-USE-04 | `last_seen_at` throttled to once per 5 minutes; admin-only; powers "Active now"; respects the switch. | N | none yet | | Track A |
-| REQ-USE-05 | Usage tab in Admin with period and exclude-admins/test-accounts filters; data only via `admin_usage_*` `SECURITY DEFINER` functions that check `is_platform_admin()` and return names and avatars, never emails; chart/table toggle. | N | none yet | | Track B |
-| REQ-USE-06 | Overview: Active now, DAU, WAU, MAU, stickiness (average DAU over MAU), DAU/WAU chart, in the admin's browser timezone with UTC fallback. | N | none yet | | Track C |
-| REQ-USE-07 | Activation funnel: signed up, trip, expense, shared an invite, someone joined, settled up; drop-off user lists; median step times. | N | none yet | | Track B. Reads `invites` after REQ-INV-01. |
-| REQ-USE-08 | Time to first expense: median, p90 and histogram including "never". | N | none yet | | Track B |
-| REQ-USE-09 | Stuck users by segment (no trip, no expense, never invited, quiet 14+ days); names and avatars only; CSV export without emails. | N | none yet | | Track B |
+| REQ-USE-01 | Usage notice at sign-up, Help and Profile, and a "Share usage data" switch (default on) enforced in RLS, not only the UI. | S | USE-03, USE-11 (not run) | | Track A |
+| REQ-USE-02 | `app_events` table (migration 049) with allowlisted event names and props. RLS on and no policies, so nothing is readable or writable through the API; rows arrive only through `track_events()` (25 per call, 2000 per day, server clock, silent drops, respects the switch and suspension) and are removed with the account. | S | USE-02, USE-04 (not run) | | Track A |
+| REQ-USE-03 | `track()` helper and first events (`app_open`, `page_view`, milestones, `invite_shared`) plus coarse device labels (form factor, install mode, OS, browser) from a tested `detectDevice`; no raw user agent, no content. | S | USE-02, USE-03 (not run) | | Track A |
+| REQ-USE-04 | Last seen and "active now": the app sends a heartbeat every 2 minutes while the tab is visible; "active now" means seen in the last 5 minutes. Stored in `user_activity`, closed to the API (trip-mates cannot see it); admin-only; respects the switch. | S | USE-10 (not run) | | Track A |
+| REQ-USE-05 | Usage tab in Admin with period and exclude-admins/test-accounts filters; data only via `admin_usage_*` `SECURITY DEFINER` functions that check `is_platform_admin()` and return names and avatars, never emails; chart/table toggle. | S | USE-01, USE-04 (not run), USE-12 (not run) | | Track B |
+| REQ-USE-06 | Overview: Active now, DAU, WAU, MAU, stickiness (average DAU over MAU), DAU/WAU chart, in the admin's browser timezone with UTC fallback. | S | USE-01, USE-13 (not run) | | Track C |
+| REQ-USE-07 | Activation funnel: signed up, created or joined a trip, added an expense (chained); then shared an invite, someone joined their trip, settled up (each measured among people who added an expense). Drop-off user lists with paging; median step times; "shared an invite" shows "No data yet" until invite events exist. | S | USE-05, USE-06 (not run) | | Track B. Reads `invites` after REQ-INV-01. |
+| REQ-USE-08 | Time to first expense: median, p90 and histogram including "never". | S | USE-07 (not run) | | Track B |
+| REQ-USE-09 | Stuck users by segment (no trip, no expense, never invited, quiet 14+ days); names and avatars only; CSV export without emails. | S | USE-08, USE-09 (not run) | | Track B |
 | REQ-USE-10 | Feature adoption: tried vs repeated (2+ days), discovery gap and quality gap diagnosis, minimum-sample rule. | N | none yet | | Track C |
 | REQ-USE-11 | Top events this week by distinct users. | N | none yet | | Track C |
 | REQ-USE-12 | Per-user activity timeline for admins; names and avatars only. | N | none yet | | Track C |
@@ -344,8 +344,8 @@ Sprints are working bursts, assigned by the date a story or bug first shipped (f
 | Sprint 4 | 1 Oct | QA fixes round 2 | 13 (DEF-009 is partial, so it returned to the backlog on close) |
 | Sprint 5 | 2 Oct | Abuse protection, onboarding, navigation, install prompt, removal-with-balance block | 15 |
 | Sprint 6 | 3 Oct onward (planned) | Regression sweep, AT-09 and ATR-03, settlement summary, amount calculator, DEF-025, DEF-026 | 4 |
-| Sprint 7 | proposed, may run in parallel with Sprint 6 | Usage insights tracks A and B: start collecting usage data and ship the Usage tab with funnel, time to first expense and stuck users | 8 (REQ-USE-01..05, 07, 08, 09) |
-| Sprint 8 | proposed, movable | Usage insights track C: true active-user numbers, feature adoption, top events, user timeline, devices, device filter | 6 (REQ-USE-06, 10, 11, 12, 23, 24) |
+| Sprint 7 | 3 Oct (shipped) | Usage insights phase 1: start collecting usage data and ship the Usage tab with overview, funnel, time to first expense and stuck users. Shipped in push 24e35ae, with SQL-editor fixes and a performance fix (migrations 049 to 051) in b8972d5 | 9 (REQ-USE-01..09) |
+| Sprint 8 | proposed, movable | Usage insights phase 2: feature adoption, top events, user timeline, devices, device filter (their data is already being collected) | 5 (REQ-USE-10, 11, 12, 23, 24) |
 
 Not in any sprint: parked and not-built requirements, and open bugs DEF-028, DEF-030, DEF-031, DEF-035, DEF-036. Story dates for requirements are estimates from the roadmap and commit history; bug dates come from their fix commits.
 

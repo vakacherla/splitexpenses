@@ -4,7 +4,7 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 
 ## Where things stand
 - **Everything is pushed.** GitHub `main` = `6d47ed8`. Production (Vercel) is live through the install prompt (`c3f5946`).
-- **Supabase prod:** migrations 046, 047, 048 applied; Edge Functions `admin-users`, `receipt-scan`, `parse-expense-text` deployed.
+- **Supabase prod:** migrations 046 to 051 applied (049 to 051 are Usage Insights, applied 3 Oct 2026 through the SQL editor); Edge Functions `admin-users`, `receipt-scan`, `parse-expense-text` deployed.
 - **Shipped 2026-10-02:** member removal blocked with an unsettled balance (046), suspended users cut off at the DB + suspended screen with
   mailto link to admin (047), AI daily caps (30 scans / 100 parses) + throwaway-email blocklist (048), Cloudflare Turnstile on sign-up/sign-in/reset,
   welcome tour, main navigation (top menu, phone bottom tabs, Trips/Circles views, breadcrumbs), install prompt (owner confirmed on a real iPhone).
@@ -89,3 +89,12 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 - The Jira-lite folder needed `request_directory` access; Docker commands must be run through the user's terminal tool (`mcp__terminal__run_in_terminal`, single-line).
 - macOS `sed -i` needs a backup suffix; use python for edits. Background Chrome tabs freeze CDP calls: create a fresh MCP tab.
 - Vercel deploy check: behavioural (e.g. archived-trip URL shows "not found") is more reliable than grepping bundles.
+
+## Usage Insights notes (3 Oct 2026)
+
+- Phase 1 (REQ-USE-01..09) is live: Admin → Usage, first-party tracking in `app_events` / `user_activity`. Design and mockups: https://claude.ai/artifact/2AjyRgZHFTwj1YTGGmy3re. Stories, definitions and where the build differs from them: `USAGE-INSIGHTS-STORIES.md`.
+- **Supabase SQL editor pitfall:** it misreads the INTO form of select inside function bodies as creating a table and mangles the script ("unterminated dollar-quoted string"). Migrations from 049 onward fill variables with `x := (select ...)`; `src/lib/migrationsSqlEditor.test.js` fails the build if the pattern comes back. The editor also shows only the last statement's result, so run read-only checks one at a time.
+- **Timezone lookups are slow:** never look a timezone up in `pg_timezone_names` per row (about 15 ms each; it made the funnel time out). Validate by using the zone, once per query (migration 051).
+- The app tolerates a database that has not yet had 049 (`src/lib/profileFetch.js`), so app and migration can deploy in either order.
+- Not built yet: REQ-USE-10 (feature adoption), 11, 12, 23 (devices), 24 (device filter); their data is already collected. Per-invite share links (REQ-INV-01) and email invites (REQ-INV-02, blocked on a verified Resend domain) are specified but not started. BRD section 7 item 7 asks whether REQ-INV-01 replaces REQ-TRIP-12 / REQ-GRO-01.
+- Release label to apply on the board for REQ-USE-01..09: `rel-2026-10-03-24e35ae` (first push that delivered them; the date is UTC).

@@ -1,6 +1,6 @@
 # Usage Insights: epic and stories (draft for approval)
 
-Status: **DRAFT, nothing built.** Design and mockups: https://claude.ai/artifact/2AjyRgZHFTwj1YTGGmy3re
+Status: **Phase 1 (REQ-USE-01..09) shipped to production on 3 Oct 2026.** Phase 2 and the parked items are not built. Design and mockups: https://claude.ai/artifact/2AjyRgZHFTwj1YTGGmy3re
 
 Goal: give the platform admin a **Usage** tab in `/admin` that shows who is active, where new users get stuck, and which features get tried and repeated, so adoption work is driven by data. First-party only (Supabase), no paid third-party tools.
 
