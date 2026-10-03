@@ -21,6 +21,7 @@ import {
   stuckForDays,
   stuckToCSV,
   timeAgo,
+  topEventRows,
 } from '../lib/usageStats'
 import Avatar from './Avatar'
 import HelpLink from './HelpLink'
@@ -195,6 +196,70 @@ function dayLabel(day) {
   return Number.isNaN(d.getTime()) ? day : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
 }
 
+// ------------------------------------------------------------ Top events
+
+// "What people did this week": the eight things the most distinct people did in
+// the last 7 days (people, not event counts). Fixed to 7 days, so it ignores the
+// period picker.
+function TopEventsCard({ exclude, tz }) {
+  const { theme } = useTheme()
+  const c = COLORS[theme]
+  const { data, error, loading, reload } = useRpc('admin_usage_top_events', { p_tz: tz, p_exclude: exclude })
+
+  if (loading) return <SkeletonChart />
+  if (error) return <ErrorNote message={error} onRetry={reload} />
+  const rows = topEventRows(data)
+  const active = data?.active_users ?? 0
+  if (!data?.has_tracking || rows.length === 0) {
+    return (
+      <EmptyState
+        title="Nothing recorded in the last 7 days"
+        subtitle="What people did shows up here once they have been using the app while tracking is on."
+      />
+    )
+  }
+  const top = rows[0].users
+  const pct = (n) => (n == null ? '—' : `${n}%`)
+
+  const chart = (
+    <div className="space-y-2.5">
+      {rows.map((r) => (
+        <div key={r.key} className="px-2">
+          <div className="flex items-baseline justify-between gap-3 text-sm">
+            <span className="text-ink">{r.label}</span>
+            <span className="num text-ink-soft shrink-0">
+              {r.users} {r.users === 1 ? 'person' : 'people'} ({pct(r.pct)})
+            </span>
+          </div>
+          <div
+            className="mt-1 h-3.5 rounded-sm bg-line/50 overflow-hidden"
+            role="img"
+            aria-label={`${r.label}: ${r.users} of ${active} active people`}
+          >
+            <div className="h-full" style={{ width: `${Math.max(2, (r.users / top) * 100)}%`, background: c.bar }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
+  const table = (
+    <Table
+      head={['What they did', 'People', '% of active']}
+      rows={rows.map((r) => [r.label, r.users, pct(r.pct)])}
+    />
+  )
+
+  return (
+    <Card
+      title="What people did this week"
+      subtitle={`Last 7 days in ${data.tz} time · each person counted once per action · ${active} active ${active === 1 ? 'person' : 'people'}`}
+      chart={chart}
+      table={table}
+    />
+  )
+}
+
 // ---------------------------------------------------------------- Overview
 
 function OverviewView({ days, exclude, tz }) {
@@ -290,6 +355,7 @@ function OverviewView({ days, exclude, tz }) {
             : 'Usage tracking has not collected anything yet, so activity here comes from actions only (adding expenses, joining trips, settling up, signing in). Page views and browsing appear once tracking has data.'
         }
       />
+      <TopEventsCard exclude={exclude} tz={tz} />
       {data.opted_out > 0 && (
         <p className="text-xs text-ink-soft">
           {data.opted_out} {data.opted_out === 1 ? 'user has' : 'users have'} turned off usage data. They are counted only

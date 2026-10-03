@@ -3,6 +3,7 @@ import {
   MIN_USERS,
   addDays,
   biggestDrop,
+  eventLabel,
   featureDiagnosis,
   featureRows,
   FEATURES,
@@ -13,6 +14,7 @@ import {
   periodRange,
   stageRows,
   stoppedAtText,
+  topEventRows,
   STUCK_SEGMENTS,
   stuckForDays,
   stuckToCSV,
@@ -239,5 +241,37 @@ describe('feature rows', () => {
     const empty = featureRows(null)
     expect(empty).toHaveLength(FEATURES.length)
     expect(empty[0]).toMatchObject({ tried: 0, pctTried: null, diagnosis: null })
+  })
+})
+
+describe('top events (REQ-USE-11)', () => {
+  it('labels plain events, features and page views in words', () => {
+    expect(eventLabel('app_open')).toBe('Opened the app')
+    expect(eventLabel('expense_added')).toBe('Added an expense')
+    expect(eventLabel('feature_used:receipt_scan')).toBe('Used receipt scan')
+    expect(eventLabel('feature_used:csv_import')).toBe('Used CSV import')
+    expect(eventLabel('feature_used:settle_up')).toBe('Used settle up')
+    expect(eventLabel('page_view:/rates')).toBe('Viewed Exchange rates')
+    expect(eventLabel('page_view:/trips/:id')).toBe('Viewed a trip')
+  })
+
+  it('falls back to readable text for anything unknown', () => {
+    expect(eventLabel('feature_used:brand_new')).toBe('Used brand new')
+    expect(eventLabel('page_view:/somewhere')).toBe('Viewed /somewhere')
+    expect(eventLabel('something_else')).toBe('something else')
+    expect(eventLabel(null)).toBe('')
+  })
+
+  it('turns the response into rows with a share of active people', () => {
+    const rows = topEventRows({ active_users: 8, events: [{ event: 'app_open', users: 6 }, { event: 'settled_up', users: 1 }] })
+    expect(rows).toEqual([
+      { key: 'app_open', label: 'Opened the app', users: 6, pct: 75 },
+      { key: 'settled_up', label: 'Settled up', users: 1, pct: 13 },
+    ])
+  })
+
+  it('copes with no data and with nobody active', () => {
+    expect(topEventRows(null)).toEqual([])
+    expect(topEventRows({ active_users: 0, events: [{ event: 'app_open', users: 1 }] })[0].pct).toBeNull()
   })
 })

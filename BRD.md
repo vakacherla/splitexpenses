@@ -235,7 +235,7 @@ Design and mockups: https://claude.ai/artifact/2AjyRgZHFTwj1YTGGmy3re. Full acce
 | REQ-USE-08 | Time to first expense: median, p90 and histogram including "never". | S | USE-07 (not run) | | Track B |
 | REQ-USE-09 | Stuck users by segment (no trip, trip but no expense, never invited, quiet 14+ days); "never invited" means added expenses and is not in any trip with someone else in it (people who joined another person's trip are not listed; fixed in migration 052, applied 3 Oct 2026); names and avatars only; CSV export without emails. | S | USE-08, USE-09 (not run) | | Track B |
 | REQ-USE-10 | Feature adoption: tried vs repeated (2+ days), discovery gap and quality gap diagnosis, minimum-sample rule. | S | `056_usage_feature_adoption.test.sql` (7 checks), `usageStats.test.js`; verified live 3 Oct 2026 | | Track C. Migration 056 (applied 3 Oct 2026), Admin > Usage > Features. Settle up and Circles tracking added but not run live; other tracking points were. Pushed with the next release |
-| REQ-USE-11 | Top events this week by distinct users. | N | none yet | | Track C |
+| REQ-USE-11 | Top events this week by distinct users. | S | `057_usage_top_events.test.sql` (6 checks), `usageStats.test.js`; verified live 3 Oct 2026 | | Track C. Migration 057 (applied 3 Oct 2026), card on Admin > Usage > Overview. Pushed with the next release |
 | REQ-USE-12 | Per-user activity timeline for admins; names and avatars only. | N | none yet | | Track C |
 | REQ-USE-13 | Trip pulse for trip creators (who has not added an expense, who has not joined, who is owed). | P | none yet | | Later, after REQ-INV-01. Belongs to Trips. |
 | REQ-USE-14 | Weekly retention cohorts. | P | none yet | | Parked until a few hundred users |

@@ -125,3 +125,6 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 - Migration 056 (`admin_usage_feature_adoption`) is applied to production (pasted into the SQL editor). Admin > Usage > Features is live in the code; **the app change is committed, not yet pushed**.
 - New tracking: itemized split, settle up (online path), circles, reminders (saving a trip end date), offline queue, tour. Rates, help and invite link are derived from existing events. Not run live: settle up and circles (they would create settlements/circles). Remaining Sprint 8: REQ-USE-11, 12, 23, 24.
 - Live test rows: `E2E-TEST 056 itemized` and `E2E-TEST 056 offline` in trip `E2E-TEST 047 write check` (not archived).
+
+## REQ-USE-11 top events built (3 Oct 2026, Sprint 8)
+- Migration 057 (`admin_usage_top_events`) is applied to production (SQL editor). The card "What people did this week" is on Admin > Usage > Overview; app change committed, not yet pushed. Remaining Sprint 8: REQ-USE-12, 23, 24.

@@ -234,3 +234,60 @@ export function featureRows(result) {
     }
   })
 }
+
+// ---- Top events this week (REQ-USE-11) ----------------------------------
+// Event keys come from migration 057: feature_used:<feature>,
+// page_view:<route>, or the plain event name.
+const EVENT_NAMES = {
+  app_open: 'Opened the app',
+  trip_created: 'Created a trip',
+  expense_added: 'Added an expense',
+  settled_up: 'Settled up',
+  member_invited: 'Invited a member',
+  invite_shared: 'Shared an invite link',
+}
+
+const ROUTE_NAMES = {
+  '/': 'the home page',
+  '/dashboard': 'the trips list',
+  '/trips/:id': 'a trip',
+  '/circles/:id': 'a Circle',
+  '/rates': 'Exchange rates',
+  '/help': 'Help',
+  '/profile': 'Profile',
+  '/admin': 'Admin',
+  '/join/:token': 'an invite link',
+  '/login': 'sign in',
+  '/signup': 'sign up',
+  '/forgot-password': 'forgot password',
+  '/reset-password': 'reset password',
+  '/other': 'another page',
+}
+
+export function eventLabel(key) {
+  const k = String(key ?? '')
+  if (EVENT_NAMES[k]) return EVENT_NAMES[k]
+  if (k.startsWith('feature_used:')) {
+    const feature = k.slice('feature_used:'.length)
+    const known = FEATURES.find((f) => f.key === feature)
+    // Lower-case the first letter of a normal word, but leave acronyms like CSV alone.
+    const name = known ? known.label.replace(/^([A-Z])([a-z])/, (_, a, b) => a.toLowerCase() + b) : feature.replace(/_/g, ' ')
+    return `Used ${name}`
+  }
+  if (k.startsWith('page_view:')) {
+    const route = k.slice('page_view:'.length)
+    return `Viewed ${ROUTE_NAMES[route] ?? route}`
+  }
+  return k.replace(/_/g, ' ')
+}
+
+// Display rows for the card: label, people, and their share of active people.
+export function topEventRows(result) {
+  const active = Number(result?.active_users) || 0
+  return (result?.events ?? []).map((e) => ({
+    key: e.event,
+    label: eventLabel(e.event),
+    users: Number(e.users) || 0,
+    pct: pctOf(Number(e.users) || 0, active),
+  }))
+}
