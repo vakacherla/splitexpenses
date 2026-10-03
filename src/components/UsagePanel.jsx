@@ -4,14 +4,21 @@ import { supabase } from '../lib/supabaseClient'
 import { useTheme } from '../context/ThemeContext'
 import { downloadCSV } from '../lib/csvExport'
 import {
+  DEVICE_FILTER_HINT,
+  DEVICE_FILTER_VIEWS,
   DIAGNOSES,
   DISCOVERY_GAP_BELOW_PCT,
+  FORM_FACTOR_FILTERS,
+  INSTALL_MODE_FILTERS,
   PERIODS,
   QUALITY_GAP_BELOW_PCT,
   STUCK_SEGMENTS,
   adminTimeZone,
   biggestDrop,
   changeText,
+  deviceFilterActive,
+  deviceFilterArgs,
+  deviceFilterText,
   deviceGroups,
   featureRows,
   formatDuration,
@@ -199,6 +206,12 @@ function SmallSampleNote({ users }) {
       Only {users ?? 0} {users === 1 ? 'user' : 'users'} so far. Treat percentages as rough, one person can move them a lot.
     </p>
   )
+}
+
+// What to say when a device filter leaves nobody to show.
+function filterEmpty(device) {
+  const text = deviceFilterText(device?.p_form_factor ?? '', device?.p_install_mode ?? '')
+  return text ? { title: `Nobody on ${text} here`, subtitle: 'No one matches this device filter in this period. Clear the filter, or try a longer period.' } : null
 }
 
 function dayLabel(day) {
@@ -534,11 +547,11 @@ function FunnelBar({ row, color, scaleTo, selected, onSelect }) {
   )
 }
 
-function FunnelView({ days, exclude, tz }) {
+function FunnelView({ days, exclude, tz, device }) {
   const { theme } = useTheme()
   const c = COLORS[theme]
   const range = useMemo(() => periodRange(days, tz), [days, tz])
-  const args = { p_from: range.from, p_to: range.to, p_tz: tz, p_exclude: exclude }
+  const args = { p_from: range.from, p_to: range.to, p_tz: tz, p_exclude: exclude, ...device }
   const funnel = useRpc('admin_usage_funnel', args)
   const ttfe = useRpc('admin_usage_ttfe', args)
   const [stage, setStage] = useState('trip')
@@ -551,7 +564,13 @@ function FunnelView({ days, exclude, tz }) {
   const rows = stageRows(funnel.data)
   const signed = rows[0]?.users ?? 0
   if (signed === 0) {
-    return <EmptyState title="No signups in this period" subtitle="Try a longer period to see how new people move through." />
+    const f = filterEmpty(device)
+    return (
+      <EmptyState
+        title={f?.title ?? 'No signups in this period'}
+        subtitle={f?.subtitle ?? 'Try a longer period to see how new people move through.'}
+      />
+    )
   }
   const sequential = rows.slice(0, 3)
   const afterExpense = rows.slice(3)
@@ -682,12 +701,12 @@ function FunnelView({ days, exclude, tz }) {
 
 // ------------------------------------------------------------- Stuck users
 
-function StuckView({ exclude }) {
+function StuckView({ exclude, device }) {
   const [segment, setSegment] = useState('never_signed_in')
   const [pages, setPages] = useState(1)
   const PAGE = 20
-  const counts = useRpc('admin_usage_stuck_counts', { p_exclude: exclude })
-  const list = useRpc('admin_usage_stuck', { p_segment: segment, p_exclude: exclude, p_limit: PAGE * pages, p_offset: 0 })
+  const counts = useRpc('admin_usage_stuck_counts', { p_exclude: exclude, ...device })
+  const list = useRpc('admin_usage_stuck', { p_segment: segment, p_exclude: exclude, p_limit: PAGE * pages, p_offset: 0, ...device })
   const rows = list.data ?? []
   const total = rows[0]?.total ?? 0
 
@@ -809,19 +828,20 @@ function DiagnosisPill({ diagnosis }) {
   )
 }
 
-function FeaturesView({ days, exclude, tz }) {
+function FeaturesView({ days, exclude, tz, device }) {
   const { theme } = useTheme()
   const c = COLORS[theme]
-  const { data, error, loading, reload } = useRpc('admin_usage_feature_adoption', { p_days: days, p_tz: tz, p_exclude: exclude })
+  const { data, error, loading, reload } = useRpc('admin_usage_feature_adoption', { p_days: days, p_tz: tz, p_exclude: exclude, ...device })
 
   if (loading) return <SkeletonChart />
   if (error) return <ErrorNote message={error} onRetry={reload} />
   const active = data?.active_users ?? 0
   if (!data?.has_tracking || active === 0) {
+    const f = filterEmpty(device)
     return (
       <EmptyState
-        title="No activity in this period yet"
-        subtitle="Feature use appears here once people have been using the app while tracking is on. Try a longer period."
+        title={f?.title ?? 'No activity in this period yet'}
+        subtitle={f?.subtitle ?? 'Feature use appears here once people have been using the app while tracking is on. Try a longer period.'}
       />
     )
   }
@@ -974,7 +994,12 @@ export default function UsagePanel() {
   const [view, setView] = useState('overview')
   const [days, setDays] = useState(30)
   const [exclude, setExclude] = useState(true)
+  const [formFactor, setFormFactor] = useState('')
+  const [installMode, setInstallMode] = useState('')
   const tz = useMemo(() => adminTimeZone(), [])
+  const device = useMemo(() => deviceFilterArgs(formFactor, installMode), [formFactor, installMode])
+  const filterOn = deviceFilterActive(formFactor, installMode)
+  const showDeviceFilter = DEVICE_FILTER_VIEWS.includes(view)
 
   return (
     <div className="space-y-4">
@@ -1020,12 +1045,69 @@ export default function UsagePanel() {
         </label>
         <span className="text-xs">Days are in your timezone ({tz})</span>
       </div>
+      {showDeviceFilter && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-ink-soft">
+          <label className="flex items-center gap-2">
+            Device
+            <select
+              value={formFactor}
+              onChange={(e) => setFormFactor(e.target.value)}
+              className="rounded-lg border border-line bg-paper-raised px-2 py-1 text-ink"
+              aria-label="Device type"
+              title={DEVICE_FILTER_HINT}
+            >
+              {FORM_FACTOR_FILTERS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex items-center gap-2">
+            Install
+            <select
+              value={installMode}
+              onChange={(e) => setInstallMode(e.target.value)}
+              className="rounded-lg border border-line bg-paper-raised px-2 py-1 text-ink"
+              aria-label="Installed app or browser"
+              title={DEVICE_FILTER_HINT}
+            >
+              {INSTALL_MODE_FILTERS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {filterOn ? (
+            <>
+              <span className="rounded-full bg-accent-tint px-2 py-0.5 text-xs text-ink">
+                Showing {deviceFilterText(formFactor, installMode)} only
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormFactor('')
+                  setInstallMode('')
+                }}
+                className="text-xs text-primary font-medium hover:underline"
+              >
+                Clear
+              </button>
+            </>
+          ) : (
+            <span className="text-xs" title={DEVICE_FILTER_HINT}>
+              Filters the funnel, features and stuck users. Hover for how people are matched.
+            </span>
+          )}
+        </div>
+      )}
 
       {view === 'overview' && <OverviewView days={days} exclude={exclude} tz={tz} />}
-      {view === 'funnel' && <FunnelView days={days} exclude={exclude} tz={tz} />}
-      {view === 'features' && <FeaturesView days={days} exclude={exclude} tz={tz} />}
+      {view === 'funnel' && <FunnelView days={days} exclude={exclude} tz={tz} device={device} />}
+      {view === 'features' && <FeaturesView days={days} exclude={exclude} tz={tz} device={device} />}
       {view === 'devices' && <DevicesView days={days} exclude={exclude} tz={tz} />}
-      {view === 'stuck' && <StuckView exclude={exclude} />}
+      {view === 'stuck' && <StuckView exclude={exclude} device={device} />}
     </div>
   )
 }

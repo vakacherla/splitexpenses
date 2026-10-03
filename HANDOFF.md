@@ -134,3 +134,7 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 
 ## REQ-USE-23 devices built (3 Oct 2026, Sprint 8, SE-165)
 - Migration 059 (`admin_usage_devices`) applied to production (SQL editor). Admin > Usage > Devices; also the Overview "Active now" tile is now a button that jumps to the Live now list. App changes committed, not yet pushed. Remaining Sprint 8: REQ-USE-12 (timeline) and REQ-USE-24 (device filter).
+
+## REQ-USE-24 device filter built (3 Oct 2026, Sprint 8, SE-166)
+- Migration 060 applied to production (SQL editor). It DROPS AND RECREATES `admin_usage_funnel`, `admin_usage_funnel_users`, `admin_usage_ttfe`, `admin_usage_stuck_counts`, `admin_usage_stuck`, `admin_usage_feature_adoption`, `usage_funnel_rows`, `usage_stuck_segment` with two optional params (`p_form_factor`, `p_install_mode`); new helper `usage_eligible_device`. Re-runnable. Dropdowns on Funnel / Features / Stuck users; verified live. App change committed, not yet pushed. Only REQ-USE-12 (timeline) is left in Sprint 8.
+- To test SQL locally: no local psql; a throwaway `postgres:16` container (`se-scratch`) with `schema.sql` + the migrations (errors from missing Supabase extensions are expected). The scripts used live in the session scratchpad, not the repo.

@@ -46,7 +46,7 @@ Rules for keeping it traceable:
 | EP-11 | Security and data integrity | 6 | 6 | 0 |
 | EP-12 | Growth (parked) | 4 | 0 | 4 (1 superseded by REQ-INV-01) |
 | EP-13 | Shared Fund mode (blocked) | 1 | 0 | 1 |
-| EP-14 | Usage insights (admin) | 26 | 14 | 12 (2 not built, 10 parked) |
+| EP-14 | Usage insights (admin) | 26 | 15 | 11 (1 not built, 10 parked) |
 
 ## 4. Requirements by epic
 
@@ -248,7 +248,7 @@ Design and mockups: https://claude.ai/artifact/2AjyRgZHFTwj1YTGGmy3re. Full acce
 | REQ-USE-21 | Test-account exclusion list managed in the UI. | P | none yet | | Parked; the `E2E-TEST` prefix rule is enough for now |
 | REQ-USE-22 | Admin action audit log. | P | none yet | | Parked; separate security story |
 | REQ-USE-23 | Devices and install mode report (device type, installed app vs browser, iOS vs Android and others). | S | `059_usage_devices.test.sql` (8 checks), `usageStats.test.js`; verified live 3 Oct 2026 | | Track C. Migration 059 (applied 3 Oct 2026), Admin > Usage > Devices. Pushed with the next release |
-| REQ-USE-24 | Device filter across usage views. | N | none yet | | Track C |
+| REQ-USE-24 | Device filter across usage views. | S | `060_usage_device_filter.test.sql` (9 checks, plus the 42 older usage checks re-run), `usageStats.test.js`; verified live 3 Oct 2026 | | Track C. Migration 060 (applied 3 Oct 2026; drops and recreates the funnel, time-to-first-expense, stuck and feature-adoption functions with two optional parameters). Filters Funnel, Features and Stuck users; a person matches if any app open matches, People with no app open are Unknown. Pushed with the next release |
 | REQ-USE-25 | "Never signed in" group on Stuck users: accounts over an hour old with no sign-in and no activity, with a yes/no for whether the email was ever confirmed (never the address); first group on the screen; CSV includes the yes/no. Migration 053. Added 3 Oct 2026 after two real users could not get past sign-up. | S | USE-14 (not run) | | Shipped 3 Oct 2026 (merge 9a14398); migration 053 applied. |
 | REQ-USE-26 | Live users now: a section on Admin > Usage > Overview listing the people in the app right now (heartbeat within 5 minutes, the same rule as the Overview "active now" number), with the part of the app they last opened, their device and how long ago they were seen. Refreshes every 30 seconds. The "Active now" tile is a button that jumps to the list (added 3 Oct 2026: the number alone was not useful). Names and avatars only, no email; at most 50 listed, count is the true total. | S | `058_usage_live_now.test.sql` (7 checks), `usageStats.test.js`; verified live 3 Oct 2026 | | Track C. Added 3 Oct 2026 at the owner's request, Sprint 8 (SE-183). Migration 058 (applied 3 Oct 2026). Pushed with the next release |
 

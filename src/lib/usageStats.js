@@ -352,3 +352,43 @@ export function deviceGroups(result) {
     })),
   }))
 }
+
+// ---- Device filter (REQ-USE-24) -----------------------------------------
+export const FORM_FACTOR_FILTERS = [
+  { value: '', label: 'All devices' },
+  { value: 'phone', label: 'Phone' },
+  { value: 'tablet', label: 'Tablet' },
+  { value: 'desktop', label: 'Desktop' },
+  { value: 'unknown', label: 'Unknown device' },
+]
+
+export const INSTALL_MODE_FILTERS = [
+  { value: '', label: 'App or browser' },
+  { value: 'pwa', label: 'Installed app' },
+  { value: 'browser', label: 'Browser' },
+  { value: 'unknown', label: 'Unknown' },
+]
+
+// Views the filter applies to. Overview, top events, live and devices describe
+// everyone (or already split by device), so they ignore it.
+export const DEVICE_FILTER_VIEWS = ['funnel', 'features', 'stuck']
+
+export const DEVICE_FILTER_HINT =
+  'A person counts if any app opening matched (in the period for Features, any time for Funnel and Stuck users). ' +
+  'Someone on a phone and a laptop shows under both. People with no app opening, such as accounts that never signed in, are "Unknown".'
+
+// The arguments the database functions take. Empty choices mean "no filter".
+export function deviceFilterArgs(formFactor, installMode) {
+  return { p_form_factor: formFactor || null, p_install_mode: installMode || null }
+}
+
+export function deviceFilterActive(formFactor, installMode) {
+  return Boolean(formFactor || installMode)
+}
+
+// "phone, installed app" for headings and empty messages.
+export function deviceFilterText(formFactor, installMode) {
+  const ff = FORM_FACTOR_FILTERS.find((o) => o.value === formFactor && o.value)
+  const im = INSTALL_MODE_FILTERS.find((o) => o.value === installMode && o.value)
+  return [ff?.label.toLowerCase(), im?.label.toLowerCase()].filter(Boolean).join(', ')
+}

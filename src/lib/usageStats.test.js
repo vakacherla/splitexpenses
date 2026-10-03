@@ -8,6 +8,9 @@ import {
   featureRows,
   FEATURES,
   changeText,
+  deviceFilterActive,
+  deviceFilterArgs,
+  deviceFilterText,
   deviceGroups,
   deviceText,
   formatDuration,
@@ -365,5 +368,28 @@ describe('devices and install mode (REQ-USE-23)', () => {
   it('copes with no data and with nobody having opened the app', () => {
     expect(deviceGroups(null).every((g) => g.rows.length === 0)).toBe(true)
     expect(deviceGroups({ total_users: 40, people_opened: 0, form_factor: [{ value: 'phone', users: 0, sessions: 0 }] })[0].rows[0].pct).toBeNull()
+  })
+})
+
+describe('device filter (REQ-USE-24)', () => {
+  it('turns the dropdown choices into database arguments, empty meaning no filter', () => {
+    expect(deviceFilterArgs('', '')).toEqual({ p_form_factor: null, p_install_mode: null })
+    expect(deviceFilterArgs('phone', '')).toEqual({ p_form_factor: 'phone', p_install_mode: null })
+    expect(deviceFilterArgs('', 'pwa')).toEqual({ p_form_factor: null, p_install_mode: 'pwa' })
+    expect(deviceFilterArgs('desktop', 'browser')).toEqual({ p_form_factor: 'desktop', p_install_mode: 'browser' })
+    expect(deviceFilterArgs(undefined, undefined)).toEqual({ p_form_factor: null, p_install_mode: null })
+  })
+
+  it('knows when a filter is on', () => {
+    expect(deviceFilterActive('', '')).toBe(false)
+    expect(deviceFilterActive('phone', '')).toBe(true)
+    expect(deviceFilterActive('', 'browser')).toBe(true)
+  })
+
+  it('describes a filter in words, and says nothing when there is none', () => {
+    expect(deviceFilterText('phone', 'pwa')).toBe('phone, installed app')
+    expect(deviceFilterText('', 'browser')).toBe('browser')
+    expect(deviceFilterText('unknown', '')).toBe('unknown device')
+    expect(deviceFilterText('', '')).toBe('')
   })
 })
