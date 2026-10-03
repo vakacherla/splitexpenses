@@ -177,7 +177,9 @@ begin
   today := (now() at time zone tz)::date;
   lookback := greatest(n + 6, 59);
 
-  with ud as (
+  -- Written as plain assignments on purpose: the Supabase SQL editor misreads
+  -- the older assignment form inside function bodies and mangles the script.
+  res := (with ud as (
     select distinct a.user_id, (a.ts at time zone tz)::date as d
     from public.usage_activity(p_exclude) a
     where a.ts >= ((today - lookback)::timestamp at time zone tz)
@@ -211,7 +213,7 @@ begin
     'opted_out', (select count(*) from public.usage_eligible(p_exclude) where not share_usage),
     'has_tracking', exists (select 1 from public.app_events),
     'series', (select coalesce(jsonb_agg(jsonb_build_object('day', d, 'dau', dau, 'wau', wau) order by d), '[]'::jsonb) from series)
-  ) into res;
+  ));
 
   return res;
 end;
@@ -241,7 +243,7 @@ declare
 begin
   perform public.usage_guard();
 
-  with f as (select * from public.usage_funnel_rows(p_from, p_to, p_tz, p_exclude)),
+  res := (with f as (select * from public.usage_funnel_rows(p_from, p_to, p_tz, p_exclude)),
   c as (
     select
       count(*) as signed,
@@ -273,8 +275,8 @@ begin
       jsonb_build_object('key', 'joined', 'label', 'Someone joined their trip', 'users', c.joined, 'basis', 'expense', 'basis_users', c.expense, 'median_seconds', c.m_joined),
       jsonb_build_object('key', 'settled', 'label', 'Settled up', 'users', c.settled, 'basis', 'expense', 'basis_users', c.expense, 'median_seconds', c.m_settled)
     )
-  ) into res
-  from c;
+  )
+  from c);
 
   return res;
 end;
@@ -346,7 +348,7 @@ declare
 begin
   perform public.usage_guard();
 
-  with f as (
+  res := (with f as (
     select extract(epoch from (t_exp - created_at)) as secs
     from public.usage_funnel_rows(p_from, p_to, p_tz, p_exclude)
   ),
@@ -375,8 +377,8 @@ begin
       jsonb_build_object('key', 'more', 'label', 'Over 3 days', 'users', b_more),
       jsonb_build_object('key', 'never', 'label', 'Never', 'users', b_never)
     )
-  ) into res
-  from s;
+  )
+  from s);
 
   return res;
 end;
