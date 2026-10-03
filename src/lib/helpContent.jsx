@@ -25,13 +25,22 @@ export const HELP_SECTIONS = [
           steps needed for most trips.
         </p>
         <p>
-          <strong className="text-ink">Join a trip</strong> from your dashboard using the invite code
-          whoever created the trip sent you — tap "Join with a code," type it in, and you're in.
+          <strong className="text-ink">Join a trip</strong> by tapping the invite link a friend sent you. If
+          you don't have an account yet, you'll create one and land right inside the trip. A link works for up
+          to 20 people for 14 days. You can also use the six-letter code: from your dashboard tap "Join with a
+          code," and paste the code or the whole link.
         </p>
         <p>
           <strong className="text-ink">Starting your own trip?</strong> Tap "New trip," give it a name and
           a home currency (this is just the currency balances are shown in — everyone can still log expenses
           in whatever currency they actually paid in).
+        </p>
+        <H>Inviting someone</H>
+        <p>
+          Open the trip's members, tap <strong className="text-ink">Create invite link</strong>, and share it
+          with WhatsApp, a message or email. You'll see when you shared it and whether it was used. The link
+          shows your friend only the trip's name and photo and who invited them, and nothing else, until they
+          join.
         </p>
         <H>Taking trips with the same people often?</H>
         <p>

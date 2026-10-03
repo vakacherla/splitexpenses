@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { track } from '../lib/track'
+import { joinPath, parseInviteInput } from '../lib/invite'
 import { useAuth } from '../context/AuthContext'
 import CurrencySelect from '../components/CurrencySelect'
 import { SkeletonRows } from '../components/Skeleton'
@@ -166,7 +167,15 @@ export default function Dashboard() {
     if (!code.trim()) return
     setJoining(true)
     setError('')
-    const { data, error } = await supabase.rpc('join_group_by_code', { code: code.trim() })
+    // People paste the link, or a whole chat message that contains it, as often as
+    // the code. A link goes to the join screen; anything else is tried as a code.
+    const parsed = parseInviteInput(code)
+    if (parsed?.type === 'link') {
+      setJoining(false)
+      navigate(joinPath(parsed.token))
+      return
+    }
+    const { data, error } = await supabase.rpc('join_group_by_code', { code: (parsed?.code ?? code).trim() })
     setJoining(false)
     if (error) {
       setError(error.message)
@@ -210,7 +219,13 @@ export default function Dashboard() {
     if (!circleCode.trim()) return
     setJoiningCircle(true)
     setError('')
-    const { data, error } = await supabase.rpc('join_circle_by_code', { code: circleCode.trim() })
+    const parsed = parseInviteInput(circleCode)
+    if (parsed?.type === 'link') {
+      setJoiningCircle(false)
+      navigate(joinPath(parsed.token))
+      return
+    }
+    const { data, error } = await supabase.rpc('join_circle_by_code', { code: (parsed?.code ?? circleCode).trim() })
     setJoiningCircle(false)
     if (error) {
       setError(error.message)

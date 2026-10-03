@@ -171,18 +171,28 @@ As an admin I see people who created an account and never got in, so I can help 
 
 These are product features, not admin analytics, so they belong under EP-02 Trips (or EP-12 Growth, where join-by-link is already parked). They are listed here because REQ-USE-07 reads from them. Decision 3 Oct 2026: build links first, email later.
 
-### REQ-INV-01 Per-invite share links
-As a trip member I can invite a friend with a link made just for that invite, and share it through any app on my phone.
-- "Invite a friend" in the trip members panel creates a unique, unguessable link (random token, not the trip's invite code).
-- Share through the device share sheet (WhatsApp, text and so on) or copy the link. Where the share sheet is unavailable, copy only.
-- Includes an **"Email"** option that opens the user's own mail app with the message and the unique link already filled in (a `mailto:` link). It is sent from the user's real address by their own mail app, so there is no spam risk, no sending cost and no dependency on a sending domain. The app cannot see whether the email was actually sent; it sees whether the link is accepted. The message text names the inviter and the app, for example: "Priya invited you to 'Goa weekend' on SplitExpenses".
-- Optional "Who is this for?" label (a first name or nickname, never an email). Shown only to the inviter and the trip creator. Kept as the default (owner asked for a plain explanation 3 Oct 2026 and did not object); easy to drop.
-- New table `invites(id, token, group_id, inviter_id, label, created_at, accepted_by, accepted_at, expires_at)`. One invite is one link; accepting it joins the trip like the existing code does and records who accepted. Links expire (default 14 days) and can be revoked by the inviter.
-- RLS: members can create and see invites for their own trips; accept goes through a `SECURITY DEFINER` function (same pattern as `join_group_by_code`) that checks expiry, revocation, suspended users, and that the person is not already a member. The existing trip code keeps working.
-- Respects abuse rules: per-user daily cap on created links (default 20), suspended users refused.
-- Feeds REQ-USE-07: created vs accepted counts, per inviter and per trip. Admin views show names and avatars only, never emails.
-- Tests: expired, revoked and reused links; accept by an existing member; cap enforcement; non-member cannot create; accepted-by recorded once.
-- Ask-before-prod: migration push, deploy and `git push` are separate approvals.
+### REQ-INV-01 Per-invite share links (phase 1, built 3 Oct 2026)
+Design and mockups: https://claude.ai/artifact/3ZVMNDBLeLPPgMU7TpCur6. The owner approved all seven design recommendations on 3 Oct 2026, and the invitation was asked to feel fun: the trip's own cover photo where there is one, a playful illustration where there isn't.
+As a trip or Circle member I can invite a friend with a link made for that invite and share it anywhere, and the friend can join in one tap.
+- **Link:** `/join/<token>`, a random 32-character token. One per invite, for trips and Circles. The address it is built on is one setting (`VITE_PUBLIC_APP_URL`, default the current address).
+- **Rules:** any member can make one; up to 20 people; 14 days; once per person, so someone removed from a trip cannot return through it; at most 20 new links per person per day; a suspended inviter's links stop working. The six-letter codes are untouched.
+- **Invite card** in the trip's and Circle's members panel: optional "Who is this for?" (only you see it), Create invite link, then Share… (phone share sheet), WhatsApp, Email (the person's own mail app), Copy link, a preview of the message, and the code as a quiet fallback.
+- **Message:** "Hi! ✈️ I've set up “Goa weekend” on Split Expenses so we can split costs in any currency and settle up easily. Tap to join 👉 <link>". Never contains the private name.
+- **Join screen** (public): the trip's cover photo, or one of eight playful illustrations (a sun in sunglasses, a smiling suitcase, a palm island, a looping plane, a camera, a tent under the moon, a smiling house, a ring of friends) picked from the trip's id; the inviter's first name and photo; Join (signed in) or Create account / I already have an account (signed out). Clear messages for expired, turned-off, full, removed, archived and invalid links, and for people already in.
+- **Survives sign-up:** the invite is remembered through sign-up, sign-in, and the confirmation email (the email link returns to the invite, even on another device), and clears itself once used or dead, so it cannot loop.
+- **Dashboard** "Join with a code" boxes accept the code, a pasted link, or a whole pasted chat message containing the link.
+- **Link preview in chat:** a fixed card ("Join a trip on Split Expenses", a friendly picture) for every link. The trip's real name in the card is phase 3.
+- **Recorded per link:** who made it, when, when and how it was first shared (share sheet, WhatsApp, email, copy), real opens, and who joined with it and whether their account was new. Closed to the API; admins see counts only, never the private name.
+- Migration 054 (tables `invites`, `invite_accepts`; functions `create_invite`, `preview_invite`, `accept_invite`, `mark_invite_shared`). Written to paste into the Supabase SQL editor.
+- **Tests:** 17 SQL checks (`supabase/tests/054_invite_links.test.sql`, verified to fail when membership, use-limit or removed-member rules are broken); 24 unit tests for the link logic; browser checks of the join screen in eight states, the invite card, sign-up survival and the redirect, against a mocked backend.
+- **Needs outside the repo:** (1) run migration 054 in the SQL editor; (2) in Supabase Authentication → URL configuration, add the app's address with `/join/**` to the redirect list; (3) the link-preview picture address in `index.html` is the current Vercel address and must be updated when the app gets its own domain.
+
+### REQ-INV-03 Invite visibility (phase 2)
+- "Invites you sent" list for each trip and Circle: each link's label, when sent, how, and "not used yet" or "N joined"; share again; turn it off. The trip creator sees every member's invites; everyone else sees their own. Adds `list_invites` and `revoke_invite`.
+- Invites report in Admin → Usage: created, opened, joined, new accounts, by channel, counts only. The funnel's "Shared an invite" step reads real invites instead of the copy-button event.
+
+### REQ-INV-04 Invite links, phase 3 (later)
+- Link-preview card with the trip's real name and cover photo (a small server function); "reset code" for the old six-letter code; "just one person" links.
 
 ### REQ-INV-02 Email invites and reminders (PARKED until a sending domain is verified in Resend)
 As a trip member I can enter my friends' email addresses and the app sends each an invite, and one reminder if they have not joined.

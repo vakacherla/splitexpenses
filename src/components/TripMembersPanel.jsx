@@ -1,7 +1,6 @@
-import { useState } from 'react'
-import { track } from '../lib/track'
 import { Link } from 'react-router-dom'
 import Avatar from './Avatar'
+import InviteCard from './InviteCard'
 import { paymentProviderLabel } from '../lib/paymentLinks'
 
 export default function TripMembersPanel({
@@ -13,37 +12,9 @@ export default function TripMembersPanel({
   onRemoveMember,
   onToggleManager,
 }) {
-  const [copied, setCopied] = useState(false)
-
-  async function copyCode() {
-    try {
-      await navigator.clipboard.writeText(group.invite_code)
-      track('invite_shared')
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    } catch {
-      // clipboard unavailable — the code is still visible to copy by hand
-    }
-  }
-
   return (
     <div className="space-y-8">
-      <div>
-        <h3 className="font-display text-lg text-ink mb-3">Invite people</h3>
-        <div className="flex items-center justify-between rounded-xl border border-line bg-paper-raised px-5 py-4">
-          <div>
-            <p className="text-xs text-ink-soft mb-1">Invite code</p>
-            <p className="font-display text-2xl tracking-[0.2em] text-ink">{group.invite_code}</p>
-          </div>
-          <button
-            onClick={copyCode}
-            className="rounded-full border border-line px-4 py-2 text-sm text-ink hover:border-primary transition-colors"
-          >
-            {copied ? 'Copied' : 'Copy'}
-          </button>
-        </div>
-        <p className="mt-2 text-xs text-ink-soft">Anyone with this code can join {group.name} from their dashboard.</p>
-      </div>
+      <InviteCard kind="trip" targetId={group.id} name={group.name} code={group.invite_code} />
 
       <div>
         <h3 className="font-display text-lg text-ink mb-3">Members</h3>

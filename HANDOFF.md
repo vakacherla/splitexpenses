@@ -98,3 +98,10 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 - The app tolerates a database that has not yet had 049 (`src/lib/profileFetch.js`), so app and migration can deploy in either order.
 - Not built yet: REQ-USE-10 (feature adoption), 11, 12, 23 (devices), 24 (device filter); their data is already collected. Per-invite share links (REQ-INV-01) and email invites (REQ-INV-02, blocked on a verified Resend domain) are specified but not started. BRD section 7 item 7 asks whether REQ-INV-01 replaces REQ-TRIP-12 / REQ-GRO-01.
 - Release label to apply on the board for REQ-USE-01..09: `rel-2026-10-03-24e35ae` (first push that delivered them; the date is UTC).
+
+## Invite links (3 Oct 2026)
+
+- Phase 1 is built on branch `feat/invite-links-phase1`, not shipped: per-invite links (`/join/<token>`), the join screen, the invite card (Share, WhatsApp, Email, Copy), sign-up survival, a playful illustration when a trip has no cover photo. Design: https://claude.ai/artifact/3ZVMNDBLeLPPgMU7TpCur6. Stories: `USAGE-INSIGHTS-STORIES.md`. Migration `054_invite_links.sql` is written and tested but not applied.
+- Before shipping: run 054 in the SQL editor; add the app's address with `/join/**` to Supabase's redirect list (Authentication → URL configuration); update the link-preview picture address in `index.html` and set `VITE_PUBLIC_APP_URL` when the app gets its own domain.
+- REQ-INV-01 supersedes REQ-TRIP-12 and REQ-GRO-01 (decision 3 Oct 2026). Phase 2 (invites list, admin report, `list_invites` and `revoke_invite`) and phase 3 (real trip name in the preview card, reset code) are not built.
+- The old six-letter codes still work and are still permanent; "reset code" is phase 3.

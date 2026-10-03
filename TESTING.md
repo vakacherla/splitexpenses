@@ -345,6 +345,44 @@ cover (`supabase/tests/049_*`, `050_*`, and the unit tests named below).
 - [ ] **P2** — **USE-13** Overview with very few users shows the "Only N
       users so far" note instead of looking authoritative
 
+## Invite links
+
+Apply migration 054 first, and add the app's address with `/join/**` to Supabase's
+redirect list. Ticked items were checked by the repo's own tests; everything
+else needs a real phone, a real WhatsApp, and a second account.
+
+- [ ] **P0** — **INV-01** In a trip's members panel: Create invite link → a link
+      appears; Share…, WhatsApp, Email and Copy link all work; the message names
+      the trip and has no private name in it (automated: 054 SQL checks 1 and 6,
+      `invite.test.js`)
+- [ ] **P0** — **INV-02** A friend who is signed out opens the link → sees the trip's
+      photo (or a playful picture), who invited them, and "Create account to join";
+      after sign-up they land inside the trip with no code typed
+- [ ] **P0** — **INV-03** A friend who already has an account taps the link → one tap
+      to join, and then the trip opens (automated: 054 SQL check 8)
+- [ ] **P0** — **INV-04** A non-member cannot make a link and nobody can read the
+      invite tables through the API (automated: 054 SQL checks 2 and 5)
+- [ ] **P1** — **INV-05** Sign-up with the confirmation email on: the email link returns
+      to the invite, including when opened on another phone (needs the redirect list
+      entry and Confirm email switched on)
+- [ ] **P1** — **INV-06** An expired, turned-off, full, or archived-trip link gives a clear
+      message that names who invited you (automated: 054 SQL checks 10, 11, 13)
+- [ ] **P1** — **INV-07** Someone removed from the trip cannot use the same link to get back
+      in (automated: 054 SQL check 12)
+- [ ] **P1** — **INV-08** Dashboard "Join with a code": the six-letter code still works,
+      and pasting the link, or a whole WhatsApp message containing it, opens the join
+      screen (automated: `invite.test.js`)
+- [ ] **P1** — **INV-09** A Circle invite adds the person to the Circle (automated: 054 SQL
+      check 14)
+- [ ] **P1** — **INV-10** Pasting a link into WhatsApp shows the "Join a trip on Split
+      Expenses" card with the picture (needs a deploy; the picture address is the
+      current Vercel address)
+- [ ] **P2** — **INV-11** The invite card and the join screen in dark mode and at phone
+      width; the eight illustrations all look right (checked in a browser against a
+      mocked backend)
+- [ ] **P2** — **INV-12** The link records when and how it was shared: after tapping
+      WhatsApp, the invite row has `shared_via = 'whatsapp'` (automated: 054 SQL check 15)
+
 ## Admin — Trips
 
 - [ ] **P0** — Admin → Trips lists every trip platform-wide with

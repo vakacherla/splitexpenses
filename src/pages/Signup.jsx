@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import ThemeToggle from '../components/ThemeToggle'
 import TurnstileWidget from '../components/TurnstileWidget'
 import { captchaOptions } from '../lib/turnstile'
 import { USAGE_NOTICE } from '../lib/usageNotice'
 import { signupErrorMessage, THROWAWAY_EMAIL_MESSAGE } from '../lib/signup'
+import { getPendingInvite, joinPath, postAuthPath } from '../lib/invite'
 
 export default function Signup() {
   const [displayName, setDisplayName] = useState('')
@@ -18,6 +19,7 @@ export default function Signup() {
   const [captchaError, setCaptchaError] = useState('')
   const [done, setDone] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -38,7 +40,9 @@ export default function Signup() {
       options: {
         ...captchaOptions(captchaToken),
         data: { display_name: displayName.trim() },
-        emailRedirectTo: `${window.location.origin}/login`,
+        // With confirmation on, the link in the email opens on whatever device the
+        // person reads mail on, so the invite has to ride along in the address.
+        emailRedirectTo: `${window.location.origin}${getPendingInvite(localStorage) ? joinPath(getPendingInvite(localStorage)) : '/login'}`,
       },
     })
     setBusy(false)
@@ -48,7 +52,7 @@ export default function Signup() {
       return
     }
     if (data.session) {
-      navigate('/dashboard', { replace: true })
+      navigate(postAuthPath(location.state?.from, localStorage), { replace: true })
     } else {
       // Email confirmation is required by this Supabase project's auth settings.
       setDone(true)
