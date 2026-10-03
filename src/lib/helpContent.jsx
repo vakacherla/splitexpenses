@@ -217,6 +217,12 @@ export const HELP_SECTIONS = [
           reconnected instead.
         </p>
         <p>
+          <strong className="text-ink">If your connection drops while you save,</strong> an expense is saved
+          completely or not at all, so you can't end up with half an expense that throws off the balances. If
+          you see an error like "Failed to fetch", check the ledger first: it may have gone through. Saving
+          again from the same screen won't add a second copy.
+        </p>
+        <p>
           If two people happen to edit the very same expense while both offline, whichever edit syncs last
           wins — you'll see a note naming what got overwritten, so nothing changes silently.
         </p>
@@ -250,6 +256,15 @@ export const HELP_SECTIONS = [
         <p>
           <strong className="text-ink">Remind</strong> is shown to you on anything you're owed, and nudges
           the other person. Made a mistake? Any recorded payment can be undone from here.
+        </p>
+        <H>Sharing a summary</H>
+        <p>
+          <strong className="text-ink">Share summary</strong>, next to "Suggested settle-up", makes a short
+          message you can drop into your group chat: who pays whom, in the trip's currency, with the date.
+          On a phone it opens the usual share sheet (WhatsApp, Messages and so on); where there isn't one it
+          copies the message and says "Copied". It names everyone by their real name, so it reads the same to
+          everybody, and two people with the same name get a (1) and (2). It never includes an invite link or
+          code, or anyone's payment details. If everyone is square it says so instead.
         </p>
       </>
     ),
@@ -367,7 +382,8 @@ export const HELP_SECTIONS = [
         <p>
           You'll need to type the trip's exact name to confirm. This removes it from everyone's dashboard
           right away, but nothing is actually deleted — the app's admin can restore it in full for 30 days,
-          after which it's gone for good.
+          after which it's gone for good. While it is deleted, nobody can add an expense or record a payment
+          in it, even from a screen that was still open when it was deleted.
         </p>
       </>
     ),
@@ -480,12 +496,21 @@ export const HELP_SECTIONS = [
         </p>
         <H>Overview</H>
         <p>
-          <strong className="text-ink">Active now</strong> is people seen in the last 5 minutes.{' '}
+          <strong className="text-ink">Active now</strong> is people seen in the last 5 minutes. Tap that tile
+          to jump to <strong className="text-ink">Live now</strong>, the list behind the number: each person,
+          the part of the app they last opened ("Viewing a trip"), their device, and how long ago they were
+          seen. It refreshes itself every 30 seconds while the page is open. People who turned off "Share
+          usage data" don't appear.{' '}
           <strong className="text-ink">DAU, WAU and MAU</strong> count each person once for the day, the last 7
           days and the last 30 days. <strong className="text-ink">Stickiness</strong> is the average daily
           users divided by monthly users: how often monthly users come back. "Active" means any action (adding
           an expense, joining a trip, settling up) or any tracked visit. With few users, one person moves
           these a lot, and the screen says so.
+        </p>
+        <p>
+          <strong className="text-ink">What people did this week</strong>, at the bottom of Overview, lists
+          the eight things the most people did in the last 7 days. Each person counts once per action, however
+          often they did it.
         </p>
         <H>Funnel</H>
         <p>
@@ -493,6 +518,32 @@ export const HELP_SECTIONS = [
           out of those who added one, how many shared an invite, had someone join, and settled up. Tap a step
           to see who stopped before it. <strong className="text-ink">Time to first expense</strong> shows how
           long that took, including the people who never did.
+        </p>
+        <H>Features</H>
+        <p>
+          For each feature (receipt scan, typed sentence, itemized split, CSV import and export, settle up,
+          invite links, Circles, trip reports, rates, trip end date, push notifications, offline, Help and the
+          welcome tour): how many people <strong className="text-ink">tried</strong> it, and how many{' '}
+          <strong className="text-ink">came back</strong> on a second day, as a share of active people.{' '}
+          <strong className="text-ink">Discovery gap</strong> means fewer than 15% of active people tried it,
+          so they may not know it exists. <strong className="text-ink">Quality gap</strong> means 15% or more
+          tried it but fewer than 30% of those came back, so it may not be good enough yet. With fewer than 10
+          users the counts show but there is no verdict.
+        </p>
+        <H>Devices</H>
+        <p>
+          What people use: phone, tablet or desktop; the installed app or the browser; and the operating
+          system, as people and as sessions (visits). Someone who uses a phone and a laptop counts once in
+          each, so the shares in a group can add up to more than 100%. People with no device information show
+          as "Unknown".
+        </p>
+        <H>Filtering by device</H>
+        <p>
+          On Funnel, Features and Stuck users, the <strong className="text-ink">Device</strong> and{' '}
+          <strong className="text-ink">Install</strong> dropdowns narrow everything to people on that kind of
+          device, for example the funnel for phone users only. A person counts if any visit matched (in the
+          period for Features, any time for Funnel and Stuck users), and people with no recorded visit are
+          "Unknown". Overview, Devices and the others ignore the filter. "Clear" removes it.
         </p>
         <H>Stuck users</H>
         <p>
@@ -503,6 +554,14 @@ export const HELP_SECTIONS = [
           <strong className="text-ink">Never invited</strong> (adding expenses alone, nobody else in the trip) and{' '}
           <strong className="text-ink">Quiet 14+ days</strong> are the others. A person can be in more than one.
           "Export CSV" downloads the list you are looking at.
+        </p>
+        <H>One person's activity</H>
+        <p>
+          Tap a person's name in Stuck users or in the Funnel list, or <strong className="text-ink">View
+          activity</strong> on the Users tab, to see their last 30 days, newest first: what they opened and
+          used, and what they did in trips (signed up, created or joined a trip, added an expense, settled
+          up). It never shows trip names, amounts or anyone's email. If they turned off usage data, only what
+          they did in trips is shown. Viewing is not logged.
         </p>
         <H>Who is counted</H>
         <p>
@@ -523,6 +582,17 @@ export const HELP_SECTIONS = [
           entered it or paid for it, you'll see "Edit" and "Delete this expense" right there, for any split
           type. Deleting is a soft delete: it disappears from your ledger immediately, and only the app's
           admin can recover it (for 30 days) if that turns out to be a mistake.
+        </p>
+        <p>
+          <strong className="text-ink">Can I type a sum instead of an amount?</strong> Yes. In the Amount
+          box, type something like 12.50+8+3.20, or use the + − × ÷ ( ) buttons that appear under it on a
+          phone. The result shows underneath and replaces what you typed when you leave the box. If it says
+          "Check the calculation", something in it can't be worked out, and the expense won't save until it is
+          fixed.
+        </p>
+        <p>
+          <strong className="text-ink">How do I tell the group who owes what?</strong> Open Balances and tap
+          Share summary. It sends a short, plain message with no links to your trip.
         </p>
         <p>
           <strong className="text-ink">Can I be in more than one trip?</strong> Yes — your dashboard lists

@@ -159,3 +159,6 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 ## Amount calculator built (3 Oct 2026, Sprint 6, SE-58)
 - App-only, committed, not yet pushed: `src/lib/evalAmount.js` (+ tests), `AddExpenseForm.jsx` (calculator keys under the Amount field, live preview, settles on blur to the currency's decimals, "Check the calculation" blocks Save), Help text (`adding-expense`). Test cases EXP-40..48 (md and Sheet rows 259-267). Owner to run on phones: EXP-46 (iPhone Safari) and EXP-47 (Android Chrome); EXP-48 offline not run. Second pass (item, tax and tip fields) not built.
 - Live test rows in `E2E-TEST 047 write check`: `E2E-TEST 058 calc` ($30.00) plus the earlier 055/056/062 rows.
+
+## Help refreshed (3 Oct 2026)
+- `helpContent.jsx` updated for everything shipped today: calculator (Adding an expense), Share summary (Balances), saving safely when the connection drops (Working offline), archived trips take no new entries (Trip settings), two new FAQ answers, and the Usage tab section now covers the clickable Active now tile, Live now, What people did this week, Features, Devices, the Device and Install filters and One person's activity. The person-activity panel has its own "?" opening the Usage help. Checked live on the Help page. Committed, not yet pushed.

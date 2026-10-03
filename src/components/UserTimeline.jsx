@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { timeAgo, timelineGroups } from '../lib/usageStats'
 import Avatar from './Avatar'
+import HelpLink from './HelpLink'
 import { Skeleton } from './Skeleton'
 
 // One person's last 30 days (REQ-USE-12): what they opened and used, and what
@@ -57,9 +58,12 @@ export default function UserTimeline({ user, tz, onClose }) {
               )}
             </div>
           </div>
-          <button type="button" onClick={onClose} className="text-ink-soft hover:text-ink text-sm shrink-0">
-            Close
-          </button>
+          <div className="flex items-center gap-3 shrink-0">
+            <HelpLink to="admin-usage" />
+            <button type="button" onClick={onClose} className="text-ink-soft hover:text-ink text-sm">
+              Close
+            </button>
+          </div>
         </div>
 
         <div className="px-5 sm:px-6 py-4 space-y-4">
