@@ -8,6 +8,7 @@ import {
   featureRows,
   FEATURES,
   changeText,
+  deviceGroups,
   deviceText,
   formatDuration,
   liveRows,
@@ -309,5 +310,60 @@ describe('live users now (REQ-USE-26)', () => {
     expect(rows[0]).toEqual({ userId: 'a', name: 'Una', avatarPath: 'a.jpg', where: 'Viewing a trip', device: 'Phone · installed app · iOS', seen: '2 min ago' })
     expect(rows[1]).toMatchObject({ name: 'Ben', where: 'In the app', device: 'Unknown device', seen: 'just now' })
     expect(liveRows(null)).toEqual([])
+  })
+})
+
+describe('devices and install mode (REQ-USE-23)', () => {
+  const result = {
+    total_users: 40,
+    people_opened: 4,
+    sessions: 6,
+    form_factor: [
+      { value: 'phone', users: 2, sessions: 3 },
+      { value: 'tablet', users: 1, sessions: 1 },
+      { value: 'desktop', users: 1, sessions: 1 },
+      { value: 'unknown', users: 1, sessions: 1 },
+    ],
+    install_mode: [
+      { value: 'pwa', users: 2, sessions: 3 },
+      { value: 'browser', users: 2, sessions: 2 },
+    ],
+    os: [
+      { value: 'ios', users: 2, sessions: 3 },
+      { value: 'macos', users: 1, sessions: 1 },
+      { value: 'other', users: 0, sessions: 0 },
+    ],
+  }
+
+  it('lists the three groups with words for each value', () => {
+    const groups = deviceGroups(result)
+    expect(groups.map((g) => g.key)).toEqual(['form_factor', 'install_mode', 'os'])
+    expect(groups[0].rows.map((r) => r.label)).toEqual(['Phone', 'Tablet', 'Desktop', 'Unknown (no device info)'])
+    expect(groups[1].rows.map((r) => r.label)).toEqual(['Installed app', 'Browser'])
+    expect(groups[2].rows.map((r) => r.label)).toEqual(['iOS', 'macOS', 'Other'])
+  })
+
+  it('shows the PWA vs browser split as users and sessions', () => {
+    const [, install] = deviceGroups(result)
+    expect(install.rows).toEqual([
+      expect.objectContaining({ value: 'pwa', users: 2, sessions: 3, pct: 50 }),
+      expect.objectContaining({ value: 'browser', users: 2, sessions: 2, pct: 50 }),
+    ])
+  })
+
+  it('shares can add up to more than 100% when a person is on two devices', () => {
+    const [form] = deviceGroups(result)
+    expect(form.rows.reduce((n, r) => n + r.pct, 0)).toBe(125)
+  })
+
+  it('drops the percentages under 10 users but keeps the counts', () => {
+    const [form] = deviceGroups({ ...result, total_users: 9 })
+    expect(form.rows.every((r) => r.pct === null)).toBe(true)
+    expect(form.rows[0]).toMatchObject({ users: 2, sessions: 3 })
+  })
+
+  it('copes with no data and with nobody having opened the app', () => {
+    expect(deviceGroups(null).every((g) => g.rows.length === 0)).toBe(true)
+    expect(deviceGroups({ total_users: 40, people_opened: 0, form_factor: [{ value: 'phone', users: 0, sessions: 0 }] })[0].rows[0].pct).toBeNull()
   })
 })

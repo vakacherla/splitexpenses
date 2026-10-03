@@ -323,3 +323,32 @@ export function liveRows(result, now = new Date()) {
     seen: timeAgo(u.last_seen_at, now),
   }))
 }
+
+// ---- Devices and install mode (REQ-USE-23) ------------------------------
+const INSTALL_MODES = { pwa: 'Installed app', browser: 'Browser' }
+const UNKNOWN_DEVICE = 'Unknown (no device info)'
+
+export const DEVICE_GROUPS = [
+  { key: 'form_factor', title: 'Device type', label: (v) => FORM_FACTORS[v] },
+  { key: 'install_mode', title: 'Installed app or browser', label: (v) => INSTALL_MODES[v] },
+  { key: 'os', title: 'Operating system', label: (v) => (v === 'other' ? 'Other' : OS_NAMES[v]) },
+]
+
+// Display rows per group. Percentages are the share of people who opened the app
+// in the period, and are left out (null) below the minimum-users rule. Because a
+// person on two devices counts in each, a group's shares can add up to over 100%.
+export function deviceGroups(result) {
+  const base = Number(result?.people_opened) || 0
+  const showPct = !notEnoughData(result?.total_users)
+  return DEVICE_GROUPS.map((g) => ({
+    key: g.key,
+    title: g.title,
+    rows: (result?.[g.key] ?? []).map((r) => ({
+      value: r.value,
+      label: r.value === 'unknown' ? UNKNOWN_DEVICE : g.label(r.value) ?? r.value,
+      users: Number(r.users) || 0,
+      sessions: Number(r.sessions) || 0,
+      pct: showPct ? pctOf(Number(r.users) || 0, base) : null,
+    })),
+  }))
+}

@@ -174,6 +174,7 @@ As an admin I see who is in the app right now, so I can watch a launch or a fix 
 - "Where" comes from the route pattern of their last page view in the last 24 hours (never a real trip id or name); "device" from their last app open in the last 24 hours. Either can be missing, and the row then says "In the app" or "Unknown device".
 - Refreshes itself every 30 seconds while the tab is visible, keeping the list on screen while it refreshes. Names and avatars only, no email. People who switched usage data off send no heartbeat, so they never appear.
 - At most 50 people are listed, newest first; the heading shows the true count.
+- The "Active now" tile on Overview is a button ("Click to see who") that jumps to this list; added after the owner pointed out that the bare number was not useful.
 - Migration 058; tests: `058_usage_live_now.test.sql` (7 checks) and unit tests for the wording.
 
 ## Invite stories (separate feature, feed the funnel)
@@ -248,7 +249,7 @@ Recorded 3 Oct 2026 on branch `feat/usage-insights-phase1`. Nothing here is appl
 | REQ-USE-09 | "never invited" | added expenses, is not in any trip that has someone else in it, and no `invite_shared` event | Does not depend on tracking data existing. The first version only looked at trips the person had created, so people who joined someone else's trip were wrongly listed; found by the owner on 3 Oct 2026 and fixed in migration 052. |
 | REQ-USE-03 | events listed | also fires `feature_used` for receipt scan, text parse, CSV import and export, push opt-in and opening a trip's Reports tab | Collection cannot be backfilled, so the cheap ones start now; the Phase 2 adoption report needs them. |
 
-Feature adoption (REQ-USE-10, migration 056) and top events (REQ-USE-11, migration 057) are built (3 Oct 2026). Devices (REQ-USE-23) and the device filter (REQ-USE-24) are not built; their data is already being collected by REQ-USE-03.
+Feature adoption (REQ-USE-10, migration 056) and top events (REQ-USE-11, migration 057) are built (3 Oct 2026). Devices (REQ-USE-23, migration 059) is built (3 Oct 2026). The device filter (REQ-USE-24) is not built; its data is already being collected by REQ-USE-03.
 
 ### Verification done
 

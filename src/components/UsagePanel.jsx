@@ -12,6 +12,7 @@ import {
   adminTimeZone,
   biggestDrop,
   changeText,
+  deviceGroups,
   featureRows,
   formatDuration,
   liveRows,
@@ -55,6 +56,7 @@ const VIEWS = [
   { id: 'overview', label: 'Overview' },
   { id: 'funnel', label: 'Funnel' },
   { id: 'features', label: 'Features' },
+  { id: 'devices', label: 'Devices' },
   { id: 'stuck', label: 'Stuck users' },
 ]
 
@@ -169,17 +171,24 @@ function Table({ head, rows }) {
   )
 }
 
-function Kpi({ label, value, note, tone, dot }) {
+function Kpi({ label, value, note, tone, dot, onClick }) {
   const toneClass = tone === 'up' ? 'text-owed' : tone === 'down' ? 'text-owe' : 'text-ink-soft'
+  const Tag = onClick ? 'button' : 'div'
   return (
-    <div className="rounded-xl border border-line bg-paper-raised px-4 py-3">
+    <Tag
+      type={onClick ? 'button' : undefined}
+      onClick={onClick}
+      className={`rounded-xl border border-line bg-paper-raised px-4 py-3 ${
+        onClick ? 'text-left w-full transition-colors hover:border-primary focus-visible:outline-2 focus-visible:outline-primary' : ''
+      }`}
+    >
       <p className="text-xs text-ink-soft">{label}</p>
       <p className="font-display text-3xl text-ink num flex items-center gap-2">
         {dot && <span className="inline-block h-2.5 w-2.5 rounded-full bg-owed" aria-hidden="true" />}
         {value ?? '—'}
       </p>
       {note && <p className={`text-xs ${toneClass}`}>{note}</p>}
-    </div>
+    </Tag>
   )
 }
 
@@ -241,7 +250,12 @@ function LiveNowCard({ exclude }) {
   const count = data.count ?? rows.length
 
   return (
-    <section className="rounded-xl border border-line bg-paper-raised p-4 space-y-3" aria-label="Live users now">
+    <section
+      id="live-now"
+      tabIndex={-1}
+      className="rounded-xl border border-line bg-paper-raised p-4 space-y-3 focus:outline-2 focus:outline-primary scroll-mt-4"
+      aria-label="Live users now"
+    >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="font-display text-base text-ink flex items-center gap-2">
@@ -417,7 +431,17 @@ function OverviewView({ days, exclude, tz }) {
     <div className="space-y-4">
       <SmallSampleNote users={data.total_users} />
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <Kpi label="Active now (last 5 min)" value={data.active_now} dot note="Updates on load" />
+        <Kpi
+          label="Active now (last 5 min)"
+          value={data.active_now}
+          dot
+          note="Click to see who"
+          onClick={() => {
+            const el = document.getElementById('live-now')
+            el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            el?.focus({ preventScroll: true })
+          }}
+        />
         <Kpi label="Active today (DAU)" value={data.dau} note={dauChange.text} tone={dauChange.tone} />
         <Kpi label="Active this week (WAU)" value={data.wau} note={wauChange.text} tone={wauChange.tone} />
         <Kpi label="Active this month (MAU)" value={data.mau} note={mauChange.text} tone={mauChange.tone} />
@@ -876,6 +900,74 @@ function FeaturesView({ days, exclude, tz }) {
   )
 }
 
+// ----------------------------------------------------------------- Devices
+
+function DevicesView({ days, exclude, tz }) {
+  const { theme } = useTheme()
+  const c = COLORS[theme]
+  const { data, error, loading, reload } = useRpc('admin_usage_devices', { p_days: days, p_tz: tz, p_exclude: exclude })
+
+  if (loading) return <SkeletonChart />
+  if (error) return <ErrorNote message={error} onRetry={reload} />
+  const people = data?.people_opened ?? 0
+  if (people === 0) {
+    return (
+      <EmptyState
+        title="No app opens in this period yet"
+        subtitle="Devices appear once people have opened the app while tracking is on. Try a longer period."
+      />
+    )
+  }
+
+  const groups = deviceGroups(data)
+  const noPct = notEnoughData(data.total_users)
+  const pct = (n) => (n == null ? '—' : `${n}%`)
+
+  return (
+    <div className="space-y-4">
+      <SmallSampleNote users={data.total_users} />
+      <p className="text-sm text-ink-soft">
+        Last {data.days} days · {people} {people === 1 ? 'person' : 'people'} opened the app, {data.sessions}{' '}
+        {data.sessions === 1 ? 'session' : 'sessions'}. A person using two devices counts once in each, so the shares in a
+        group can add up to more than 100%.
+        {noPct ? ' Percentages appear once there are at least 10 users.' : ''}
+      </p>
+      {groups.map((g) => {
+        const top = Math.max(1, ...g.rows.map((r) => r.users))
+        const chart = (
+          <div className="space-y-2.5">
+            {g.rows.map((r) => (
+              <div key={r.value} className="px-2">
+                <div className="flex items-baseline justify-between gap-3 text-sm">
+                  <span className="text-ink">{r.label}</span>
+                  <span className="num text-ink-soft shrink-0">
+                    {r.users} {r.users === 1 ? 'person' : 'people'}
+                    {r.pct != null ? ` (${r.pct}%)` : ''} · {r.sessions} {r.sessions === 1 ? 'session' : 'sessions'}
+                  </span>
+                </div>
+                <div
+                  className="mt-1 h-3.5 rounded-sm bg-line/50 overflow-hidden"
+                  role="img"
+                  aria-label={`${r.label}: ${r.users} of ${people} people, ${r.sessions} sessions`}
+                >
+                  <div className="h-full" style={{ width: `${r.users === 0 ? 0 : Math.max(2, (r.users / top) * 100)}%`, background: c.bar }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+        const table = (
+          <Table
+            head={['', 'People', '% of people', 'Sessions']}
+            rows={g.rows.map((r) => [r.label, r.users, pct(r.pct), r.sessions])}
+          />
+        )
+        return <Card key={g.key} title={g.title} chart={chart} table={table} />
+      })}
+    </div>
+  )
+}
+
 // ------------------------------------------------------------------- Panel
 
 export default function UsagePanel() {
@@ -932,6 +1024,7 @@ export default function UsagePanel() {
       {view === 'overview' && <OverviewView days={days} exclude={exclude} tz={tz} />}
       {view === 'funnel' && <FunnelView days={days} exclude={exclude} tz={tz} />}
       {view === 'features' && <FeaturesView days={days} exclude={exclude} tz={tz} />}
+      {view === 'devices' && <DevicesView days={days} exclude={exclude} tz={tz} />}
       {view === 'stuck' && <StuckView exclude={exclude} />}
     </div>
   )
