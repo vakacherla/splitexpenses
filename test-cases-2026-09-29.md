@@ -169,7 +169,7 @@ FAIL severity: **P0: 5** (signup broken, malformed circle route leaks DB error, 
 | BAL-07 | Undo a settlement | P0 | PASS | Fixed and confirmed live 2026-09-30: Undo on a real $10 settlement correctly reverted the balance (Demo Traveler back to "owes $10.00") and removed the row from Recent payments. Root cause of the original FAIL: very likely a native confirm() dialog being auto-dismissed by browser automation, not a real defect. See Appendix D (F4); re-confirmed with a different, genuine fix (RLS-blocked undo surfacing a clear error instead of silently no-opping) commit `29e95f2`. |
 | BAL-08 | Fully-settled trip state | P2 | PASS | "Nothing to settle" message shown. |
 | BAL-09 | Settle-up deep links (UPI/Venmo/PayPal) | P1 | NOT RUN | Policy: never tap external payment links. |
-| BAL-10 | Recipient with no payment handle: graceful state | P1 | NOT RUN | Code-reviewed 2026-10-01 (not run live): `SettleUpModal.jsx` shows "<name> hasn't added a payment handle yet" and hides the pay button when the recipient has no handle. Live run still needs a real debt to a no-handle member. |
+|  BAL-10 | Recipient with no payment handle: graceful state | P1 | PASS | 2026-10-03 live (E2E-TEST Empty Trip, recipient Jayashree has no handle): Record payment opens with no Pay via button and the note "Jayashree hasn't added a payment handle yet - ask them to add one on the Members tab ...". Closed without confirming. Cosmetic finding: the Amount box is so narrow that 5.00 is cut off (DEF-040). |
 | BAL-11 | Push notification deep-links to the trip | P1 | BLOCKED | Needs a second identity and a real device. |
 | BAL-12 | Trip end date in the past triggers debtor reminders | P1 | BLOCKED | Needs waiting days plus inbox/device access. |
 | BAL-13 | Reminder 3-day cooldown boundary | P1 | BLOCKED | Needs waiting days plus inbox/device access. |
@@ -319,7 +319,7 @@ FAIL severity: **P0: 5** (signup broken, malformed circle route leaks DB error, 
 | RES-01 | Full flow on an actual phone | P0 | NOT RUN | MANUAL: needs a real phone, not a resized window. |
 | RES-02 | No horizontal scrolling on small screens | P1 | PASS (after fix) | Initially FAIL 2026-10-01: trip page tab strip (456px) and Profile payment row overflowed at 375px; Navbar overflowed at 320px. Fixed locally (TripView tab strip scrolls inside itself; Navbar tightened; Profile input min-w-0). Re-measured at 375/320 across dashboard, trip (all 5 tabs), circle, profile, rates, help: no page overflow. Not pushed. See Appendix N. |
 | RES-03 | Floating add-expense button stays reachable | P1 | PASS | Verified 2026-10-01 at 375/320px: button is fixed, fully on-screen, and at page bottom the last content on Ledger/Balances/Members clears it. See Appendix N. |
-| RES-04 | Laptop-width layout looks intentional | P2 | NOT RUN | Not covered this run. |
+|  RES-04 | Laptop-width layout looks intentional | P2 | PASS | 2026-10-03 in same-origin frames at 1280 and 1024 px: dashboard, trip and Admin have no horizontal scroll and no clipped elements; the top nav fits. Light mode also checked (dashboard, menu, Usage Overview). The browser tool's resize does not change the real page width, so frames were used. |
 | RES-05 | Theme toggle is instant | P1 | PASS | Toggles instantly with no wrong-theme flash. |
 | RES-06 | Theme choice persists across browser restarts | P1 | PASS | Persists. |
 | RES-07 | First visit with no saved preference follows the OS setting | P2 | PASS | Verified 2026-10-01: with the saved theme cleared and a dark OS emulated, the app rendered dark (index.html bootstrap follows prefers-color-scheme). |
@@ -352,13 +352,13 @@ Each was verified by the developer at build time; NOT RUN here means the indepen
 
 | Ref | Test case | Priority | Status | Evidence |
 |---|---|---|---|---|
-| NAV-01 | Desktop top menu: Trips, Circles, Rates, Help, Profile; active item highlighted on each route | P1 | NOT RUN | Built 2026-10-02 (4d23709). Dev-verified in desktop Chrome. |
-| NAV-02 | Phone bottom tabs show, keep the add-expense button clear, no horizontal scroll at 375/320 | P1 | NOT RUN | Dev-verified in a 390px iframe only; not on a real phone. |
-| NAV-03 | Breadcrumbs on a trip and a circle page; Circles tab opens the circles view | P2 | NOT RUN | Dev-verified. Light-mode visual check outstanding. |
+|  NAV-01 | Desktop top menu: Trips, Circles, Rates, Help, Profile; active item highlighted on each route | P1 | PASS | 2026-10-03, dev server in the owner's Chrome: header lists Trips, Circles, Rates, Help, Admin (admin only) and Profile; the active page carries aria-current on /dashboard, /rates, /help and /profile. |
+|  NAV-02 | Phone bottom tabs show, keep the add-expense button clear, no horizontal scroll at 375/320 | P1 | PASS | 2026-10-03 in same-origin frames at 375 and 320 px: bottom tabs present, no horizontal page scroll. The one element past the edge is the trip's own tab strip (scrolls by design; Members is off-screen until swiped). Real-phone visual check is RES-01 (owner). |
+|  NAV-03 | Breadcrumbs on a trip and a circle page; Circles tab opens the circles view | P2 | PASS | 2026-10-03: trip page shows Trips > name, circle page shows Circles > name, the Circles menu item opens /dashboard?view=circles with Circles active. |
 | TOUR-01 | New user with no trips sees the 4-card welcome tour; Skip, Back/Next, "Create my first Trip" and "I have a code: Join" work | P1 | NOT RUN | Dev-verified. Needs a fresh account (owner creates). |
-| TOUR-02 | "Show every time" checkbox persists per user; Help > Replay and Dashboard link reopen the tour | P2 | NOT RUN | Dev-verified; replay-after-refresh bug fixed. |
+|  TOUR-02 | "Show every time" checkbox persists per user; Help > Replay and Dashboard link reopen the tour | P2 | PASS | 2026-10-03 live: Help > Replay opens the dashboard tour; Show every time saved and the tour appeared on its own after reload; unticking removed the flag and the tour stayed away; the dashboard has a Show the welcome tour link. Setting left as found. |
 | INST-01 | Install banner: Chrome/Edge native prompt; iPhone shows Add-to-Home-Screen steps; dismissal hides it 14 days; hidden when installed | P1 | PASS | Owner confirmed on a real iPhone 2026-10-02. Android/desktop prompt dev-verified. |
-| INST-02 | Install card always available on Profile and Help | P2 | NOT RUN | Dev-verified. |
+|  INST-02 | Install card always available on Profile and Help | P2 | PASS | 2026-10-03 live: the Install the app card shows on Profile and on Help. |
 | SUSP-01 | Suspended user: sign-in refused with friendly message; live session shows the suspended screen with a mailto link to the admin | P0 | PASS | Same evidence as AU-04 (Appendix U). |
 | SIGN-01 | Sign-up with a throwaway-email domain (e.g. mailinator.com) is refused with a clear message, in the form and at the database | P1 | NOT RUN | Migration 048. Form pre-check and DB trigger not exercised live; owner to try a mailinator sign-up. |
 | SIGN-02 | A normal address (and example.com) still signs up | P0 | NOT RUN | Needs owner (Turnstile). |

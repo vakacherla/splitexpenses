@@ -162,3 +162,8 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 
 ## Help refreshed (3 Oct 2026)
 - `helpContent.jsx` updated for everything shipped today: calculator (Adding an expense), Share summary (Balances), saving safely when the connection drops (Working offline), archived trips take no new entries (Trip settings), two new FAQ answers, and the Usage tab section now covers the clickable Active now tile, Live now, What people did this week, Features, Devices, the Device and Install filters and One person's activity. The person-activity panel has its own "?" opening the Usage help. Checked live on the Help page. Committed, not yet pushed.
+
+## Regression sweep, first pass (3 Oct 2026, run by Claude Code)
+- Ganesha (own VM) cannot sign in past Turnstile and returned a checklist only, no results. The desktop items were run in the owner's Chrome instead and recorded (md and Sheet): NAV-01, NAV-02, NAV-03, TOUR-02, INST-02, BAL-10, RES-04 all PASS. Earlier today (verified live): EXP-40..45, BAL-17..19, TRIP-22 (DEF-025), RES-09 (PARTIAL), Usage views and filters, activity timeline, AT-09, ATR-03.
+- Not run (need a person): phones (RES-01, BAL-09/11/14/15/16/20/21, EXP-46/47/48, ACT-06, OFF-11), two accounts (AUTH-06/07, CIRC-04), throwaway account (AU-07, SEC-07), Turnstile sign-ups (AUTH-02/04, SIGN-01/02, TOUR-01), EXP-17 and EXP-39 (optional), per-invite join screen and sign-up survival (needs a second identity).
+- New cosmetic defects, to create on the board (login had expired): DEF-039 "You owes" wording, DEF-040 narrow Amount box in Record payment. Sprint 6 still active; close it after the owner decides the sweep is enough.
