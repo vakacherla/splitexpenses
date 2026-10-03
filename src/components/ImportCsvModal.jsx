@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import { track } from '../lib/track'
 import { getRate, fetchSupportedCurrencies, FALLBACK_CURRENCIES } from '../lib/fx'
 import { CATEGORIES } from '../lib/categories'
 import { downloadCSV } from '../lib/csvExport'
@@ -159,6 +160,7 @@ export default function ImportCsvModal({ group, members, currentUserId, onImport
         url: `/trips/${group.id}`,
       })
 
+      track('feature_used', { feature: 'csv_import' })
       setResult({ batchId: batch.id, count: validRows.length })
     } catch (err) {
       // Soft-delete whatever this run managed to create, and mark the

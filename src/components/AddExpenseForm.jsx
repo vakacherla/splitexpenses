@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import { track } from '../lib/track'
 import { formatMoney } from '../lib/fx'
 import { useLiveRate } from '../lib/useLiveRate'
 import { useOnlineStatus } from '../lib/useOnlineStatus'
@@ -298,6 +299,7 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
         throw new Error(message)
       }
       if (data?.error) throw new Error(data.error)
+      track('feature_used', { feature: 'receipt_scan' })
 
       if (data?.description) setDescription(data.description)
       if (typeof data?.amount === 'number' && data.amount > 0) setAmount(String(data.amount))
@@ -357,6 +359,7 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
         throw new Error(message)
       }
       if (data?.error) throw new Error(data.error)
+      track('feature_used', { feature: 'text_parse' })
 
       if (data?.description) setDescription(data.description)
       if (typeof data?.amount === 'number' && data.amount > 0) setAmount(String(data.amount))

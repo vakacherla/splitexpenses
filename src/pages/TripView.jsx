@@ -3,6 +3,7 @@ import { tripCrumbs } from '../lib/navItems'
 import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
+import { track } from '../lib/track'
 import { useAuth } from '../context/AuthContext'
 import ExpenseRow from '../components/ExpenseRow'
 import BalancesPanel from '../components/BalancesPanel'
@@ -58,6 +59,10 @@ export default function TripView() {
   const [expenses, setExpenses] = useState([])
   const [settlements, setSettlements] = useState([])
   const [tab, setTab] = useState('ledger')
+  // Usage insights: opening the trip's Reports tab counts as trying that feature.
+  useEffect(() => {
+    if (tab === 'reports') track('feature_used', { feature: 'trip_reports' })
+  }, [tab])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [stale, setStale] = useState(null)
@@ -343,6 +348,7 @@ export default function TripView() {
     const csv = expensesToCSV(displayExpenses, membersMap, group.home_currency)
     const safeName = group.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()
     downloadCSV(`${safeName}-expenses.csv`, csv)
+    track('feature_used', { feature: 'csv_export' })
   }
 
   async function handleRenameTrip(newName) {

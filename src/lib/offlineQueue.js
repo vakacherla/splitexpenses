@@ -20,6 +20,7 @@
 
 import { useSyncExternalStore } from 'react'
 import { supabase } from './supabaseClient'
+import { track } from './track'
 import { getRate } from './fx'
 import { logActivity, notifyGroup } from './activity'
 
@@ -235,6 +236,7 @@ async function applyExpenseCreate(op) {
   const { error: splitError } = await supabase.from('expense_splits').insert(splitRows)
   if (splitError) throw splitError
 
+  track('expense_added', { split_type: String(payload.split_type ?? 'equal') })
   const summary = `${payload.description} — ${payload.amount} ${payload.currency}`
   logActivity({
     groupId: op.groupId,
@@ -366,6 +368,7 @@ async function applySettlementCreate(op) {
   })
   if (error) throw error
 
+  track('settled_up')
   const actorName = payload.actorName ?? 'Someone'
   const summary = `${payload.amount} ${payload.currency}`
   logActivity({

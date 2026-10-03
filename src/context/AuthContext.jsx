@@ -139,7 +139,7 @@ export function AuthProvider({ children }) {
   function fetchProfile(userId) {
     return supabase
       .from('profiles')
-      .select('id, display_name, email, is_admin, is_super_admin, avatar_path')
+      .select('id, display_name, email, is_admin, is_super_admin, avatar_path, share_usage')
       .eq('id', userId)
       .single()
       .then(({ data, error }) => {
