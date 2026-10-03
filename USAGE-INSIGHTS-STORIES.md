@@ -158,6 +158,15 @@ As an admin I can filter any usage view by form factor or install mode, for exam
 - A user's device for filtering is the one on their most recent `app_open` in the period; users with several devices are included if any session matches (stated in the tooltip).
 - Tests: filter combinations; users without device data (before tracking) shown as "unknown".
 
+### REQ-USE-25 "Never signed in" group (added 3 Oct 2026)
+As an admin I see people who created an account and never got in, so I can help them.
+- Why: two real users could not get past sign-up in September (confirmation emails that never arrived). The other groups all start from "signed in at least once", so they could not show this.
+- A person is in the group when their account is over an hour old and we have never seen them do anything: no sign-in, no heartbeat, no events, no writes.
+- Each row says whether their email was ever confirmed ("Email never confirmed" or "Email confirmed, never signed in"). The yes/no is returned; the address never is. CSV carries the same yes/no.
+- It is the first group on the Stuck users screen, with a short note explaining the two cases.
+- Migration 053; `admin_usage_stuck` gains a last column `email_confirmed`, so the app can deploy before or after the migration.
+- Tests: 050 SQL check 13 (members, email flag, a heartbeat removes someone, other groups still work after the function is replaced); unit tests for the CSV and the "stopped at" text.
+
 ## Invite stories (separate feature, feed the funnel)
 
 These are product features, not admin analytics, so they belong under EP-02 Trips (or EP-12 Growth, where join-by-link is already parked). They are listed here because REQ-USE-07 reads from them. Decision 3 Oct 2026: build links first, email later.

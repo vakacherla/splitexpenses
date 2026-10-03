@@ -333,6 +333,12 @@ cover (`supabase/tests/049_*`, `050_*`, and the unit tests named below).
 - [ ] **P1** — **USE-11** An already signed-in browser, open when an update
       deploys, keeps working: profile loads, no error, even if the database
       migration has not been applied yet (automated: `profileFetch.test.js`)
+- [ ] **P1** — **USE-14** Stuck users opens on "Never signed in": accounts
+      over an hour old that we have never seen do anything. Each row says
+      "Email never confirmed" or "Email confirmed, never signed in"; the CSV
+      has a yes/no "Email confirmed" column and no address. Apply migration 053
+      first. After the account `doinku` was deleted, SuhasC is expected here.
+      (automated: 050 SQL check 13, `usageStats.test.js`)
 - [ ] **P2** — **USE-12** Usage tab in dark mode and at phone width: the tab
       bar scrolls sideways inside itself, the page does not, charts and
       labels stay legible

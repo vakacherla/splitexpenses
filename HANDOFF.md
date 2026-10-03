@@ -4,7 +4,7 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 
 ## Where things stand
 - **Everything is pushed.** GitHub `main` = `6d47ed8`. Production (Vercel) is live through the install prompt (`c3f5946`).
-- **Supabase prod:** migrations 046 to 052 applied (049 to 052 are Usage Insights, applied 3 Oct 2026 through the SQL editor; 052 is the stuck users "never invited" fix); Edge Functions `admin-users`, `receipt-scan`, `parse-expense-text` deployed.
+- **Supabase prod:** migrations 046 to 052 applied (053, the "Never signed in" group, is written and tested but not yet applied) (049 to 052 are Usage Insights, applied 3 Oct 2026 through the SQL editor; 052 is the stuck users "never invited" fix); Edge Functions `admin-users`, `receipt-scan`, `parse-expense-text` deployed.
 - **Shipped 2026-10-02:** member removal blocked with an unsettled balance (046), suspended users cut off at the DB + suspended screen with
   mailto link to admin (047), AI daily caps (30 scans / 100 parses) + throwaway-email blocklist (048), Cloudflare Turnstile on sign-up/sign-in/reset,
   welcome tour, main navigation (top menu, phone bottom tabs, Trips/Circles views, breadcrumbs), install prompt (owner confirmed on a real iPhone).

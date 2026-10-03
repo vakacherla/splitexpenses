@@ -9,6 +9,8 @@ import {
   pctOf,
   periodRange,
   stageRows,
+  stoppedAtText,
+  STUCK_SEGMENTS,
   stuckForDays,
   stuckToCSV,
   timeAgo,
@@ -157,6 +159,29 @@ describe('stuck users', () => {
     expect(header).toBe('Name,Segment,Signed up,Last seen,Trips,Expenses,Days stuck')
     expect(line).toBe('"Maya, ""M"" Iyer",No trip yet,2026-09-30,2026-09-19,0,0,3')
     expect(header.toLowerCase()).not.toContain('email')
+  })
+
+  it('puts "Never signed in" first and describes why they stopped', () => {
+    expect(STUCK_SEGMENTS[0].key).toBe('never_signed_in')
+    expect(stoppedAtText({ email_confirmed: false }, 'never_signed_in')).toBe('Email never confirmed')
+    expect(stoppedAtText({ email_confirmed: true }, 'never_signed_in')).toBe('Email confirmed, never signed in')
+    expect(stoppedAtText({}, 'never_signed_in')).toBe('Account created, never signed in')
+    expect(stoppedAtText({ email_confirmed: false }, 'no_trip')).toBe('Signed up, no trip')
+  })
+
+  it('adds a yes/no email column for never-signed-in rows only, never an address', () => {
+    const rows = [
+      { display_name: 'A', signed_up_at: '2026-09-29T00:00:00Z', last_seen_at: null, trips: 0, expenses: 0, email_confirmed: false },
+      { display_name: 'B', signed_up_at: '2026-09-29T00:00:00Z', last_seen_at: null, trips: 0, expenses: 0, email_confirmed: true },
+      { display_name: 'C', signed_up_at: '2026-09-29T00:00:00Z', last_seen_at: null, trips: 0, expenses: 0 },
+    ]
+    const csv = stuckToCSV(rows, 'never_signed_in', new Date('2026-10-03T12:00:00Z')).split('\n')
+    expect(csv[0]).toBe('Name,Segment,Signed up,Last seen,Trips,Expenses,Days stuck,Email confirmed')
+    expect(csv[1]).toMatch(/,no$/)
+    expect(csv[2]).toMatch(/,yes$/)
+    expect(csv[3]).toMatch(/,$/)
+    expect(csv.join('\n')).not.toMatch(/@/)
+    expect(stuckToCSV(rows, 'no_trip').split('\n')[0]).not.toContain('Email confirmed')
   })
 
   it('exports just the header for an empty list', () => {

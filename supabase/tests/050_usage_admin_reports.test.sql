@@ -52,6 +52,9 @@ update public.profiles set display_name = 'Sam Seven', created_at = pg_temp.at(2
 update public.profiles set display_name = 'Eli Eight', created_at = now() - interval '2 hours' where id = 'a8000000-0000-0000-0000-000000000008';
 update public.profiles set display_name = 'Vic Nine', created_at = pg_temp.at(40, 12) where id = 'a9000000-0000-0000-0000-000000000009';
 
+-- u1 confirmed their email but never signed in; u7 and u8 never confirmed.
+update auth.users set email_confirmed_at = now() - interval '2 days' where id = 'a1000000-0000-0000-0000-000000000001';
+
 -- Trips
 insert into public.groups (id, name, home_currency, created_by, created_at) values
   ('b2000000-0000-0000-0000-000000000002', 'T2 solo', 'USD', 'a3000000-0000-0000-0000-000000000003', pg_temp.at(2, 12, 10)),
@@ -324,7 +327,36 @@ begin
   raise notice 'PASS 12 bad segment/stage rejected, timezone fallback, day clamping';
 end $$;
 
--- 13. The reports stay fast with hundreds of users. (Found on 3 Oct 2026: a
+-- 13. Never signed in (migration 053): accounts over an hour old that we have
+--     never seen do anything. u1, u7 and u8 qualify; everyone else has a
+--     sign-in, heartbeat or action. The yes/no email flag is returned, the
+--     address is not.
+do $$
+declare c jsonb; names text; confirmed text;
+begin
+  perform pg_temp.as_user('a0000000-0000-0000-0000-000000000000');
+  c := public.admin_usage_stuck_counts(true);
+  assert (c->>'never_signed_in')::int = 3, format('never_signed_in count %s', c);
+  select string_agg(display_name, ',' order by display_name) into names
+    from public.admin_usage_stuck('never_signed_in', true);
+  assert names = 'Eli Eight,Sam Seven,Una One', format('never_signed_in: %s', names);
+  select string_agg(display_name || '=' || email_confirmed::text, ',' order by display_name) into confirmed
+    from public.admin_usage_stuck('never_signed_in', true);
+  assert confirmed = 'Eli Eight=false,Sam Seven=false,Una One=true', format('email flags: %s', confirmed);
+  -- a heartbeat takes someone out of the group
+  perform pg_temp.as_owner();
+  insert into public.user_activity (user_id, last_seen_at) values ('a1000000-0000-0000-0000-000000000001', now());
+  perform pg_temp.as_user('a0000000-0000-0000-0000-000000000000');
+  c := public.admin_usage_stuck_counts(true);
+  assert (c->>'never_signed_in')::int = 2, format('after heartbeat %s', c);
+  -- the old segments still work through the replaced function
+  select string_agg(display_name, ',' order by display_name) into names from public.admin_usage_stuck('trip_no_expense', true);
+  assert names = 'Dev Two,Pia Five', format('trip_no_expense after replace: %s', names);
+  perform pg_temp.as_owner();
+  raise notice 'PASS 13 never signed in: members, email flag, heartbeat removes, other segments intact';
+end $$;
+
+-- 14. (runs last: it adds 400 filler users) The reports stay fast with hundreds of users. (Found on 3 Oct 2026: a
 --     per-user timezone lookup made the funnel take ~6 s at 400 users and time
 --     out in production; migration 051 fixes it.) The limit is generous so the
 --     check is stable on a slow machine, but far below the database's limit.
@@ -342,7 +374,7 @@ begin
   secs := extract(epoch from clock_timestamp() - t0);
   perform pg_temp.as_owner();
   assert secs < 2.5, format('funnel, drop-off, time to first expense and stuck users took %s s with 400 users', round(secs, 2));
-  raise notice 'PASS 13 reports stay fast with 400 users (% s)', round(secs, 2);
+  raise notice 'PASS 14 reports stay fast with 400 users (% s)', round(secs, 2);
 end $$;
 
 rollback;

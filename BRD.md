@@ -46,7 +46,7 @@ Rules for keeping it traceable:
 | EP-11 | Security and data integrity | 6 | 6 | 0 |
 | EP-12 | Growth (parked) | 4 | 0 | 4 |
 | EP-13 | Shared Fund mode (blocked) | 1 | 0 | 1 |
-| EP-14 | Usage insights (admin) | 24 | 9 | 15 (5 not built, 10 parked) |
+| EP-14 | Usage insights (admin) | 25 | 9 | 16 (6 not built or not yet shipped, 10 parked) |
 
 ## 4. Requirements by epic
 
@@ -247,6 +247,7 @@ Design and mockups: https://claude.ai/artifact/2AjyRgZHFTwj1YTGGmy3re. Full acce
 | REQ-USE-22 | Admin action audit log. | P | none yet | | Parked; separate security story |
 | REQ-USE-23 | Devices and install mode report (device type, installed app vs browser, iOS vs Android and others). | N | none yet | | Track C |
 | REQ-USE-24 | Device filter across usage views. | N | none yet | | Track C |
+| REQ-USE-25 | "Never signed in" group on Stuck users: accounts over an hour old with no sign-in and no activity, with a yes/no for whether the email was ever confirmed (never the address); first group on the screen; CSV includes the yes/no. Migration 053. Added 3 Oct 2026 after two real users could not get past sign-up. | N | USE-14 (not run) | | Built on the PR #5 branch; mark Shipped once 053 is applied and checked |
 
 ## 5. Quick wins (planned, not started)
 
