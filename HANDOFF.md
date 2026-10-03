@@ -28,8 +28,8 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 - **`RELEASES.md`:** every push to `main` (60 so far) with the issues it first shipped. Label format `rel-<date>-<tip sha>`.
 - **`TESTING-AGENT-BRIEF.md`:** what the testing agent can run vs what needs the owner or a phone.
 - **Jira-lite board** (the owner's own app): `http://localhost:5173/board`, project **SplitExpenses (key SE)**. Code in `../Proj Mgmt Tool` (Docker compose; `docker compose up -d`),
-  private GitHub repo `vakacherla/jira-lite` (`f7076fa`). 151 issues imported (SE-1..13 epics, SE-14..111 stories, SE-112..151 bugs), stories/bugs linked to epics.
-  Sprints: **S0** core (2-4 Sep), **S1** 5-7 Sep, **S2** 13 Sep, **S3** 30 Sep, **S4** 1 Oct, **S5** 2 Oct (all closed), **S6** 3 Oct onward (planned: regression sweep,
+  private GitHub repo `vakacherla/jira-lite` (`f7076fa`). 172 issues (SE-1..13 epics, SE-14..111 stories, SE-112..151 bugs, SE-152 epic EP-14 and SE-153..172 usage/invite stories), stories/bugs linked to epics.
+  Sprints: **S0** core (2-4 Sep), **S1** 5-7 Sep, **S2** 13 Sep, **S3** 30 Sep, **S4** 1 Oct, **S5** 2 Oct, **S7** 3 Oct (usage insights + invite links; 11 issues, all closed), **S6** 3 Oct onward (planned: regression sweep,
   AT-09/ATR-03, settlement summary, amount calculator, DEF-025, DEF-026). Epic status rolls up from children (Done only when all children Done). Epics hidden from the
   Kanban board; Epics page `/epics`, Bugs page `/bugs`. Bug reporter defaults to **Ganesha - Testing Agent**; fixer on fixed bugs is **Vishwakarma - Fixer Agent**
   (both non-login viewer identities; script `backend/scripts/seed_testing_agent.py`).
@@ -107,3 +107,8 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 - REQ-INV-01 supersedes REQ-TRIP-12 and REQ-GRO-01 (decision 3 Oct 2026). Phase 2 (invites list, admin report, `list_invites` and `revoke_invite`) and phase 3 (real trip name in the preview card, reset code) are not built.
 - The old six-letter codes still work and are still permanent; "reset code" is phase 3.
 - The Supabase SQL editor stopped partway through `054_invite_links.sql` on 3 Oct 2026 (only `create_invite` was created; cause not found, the file parses cleanly). The rest is in `supabase/editor-parts/054_part2..4_*.sql`, to paste one at a time in order; each is safe to repeat. If the whole file ever works, the parts are redundant.
+
+## Jira-lite board update (3 Oct 2026)
+- Imported `jira/SE-jira-delta-usage-invites.csv` (SE-152..172), linked all 20 stories to EP-14 (SE-152), created and closed **Sprint 7** with REQ-USE-01..09, REQ-USE-25 and REQ-INV-01 (release labels `rel-2026-10-03-24e35ae`, `-9a14398`, `-e3e3cfd`). Unbuilt EP-14 stories stay in the backlog; no Sprint 8 on the board yet.
+- SE-36 (REQ-TRIP-12) and SE-107 (REQ-GRO-01) carry a `superseded` label and a comment pointing at SE-168; status unchanged (the board has no superseded status).
+- Delivery notes: `jira/S7-LOCAL-TODO.md` is the note this came from. `PRODUCT-ROADMAP.md` now shows join-by-link as shipped and lists the usage/invite backlog.

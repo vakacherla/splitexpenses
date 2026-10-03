@@ -748,7 +748,8 @@ and #3 are now shipped (below); #4 remains, blocked on family review.
   splitmyexpenses.com (UI walkthrough + their "Receipt upload" demo
   video) while drafting the new logged-out HomePage. Four real, verified
   gaps, in rough priority order:
-  1. **Shareable invite link, not just a code.** Today a Trip/Circle
+  1. **Shareable invite link, not just a code.** *(Shipped 2026-10-03 as
+     REQ-INV-01.)* Today a Trip/Circle
      only has a copyable `invite_code`
      (`TripMembersPanel.jsx:17-40`) plus a manual "Join with a code" flow
      (`Dashboard.jsx`) via `join_group_by_code`/`join_circle_by_code`.
@@ -824,12 +825,17 @@ person on Balances.
 
 **Goal behind the ranking:** more sign-ups and more trips, as the traction
 story for investors or acquirers. Ram's call: park these four for later —
-**none is started.** Order matters; each later item leans on the earlier
+**none was started at the time; Priority 1 shipped 2026-10-03, the
+other three are still not started.** Order matters; each later item leans on the earlier
 ones. The detailed brief for #1 (and the growth-metrics companion) is
 `growth-brief-join-link.md`. Re-check Settle Up / Splid listings before
 starting any of these — their free-vs-paid gating changes.
 
-1. **Join by link, plus growth metrics — Priority 1.** *Effort: small to
+1. **Join by link, plus growth metrics — Priority 1.** **SHIPPED 2026-10-03**
+   as REQ-INV-01 (per-invite share links, migration 054; merge `e3e3cfd`) and
+   the Usage tab (REQ-USE-01..09, 25), both on the Jira-lite board in Sprint 7.
+   The text below is the original brief; where the build differs, see
+   "Usage insights and invite links" further down. *Effort: small to
    medium.* Already noted as gap #1 in the 2026-09-13 entry above; raised
    to the top because it removes the biggest sign-up friction (today: get
    a code, sign up, confirm email, find "Join with a code", type it).
@@ -871,6 +877,39 @@ payers / income on one expense (no support in the schema today), a
 Hindi/Telugu UI (English-only today; large effort, only worth it if India
 growth is a goal), and a home-screen "Add expense" shortcut in the web
 manifest (tiny).
+
+### Usage insights and invite links (set 2026-10-03, Sprint 7)
+
+Owner decision 2026-10-03: first-party usage reporting and per-invite links
+ship as one stream, Epic EP-14 (board SE-152). Stories and definitions:
+`USAGE-INSIGHTS-STORIES.md`; requirement rows in `BRD.md`.
+
+**Shipped (Sprint 7, closed 2026-10-03):**
+- Usage tab in Admin (REQ-USE-01..09): usage notice and Profile switch, event
+  store with RLS, tracking helper, last seen and "active now", overview of
+  active users, activation funnel, time to first expense, stuck users.
+  Release `rel-2026-10-03-24e35ae`.
+- "Never signed in" group (REQ-USE-25), `rel-2026-10-03-9a14398`.
+- Per-invite share links (REQ-INV-01), `rel-2026-10-03-e3e3cfd`. It supersedes
+  REQ-TRIP-12 and REQ-GRO-01 for the link, join page, sign-up survival and
+  preview; the Usage tab replaces the planned admin Growth tab.
+  Open piece: add the app's address with a `/join/**` wildcard to the Supabase
+  redirect list so confirmation emails can return to an invite.
+
+**Backlog (not started, no sprint yet):**
+1. Invite visibility, phase 2 (REQ-INV-03): "Invites you sent" list with
+   share-again and turn-off, and an invites report in Admin > Usage.
+2. Feature adoption (REQ-USE-10), top events this week (REQ-USE-11),
+   per-user timeline (REQ-USE-12), devices and install mode (REQ-USE-23),
+   device filter (REQ-USE-24). Data for the device views is already being
+   collected by REQ-USE-03.
+3. Invite links, phase 3 (REQ-INV-04), later.
+4. Trip pulse for trip creators (REQ-USE-13), later, after REQ-INV-01.
+5. Email invites and reminders (REQ-INV-02): **parked** until a sending domain
+   is verified in Resend.
+
+Per the owner rule, each item above is assigned to a sprint with a goal before
+it is built.
 
 ### Deliberately not doing — and why
 
@@ -935,6 +974,8 @@ on a family verdict on its BRD, not on effort, so check on that before
 starting it. Absent a verdict, the best next move is picking something
 from "Deliberately not doing" to re-litigate, or a fresh pass at
 competitive research to find what's changed since 2026-09-05.
-As of 2026-10-02, the two usability quick wins (settlement summary, amount
-calculator) can be picked up any time; the growth priorities ("Parked —
-growth priorities") start with join-by-link.
+As of 2026-10-03, join-by-link and the Usage tab have shipped (Sprint 7). The
+two usability quick wins (settlement summary, amount calculator) can be picked
+up any time; the next growth priority is the read-only balance link (Priority
+2), and the remaining usage and invite stories are listed under "Usage
+insights and invite links".
