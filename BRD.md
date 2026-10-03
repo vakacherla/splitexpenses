@@ -203,6 +203,7 @@ Status key: **S** Shipped, **Q** Planned quick win, **P** Parked, **B** Blocked,
 | REQ-SEC-04 | User text is inert (no XSS). | S | SEC-06 | | |
 | REQ-SEC-05 | A tampered or expired session degrades safely. | S | SEC-07 (partial) | | |
 | REQ-SEC-06 | RLS policies that read other tables go through SECURITY DEFINER helpers. | S | EXP-12, TRIP-22 | DEF-014, DEF-009 | Engineering rule, migration 025 |
+| REQ-SEC-07 | A staging copy for automated QA: a second Supabase project (Turnstile dummy secret) behind a Vercel Preview that uses Cloudflare's always-pass test sitekey, so the QA agent can sign in; the app refuses to build production with a test key; no bypass of any kind in production code. | Q | `src/lib/turnstile.test.js` (guard), manual acceptance in `STAGING.md` | | Added 3 Oct 2026 at the QA agent's request. Code guard done; the staging project and Vercel preview need the owner. Not on the board yet (login expired) |
 
 ### EP-12 Growth (parked, in priority order; none started)
 

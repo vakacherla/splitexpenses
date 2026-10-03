@@ -1,9 +1,23 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
+import { assertNoTestKeyInProduction } from './src/lib/turnstileKeys.js'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
+// Refuses to build production with one of Cloudflare's always-pass test captcha keys
+// (those belong on a staging copy only). Reads the real environment as well as .env files.
+function turnstileTestKeyGuard() {
+  return {
+    name: 'turnstile-test-key-guard',
+    configResolved(config) {
+      if (config.command === 'build') {
+        assertNoTestKeyInProduction({ ...loadEnv(config.mode, process.cwd(), 'VITE_'), ...process.env })
+      }
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), turnstileTestKeyGuard()],
   server: {
     host: true,
     // .claude/launch.json tells the preview harness to expect this dev
