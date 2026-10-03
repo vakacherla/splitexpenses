@@ -292,10 +292,12 @@ cover (`supabase/tests/049_*`, `050_*`, and the unit tests named below).
       device labels, and nothing else: no amounts, names, emails or trip
       names — verified 2026-10-03 (automated: `track.test.js`,
       `device.test.js`, 049 SQL checks 1 and 2)
-- [ ] **P0** — **USE-03** Profile → Usage data: switch "Share usage data"
+- [x] **P0** — **USE-03** Profile → Usage data: switch "Share usage data"
       off, click around for a minute → no new `app_events` rows and
       `user_activity.last_seen_at` stops moving; switch it back on → both
-      resume (automated: 049 SQL check 4, `track.test.js`)
+      resume — switching off verified 2026-10-03 (visited Circles, Trips and
+      Help with it off; nothing recorded); resuming after switching back on
+      not yet checked (automated: 049 SQL check 4, `track.test.js`)
 - [ ] **P0** — **USE-04** A signed-in non-admin calling an `admin_usage_*`
       function (Network tab replay or console `supabase.rpc`) is refused with
       "Admins only"; nobody can read `app_events` or `user_activity`
