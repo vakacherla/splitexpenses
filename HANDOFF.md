@@ -42,7 +42,7 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 - **Agent runs:** RES-04, BAL-10, NAV-01..03, INST-02, TOUR-02, optional EXP-17/EXP-39 (see the brief).
 - **Owner, real Chrome / two accounts / throwaway:** AUTH-02, AUTH-04, AUTH-06, AUTH-07, CIRC-04, AU-07, AU-16, AU-19, SEC-07, SIGN-01 (try a mailinator sign-up), SIGN-02, TOUR-01.
 - **Owner, phone:** RES-01, BAL-09 (agent never taps payment links), BAL-11, BAL-14, BAL-15, BAL-16, ACT-06, OFF-11.
-- **Blocked:** AUTH-11/13/14/15 (domain + email), BAL-12/13 (days must pass), RES-09 (needs a migration).
+- **Blocked:** AUTH-11/13/14/15 (domain + email), BAL-12/13 (days must pass), RES-09 (migration 055 applied 3 Oct 2026; now PARTIAL, see DEF-038).
 - Owner wants a single complete sweep across the app, so run it after the remaining items above.
 
 ## Standing rules (from the owner — do not skip)
@@ -65,7 +65,7 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 - Epic-based reports and how to visualise them on the board (owner idea, later). Consider hosting Jira-lite later (frontend on Vercel needs its own backend + DB).
 
 ## Open findings (not fixed) — also in BRD section 6
-1. **RES-09 / DEF-026 (P1):** a dropped connection mid-save leaves a phantom expense with no splits. Proposal: atomic `create_expense_with_splits` / `update_expense_with_splits`
+1. **RES-09 / DEF-026 (P1): fixed in code 3 Oct 2026.** Migration 055 (atomic `create_expense_with_splits` / `update_expense_with_splits`) is applied to production; the five write sites use it; verified live (online create and edit, dropped response, retry, CSV import, offline queue). **The app change is committed but not pushed.** Open leftover: DEF-038, the raw "Failed to fetch" text.
    plpgsql functions and route the 6 call sites through them. Needs a migration + approval.
 2. **DEF-025:** RLS still allows expense inserts into an archived trip.
 3. DEF-036 inline create-circle does 3 non-atomic writes; DEF-031 admin has no circle purge; DEF-035 admin dropdowns list archived circles / trips the user is already in;
@@ -112,3 +112,8 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 - Imported `jira/SE-jira-delta-usage-invites.csv` (SE-152..172), linked all 20 stories to EP-14 (SE-152), created and closed **Sprint 7** with REQ-USE-01..09, REQ-USE-25 and REQ-INV-01 (release labels `rel-2026-10-03-24e35ae`, `-9a14398`, `-e3e3cfd`). Unbuilt EP-14 stories stay in the backlog; no Sprint 8 on the board yet.
 - SE-36 (REQ-TRIP-12) and SE-107 (REQ-GRO-01) carry a `superseded` label and a comment pointing at SE-168; status unchanged (the board has no superseded status).
 - Delivery notes: `jira/S7-LOCAL-TODO.md` is the note this came from. `PRODUCT-ROADMAP.md` now shows join-by-link as shipped and lists the usage/invite backlog.
+
+## DEF-026 delivery notes (3 Oct 2026)
+- `supabase db push` would also re-run 049-054 (applied by hand in the SQL editor, so absent from the remote migration history). 055 was pasted into the SQL editor instead. To use `db push` again, first run `supabase migration repair --status applied 049 050 051 052 053 054` (a production write; ask first).
+- Scratch Postgres test: `supabase/tests/055_atomic_expense_save.test.sql` (12 checks). There is no local psql; a throwaway `postgres:16` container runs `schema.sql` plus the migrations, started from the owner's terminal (Docker is blocked in the sandbox). Container `se-scratch` may still be running.
+- Live test rows (prefix `E2E-TEST 055`) sit in the trip `E2E-TEST 047 write check`, which is still not archived. The Members tab there also created a per-invite link.

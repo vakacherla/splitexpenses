@@ -106,9 +106,8 @@ export default function ImportCsvModal({ group, members, currentUserId, onImport
         const rate = await getRate(row.currency, group.home_currency, row.expense_date)
         const amountInHome = Math.round(row.amount * rate * 100) / 100
 
-        const { data: expense, error: expenseError } = await supabase
-          .from('expenses')
-          .insert({
+        const { error: expenseError } = await supabase.rpc('create_expense_with_splits', {
+          p_expense: {
             group_id: group.id,
             description: row.description,
             paid_by: row.paid_by,
@@ -122,20 +121,15 @@ export default function ImportCsvModal({ group, members, currentUserId, onImport
             note: row.note,
             created_by: batch.created_by,
             import_batch_id: batch.id,
-          })
-          .select()
-          .single()
+          },
+          p_splits: row.splits.map((s) => ({
+            user_id: s.user_id,
+            share_amount: s.share_amount,
+            share_in_home: Math.round(s.share_amount * rate * 100) / 100,
+            percentage: null,
+          })),
+        })
         if (expenseError) throw expenseError
-
-        const splitRows = row.splits.map((s) => ({
-          expense_id: expense.id,
-          user_id: s.user_id,
-          share_amount: s.share_amount,
-          share_in_home: Math.round(s.share_amount * rate * 100) / 100,
-          percentage: null,
-        }))
-        const { error: splitError } = await supabase.from('expense_splits').insert(splitRows)
-        if (splitError) throw splitError
 
         createdCount++
         setProgress(i + 1)

@@ -107,6 +107,9 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
   const [scanning, setScanning] = useState(false)
   const [scanError, setScanError] = useState('')
   const fileInputRef = useRef(null)
+  // One id per open form: if a save succeeds on the server but the response is
+  // lost, saving again returns that expense instead of creating a duplicate.
+  const newExpenseIdRef = useRef(crypto.randomUUID())
 
   const [sentenceText, setSentenceText] = useState('')
   const [parsingText, setParsingText] = useState(false)
@@ -579,34 +582,11 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
       tip: splitMode === 'itemized' ? tipNum : null,
     }
 
-    const { data: expense, error: expenseError } = editingExpense
-      ? await supabase.from('expenses').update(expensePayload).eq('id', editingExpense.id).select().single()
-      : await supabase
-          .from('expenses')
-          .insert({ ...expensePayload, group_id: group.id, created_by: currentUserId })
-          .select()
-          .single()
-
-    if (expenseError) {
-      setError(expenseError.message)
-      setSaving(false)
-      return
-    }
-
-    // Editing replaces the whole split rather than diffing row by row —
-    // simpler, and correct here since a fresh set is always computed from
-    // the current form state anyway (same as a new expense would be).
-    if (editingExpense) {
-      const { error: deleteError } = await supabase.from('expense_splits').delete().eq('expense_id', expense.id)
-      if (deleteError) {
-        setSaving(false)
-        setError(deleteError.message)
-        return
-      }
-    }
-
+    // One database call saves the expense and its splits together (migration
+    // 055), so a dropped connection can no longer leave an expense behind with
+    // no splits. Editing replaces the whole split rather than diffing row by
+    // row: a fresh set is always computed from the current form state anyway.
     const splitRows = splitsPayload.map((s) => ({
-      expense_id: expense.id,
       user_id: s.user_id,
       share_amount: s.share_amount,
       share_in_home: Math.round(s.share_amount * finalRate * 100) / 100,
@@ -615,37 +595,20 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
       adjustment: s.adjustment,
     }))
 
-    const { error: splitError } = await supabase.from('expense_splits').insert(splitRows)
-    if (splitError) {
-      // The expense row is already committed at this point, so a failure
-      // here can't just be surfaced as an error — left alone, it's a
-      // phantom expense with nobody's share deducted, which silently
-      // corrupts every member's balance. Roll back to keep the two tables
-      // consistent: a brand-new expense gets deleted outright; an edit
-      // gets its previous splits (still in hand from the seed data)
-      // reinserted so it's back to its pre-edit state, not stranded with
-      // no splits at all.
-      if (editingExpense) {
-        const oldSplitRows = editingExpense.expense_splits.map((s) => ({
-          expense_id: expense.id,
-          user_id: s.user_id,
-          share_amount: s.share_amount,
-          share_in_home: s.share_in_home,
-          percentage: s.percentage,
-          share_units: s.share_units,
-          adjustment: s.adjustment,
-        }))
-        await supabase.from('expense_splits').insert(oldSplitRows)
-      } else {
-        // A real DELETE is blocked by RLS for regular members (only a
-        // platform admin can hard-delete — see migration 014), so a plain
-        // .delete() here silently no-ops and leaves the phantom expense
-        // behind. Soft-delete instead: the creator's own UPDATE policy
-        // always covers a row they just inserted themselves.
-        await supabase.from('expenses').update({ deleted_at: new Date().toISOString() }).eq('id', expense.id)
-      }
+    const { data: expense, error: expenseError } = editingExpense
+      ? await supabase.rpc('update_expense_with_splits', {
+          p_expense_id: editingExpense.id,
+          p_expense: expensePayload,
+          p_splits: splitRows,
+        })
+      : await supabase.rpc('create_expense_with_splits', {
+          p_expense: { ...expensePayload, id: newExpenseIdRef.current, group_id: group.id, created_by: currentUserId },
+          p_splits: splitRows,
+        })
+
+    if (expenseError) {
+      setError(expenseError.message)
       setSaving(false)
-      setError(splitError.message)
       return
     }
 

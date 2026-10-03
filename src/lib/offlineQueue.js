@@ -204,37 +204,37 @@ async function applyExpenseCreate(op) {
   const finalRate = await resolveRate(payload.currency, payload.homeCurrency, payload.expense_date)
   const amountInHome = Math.round(payload.amount * finalRate * 100) / 100
 
-  const { error: expenseError } = await supabase.from('expenses').insert({
-    id: op.entityId,
-    group_id: op.groupId,
-    description: payload.description,
-    paid_by: payload.paid_by,
-    currency: payload.currency,
-    amount: payload.amount,
-    exchange_rate: finalRate,
-    amount_in_home: amountInHome,
-    expense_date: payload.expense_date,
-    split_type: payload.split_type,
-    category: payload.category,
-    note: payload.note,
-    items: payload.items,
-    tax: payload.tax,
-    tip: payload.tip,
-    created_by: payload.created_by,
+  // One atomic call (migration 055). The fixed id makes a replay after a lost
+  // response return the already-saved expense instead of failing or duplicating.
+  const { error: expenseError } = await supabase.rpc('create_expense_with_splits', {
+    p_expense: {
+      id: op.entityId,
+      group_id: op.groupId,
+      description: payload.description,
+      paid_by: payload.paid_by,
+      currency: payload.currency,
+      amount: payload.amount,
+      exchange_rate: finalRate,
+      amount_in_home: amountInHome,
+      expense_date: payload.expense_date,
+      split_type: payload.split_type,
+      category: payload.category,
+      note: payload.note,
+      items: payload.items,
+      tax: payload.tax,
+      tip: payload.tip,
+      created_by: payload.created_by,
+    },
+    p_splits: payload.splits.map((s) => ({
+      user_id: s.user_id,
+      share_amount: s.share_amount,
+      share_in_home: Math.round(s.share_amount * finalRate * 100) / 100,
+      percentage: s.percentage,
+      share_units: s.share_units,
+      adjustment: s.adjustment,
+    })),
   })
   if (expenseError) throw expenseError
-
-  const splitRows = payload.splits.map((s) => ({
-    expense_id: op.entityId,
-    user_id: s.user_id,
-    share_amount: s.share_amount,
-    share_in_home: Math.round(s.share_amount * finalRate * 100) / 100,
-    percentage: s.percentage,
-    share_units: s.share_units,
-    adjustment: s.adjustment,
-  }))
-  const { error: splitError } = await supabase.from('expense_splits').insert(splitRows)
-  if (splitError) throw splitError
 
   track('expense_added', { split_type: String(payload.split_type ?? 'equal') })
   const summary = `${payload.description} — ${payload.amount} ${payload.currency}`
@@ -260,7 +260,7 @@ async function applyExpenseUpdate(op) {
   const { payload } = op
   const { data: current, error: fetchError } = await supabase
     .from('expenses')
-    .select('deleted_at, updated_at, currency, amount, expense_date')
+    .select('deleted_at, updated_at, currency, amount, expense_date, exchange_rate')
     .eq('id', op.entityId)
     .single()
   if (fetchError || !current) {
@@ -276,9 +276,13 @@ async function applyExpenseUpdate(op) {
     Math.abs(payload.amount - current.amount) > 0.005
   const finalRate = rateChanged ? await resolveRate(payload.currency, payload.homeCurrency, payload.expense_date) : null
 
-  const { data: updatedRow, error: updateError } = await supabase
-    .from('expenses')
-    .update({
+  // The rate only changes when currency, date or amount did; otherwise the
+  // stored rate stays and the splits are converted with it. One atomic call
+  // (migration 055) updates the expense and replaces its splits together.
+  const effectiveRate = rateChanged ? finalRate : current.exchange_rate
+  const { error: updateError } = await supabase.rpc('update_expense_with_splits', {
+    p_expense_id: op.entityId,
+    p_expense: {
       description: payload.description,
       paid_by: payload.paid_by,
       currency: payload.currency,
@@ -293,27 +297,17 @@ async function applyExpenseUpdate(op) {
       items: payload.items,
       tax: payload.tax,
       tip: payload.tip,
-    })
-    .eq('id', op.entityId)
-    .select('exchange_rate')
-    .single()
+    },
+    p_splits: payload.splits.map((s) => ({
+      user_id: s.user_id,
+      share_amount: s.share_amount,
+      share_in_home: Math.round(s.share_amount * effectiveRate * 100) / 100,
+      percentage: s.percentage,
+      share_units: s.share_units,
+      adjustment: s.adjustment,
+    })),
+  })
   if (updateError) throw updateError
-
-  const { error: deleteError } = await supabase.from('expense_splits').delete().eq('expense_id', op.entityId)
-  if (deleteError) throw deleteError
-
-  const effectiveRate = rateChanged ? finalRate : updatedRow.exchange_rate
-  const splitRows = payload.splits.map((s) => ({
-    expense_id: op.entityId,
-    user_id: s.user_id,
-    share_amount: s.share_amount,
-    share_in_home: Math.round(s.share_amount * effectiveRate * 100) / 100,
-    percentage: s.percentage,
-    share_units: s.share_units,
-    adjustment: s.adjustment,
-  }))
-  const { error: splitError } = await supabase.from('expense_splits').insert(splitRows)
-  if (splitError) throw splitError
 
   logActivity({
     groupId: op.groupId,

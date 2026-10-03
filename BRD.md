@@ -122,7 +122,7 @@ Status key: **S** Shipped, **Q** Planned quick win, **P** Parked, **B** Blocked,
 | REQ-EXP-13 | Calculator in the amount field (operator row, safe parser, live result). | Q | none yet | | `brief-amount-calculator.md` |
 | REQ-EXP-14 | Automatic recurring expenses (scheduled). | P | none yet | | See REQ-GRO-04 |
 | REQ-EXP-15 | Multiple payers, tags, reimbursable flag, comment threads, per-person export, voice input. | N | REC-03..07, REC-09, REC-12, REC-13 | | Not planned; testers to decide |
-| REQ-EXP-16 | A phantom expense must never appear when the network drops during save (atomic save). | B | RES-09 | DEF-026 | Needs an atomic-save migration |
+| REQ-EXP-16 | A phantom expense must never appear when the network drops during save (atomic save). | S | RES-09 | DEF-026, DEF-038 | Migration 055 (applied to production 3 Oct 2026): `create_expense_with_splits` and `update_expense_with_splits` save the expense and its splits in one transaction. App routed through them in the next push. The raw error text is DEF-038 |
 
 ### EP-05 Balances and settling up
 
@@ -291,7 +291,8 @@ Status: Fixed (verified on production), Open, Partial. "Layer" is where the fix 
 | DEF-023 | ADM-02 | AU-08 | Deleting a user with history gave "Database error deleting user". | f8cdde5 (admin-users) | Fixed |
 | DEF-024 | AUTH-07 | AU-04 | A suspended user's live session kept working. | Migration 047 + session revoke | Fixed |
 | DEF-025 | TRIP-08 | TRIP-22 | Server RLS still allows expense inserts into an archived trip. | Needs a migration | Open |
-| DEF-026 | EXP-16 | RES-09 | Dropped connection mid-save can leave a phantom expense. | Needs an atomic-RPC migration | Open |
+| DEF-026 | EXP-16 | RES-09 | Dropped connection mid-save can leave a phantom expense. | Migration 055 (atomic save functions) plus the app's five write sites routed through them; one fixed id per open Add form so a retry returns the saved expense | Fixed 3 Oct 2026 (migration applied; app change committed, awaiting push) |
+| DEF-038 | EXP-16 | RES-09 | After a save whose response was lost, the Add form shows the raw browser text "Failed to fetch", which reads as "not saved" although it was. | Needs a friendlier message that says to check the ledger before retrying | Open |
 | DEF-027 | AUTH-05 | AUTH-20 | Admin link and name missing right after a fresh load. | See Sheet | Fixed |
 | DEF-028 | ACT-05 | BAL-11 | iOS web push disappears after display. | Diagnostic logging in `sw.js`; cause unconfirmed | Open |
 | DEF-029 | CIRC-08 | CIRC-12 | The "Viewing as admin" banner wrongly shows for a non-joined Circle member. | Fixed in 1059afb (2026-10-01) | Fixed |
