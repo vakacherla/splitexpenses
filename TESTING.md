@@ -322,7 +322,9 @@ cover (`supabase/tests/049_*`, `050_*`, and the unit tests named below).
       and "Show more" (needs more than 20 people) not yet checked
       (automated: 050 SQL check 8, `usageStats.test.js`)
 - [ ] **P1** — **USE-10** Untick "Exclude admins and test accounts" → your own
-      use appears (Active now counts you); tick it again → you disappear
+      use appears (Active now counts you); tick it again → you disappear —
+      Stuck users part verified 2026-10-03 (unticking added 2 admin/test
+      accounts to the list); the Overview "Active now" part not yet checked
       (automated: 050 SQL checks 1 and 2)
 - [ ] **P1** — **USE-11** An already signed-in browser, open when an update
       deploys, keeps working: profile loads, no error, even if the database
