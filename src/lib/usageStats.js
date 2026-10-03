@@ -291,3 +291,35 @@ export function topEventRows(result) {
     pct: pctOf(Number(e.users) || 0, active),
   }))
 }
+
+// ---- Live users now (REQ-USE-26) ----------------------------------------
+const FORM_FACTORS = { phone: 'Phone', tablet: 'Tablet', desktop: 'Desktop' }
+const OS_NAMES = { ios: 'iOS', android: 'Android', windows: 'Windows', macos: 'macOS', linux: 'Linux' }
+
+// "Phone · installed app · iOS". null when we know nothing about the device
+// (the person has no app_open recorded yet).
+export function deviceText({ form_factor: form, install_mode: mode, os } = {}) {
+  const parts = [
+    FORM_FACTORS[form],
+    mode === 'pwa' ? 'installed app' : mode === 'browser' ? 'browser' : null,
+    OS_NAMES[os],
+  ].filter(Boolean)
+  return parts.length ? parts.join(' · ') : null
+}
+
+// Where someone is, from the route pattern of their last page view.
+export function whereText(route) {
+  if (!route) return 'In the app'
+  return `Viewing ${ROUTE_NAMES[route] ?? route}`
+}
+
+export function liveRows(result, now = new Date()) {
+  return (result?.users ?? []).map((u) => ({
+    userId: u.user_id,
+    name: u.display_name,
+    avatarPath: u.avatar_path,
+    where: whereText(u.route),
+    device: deviceText(u) ?? 'Unknown device',
+    seen: timeAgo(u.last_seen_at, now),
+  }))
+}

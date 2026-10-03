@@ -167,6 +167,15 @@ As an admin I see people who created an account and never got in, so I can help 
 - Migration 053; `admin_usage_stuck` gains a last column `email_confirmed`, so the app can deploy before or after the migration.
 - Tests: 050 SQL check 13 (members, email flag, a heartbeat removes someone, other groups still work after the function is replaced); unit tests for the CSV and the "stopped at" text.
 
+### REQ-USE-26 Live users now (added 3 Oct 2026, Sprint 8)
+As an admin I see who is in the app right now, so I can watch a launch or a fix land and see what people are doing.
+- Added at the owner's request: the Overview already shows an "Active now" number (REQ-USE-04); this is the list behind it.
+- A "Live now" card on Overview lists everyone with a heartbeat in the last 5 minutes (the same rule and the same eligible-people rule as the number, so the two agree). Each row: name, avatar, the part of the app they last opened ("Viewing a trip"), their device ("Phone · installed app · iOS"), and how long ago they were seen.
+- "Where" comes from the route pattern of their last page view in the last 24 hours (never a real trip id or name); "device" from their last app open in the last 24 hours. Either can be missing, and the row then says "In the app" or "Unknown device".
+- Refreshes itself every 30 seconds while the tab is visible, keeping the list on screen while it refreshes. Names and avatars only, no email. People who switched usage data off send no heartbeat, so they never appear.
+- At most 50 people are listed, newest first; the heading shows the true count.
+- Migration 058; tests: `058_usage_live_now.test.sql` (7 checks) and unit tests for the wording.
+
 ## Invite stories (separate feature, feed the funnel)
 
 These are product features, not admin analytics, so they belong under EP-02 Trips (or EP-12 Growth, where join-by-link is already parked). They are listed here because REQ-USE-07 reads from them. Decision 3 Oct 2026: build links first, email later.

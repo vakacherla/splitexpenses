@@ -8,7 +8,9 @@ import {
   featureRows,
   FEATURES,
   changeText,
+  deviceText,
   formatDuration,
+  liveRows,
   notEnoughData,
   pctOf,
   periodRange,
@@ -20,6 +22,7 @@ import {
   stuckToCSV,
   timeAgo,
   todayIn,
+  whereText,
 } from './usageStats'
 
 describe('dates in the admin timezone', () => {
@@ -273,5 +276,38 @@ describe('top events (REQ-USE-11)', () => {
   it('copes with no data and with nobody active', () => {
     expect(topEventRows(null)).toEqual([])
     expect(topEventRows({ active_users: 0, events: [{ event: 'app_open', users: 1 }] })[0].pct).toBeNull()
+  })
+})
+
+describe('live users now (REQ-USE-26)', () => {
+  it('describes a device in words and says nothing when unknown', () => {
+    expect(deviceText({ form_factor: 'phone', install_mode: 'pwa', os: 'ios' })).toBe('Phone · installed app · iOS')
+    expect(deviceText({ form_factor: 'desktop', install_mode: 'browser', os: 'macos' })).toBe('Desktop · browser · macOS')
+    expect(deviceText({ form_factor: 'tablet', os: 'other' })).toBe('Tablet')
+    expect(deviceText({})).toBeNull()
+    expect(deviceText()).toBeNull()
+  })
+
+  it('says where someone is from the route pattern', () => {
+    expect(whereText('/trips/:id')).toBe('Viewing a trip')
+    expect(whereText('/rates')).toBe('Viewing Exchange rates')
+    expect(whereText('/somewhere')).toBe('Viewing /somewhere')
+    expect(whereText(null)).toBe('In the app')
+  })
+
+  it('shapes the response into rows, with fallbacks', () => {
+    const now = new Date('2026-10-03T12:00:00Z')
+    const rows = liveRows(
+      {
+        users: [
+          { user_id: 'a', display_name: 'Una', avatar_path: 'a.jpg', last_seen_at: '2026-10-03T11:58:00Z', route: '/trips/:id', form_factor: 'phone', install_mode: 'pwa', os: 'ios' },
+          { user_id: 'b', display_name: 'Ben', avatar_path: null, last_seen_at: '2026-10-03T11:59:50Z', route: null },
+        ],
+      },
+      now
+    )
+    expect(rows[0]).toEqual({ userId: 'a', name: 'Una', avatarPath: 'a.jpg', where: 'Viewing a trip', device: 'Phone · installed app · iOS', seen: '2 min ago' })
+    expect(rows[1]).toMatchObject({ name: 'Ben', where: 'In the app', device: 'Unknown device', seen: 'just now' })
+    expect(liveRows(null)).toEqual([])
   })
 })

@@ -14,6 +14,7 @@ import {
   changeText,
   featureRows,
   formatDuration,
+  liveRows,
   notEnoughData,
   periodRange,
   stageRows,
@@ -196,6 +197,88 @@ function dayLabel(day) {
   return Number.isNaN(d.getTime()) ? day : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
 }
 
+// ---------------------------------------------------------------- Live now
+
+const LIVE_REFRESH_MS = 30 * 1000
+
+// Loads the live list now and every 30 seconds while the tab is visible. Unlike
+// useRpc it keeps the current list on screen while a refresh is in flight, so
+// the card does not flash. A failed refresh keeps the last good list and says so.
+function useLive(exclude) {
+  const [state, setState] = useState({ data: null, error: '', updatedAt: null })
+
+  useEffect(() => {
+    let cancelled = false
+    const load = () =>
+      supabase.rpc('admin_usage_live', { p_exclude: exclude }).then(({ data, error }) => {
+        if (cancelled) return
+        setState((prev) =>
+          error
+            ? { ...prev, error: error.message }
+            : { data, error: '', updatedAt: new Date() }
+        )
+      })
+    load()
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') load()
+    }, LIVE_REFRESH_MS)
+    return () => {
+      cancelled = true
+      clearInterval(id)
+    }
+  }, [exclude])
+
+  return state
+}
+
+function LiveNowCard({ exclude }) {
+  const { data, error, updatedAt } = useLive(exclude)
+
+  if (!data) {
+    return error ? <ErrorNote message={error} onRetry={() => window.location.reload()} /> : <SkeletonChart />
+  }
+  const rows = liveRows(data)
+  const count = data.count ?? rows.length
+
+  return (
+    <section className="rounded-xl border border-line bg-paper-raised p-4 space-y-3" aria-label="Live users now">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="font-display text-base text-ink flex items-center gap-2">
+            <span className="inline-block h-2.5 w-2.5 rounded-full bg-owed" aria-hidden="true" />
+            Live now: {count} {count === 1 ? 'person' : 'people'}
+          </h3>
+          <p className="text-xs text-ink-soft mt-0.5">
+            In the app in the last {data.window_minutes ?? 5} minutes. Refreshes every 30 seconds
+            {updatedAt ? `, last at ${updatedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' })}` : ''}.
+          </p>
+        </div>
+      </div>
+      {error && <p className="text-xs text-owe">Couldn't refresh ({error}). Showing the last list.</p>}
+      {rows.length === 0 ? (
+        <p className="text-sm text-ink-soft">Nobody is in the app right now.</p>
+      ) : (
+        <ul className="divide-y divide-line border-y border-line">
+          {rows.map((u) => (
+            <li key={u.userId} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 py-2 text-sm">
+              <span className="flex items-center gap-2 min-w-0">
+                <Avatar avatarPath={u.avatarPath} name={u.name} size="sm" />
+                <span className="truncate text-ink">{u.name}</span>
+              </span>
+              <span className="text-xs text-ink-soft text-right">
+                {u.where} · {u.device} · {u.seen}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {count > rows.length && (
+        <p className="text-xs text-ink-soft">Showing the {rows.length} most recent of {count}.</p>
+      )}
+    </section>
+  )
+}
+
 // ------------------------------------------------------------ Top events
 
 // "What people did this week": the eight things the most distinct people did in
@@ -344,6 +427,7 @@ function OverviewView({ days, exclude, tz }) {
           note="Average daily users over monthly users"
         />
       </div>
+      <LiveNowCard exclude={exclude} />
       <Card
         title="Active users"
         subtitle={`Distinct people with at least one action per day, in ${data.tz} time`}

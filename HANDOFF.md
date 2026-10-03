@@ -128,3 +128,6 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 
 ## REQ-USE-11 top events built (3 Oct 2026, Sprint 8)
 - Migration 057 (`admin_usage_top_events`) is applied to production (SQL editor). The card "What people did this week" is on Admin > Usage > Overview; app change committed, not yet pushed. Remaining Sprint 8: REQ-USE-12, 23, 24.
+
+## REQ-USE-26 live users now built (3 Oct 2026, Sprint 8, SE-183)
+- Migration 058 (`admin_usage_live`) applied to production (SQL editor). "Live now" card on Admin > Usage > Overview refreshes every 30 s; verified live (count matches the Active now tile). App change committed, not yet pushed. Remaining Sprint 8: REQ-USE-12, 23, 24.
