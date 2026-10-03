@@ -135,9 +135,12 @@ begin
     return 0;
   end if;
 
-  select count(*) into recent
-  from public.app_events
-  where user_id = uid and created_at > now() - interval '1 day';
+  -- Written as a plain assignment on purpose: the Supabase SQL editor misreads
+  -- the older assignment form inside function bodies and mangles the script.
+  recent := (
+    select count(*) from public.app_events
+    where user_id = uid and created_at > now() - interval '1 day'
+  );
   if recent >= 2000 then
     return 0;
   end if;

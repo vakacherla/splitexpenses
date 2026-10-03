@@ -318,4 +318,25 @@ begin
   raise notice 'PASS 12 bad segment/stage rejected, timezone fallback, day clamping';
 end $$;
 
+-- 13. The reports stay fast with hundreds of users. (Found on 3 Oct 2026: a
+--     per-user timezone lookup made the funnel take ~6 s at 400 users and time
+--     out in production; migration 051 fixes it.) The limit is generous so the
+--     check is stable on a slow machine, but far below the database's limit.
+do $$
+declare t0 timestamptz; secs numeric; r jsonb;
+begin
+  insert into auth.users (id, email) select gen_random_uuid(), 'perf' || g || '@test.invalid' from generate_series(1, 400) g;
+  update public.profiles set created_at = now() - (random() * 20 || ' days')::interval where email like 'perf%';
+  perform pg_temp.as_user('a0000000-0000-0000-0000-000000000000');
+  t0 := clock_timestamp();
+  r := public.admin_usage_funnel(current_date - 29, current_date, 'America/New_York', true);
+  perform count(*) from public.admin_usage_funnel_users('trip', current_date - 29, current_date, 'America/New_York', true);
+  r := public.admin_usage_ttfe(current_date - 29, current_date, 'America/New_York', true);
+  perform count(*) from public.admin_usage_stuck('quiet', true);
+  secs := extract(epoch from clock_timestamp() - t0);
+  perform pg_temp.as_owner();
+  assert secs < 2.5, format('funnel, drop-off, time to first expense and stuck users took %s s with 400 users', round(secs, 2));
+  raise notice 'PASS 13 reports stay fast with 400 users (% s)', round(secs, 2);
+end $$;
+
 rollback;
