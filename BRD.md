@@ -79,7 +79,7 @@ Status key: **S** Shipped, **Q** Planned quick win, **P** Parked, **B** Blocked,
 | REQ-TRIP-05 | Duplicate a trip (members, roles, currency; new invite code; no expenses). | S | TRIP-13..15 | | Migration 018 |
 | REQ-TRIP-06 | Cover photo for owner or manager; images downscaled; non-images rejected; centre-cropped. | S | TRIP-16..19 | DEF-007, DEF-008 | Migrations 024, 025 |
 | REQ-TRIP-07 | Removing a member who has an unsettled balance is blocked for everyone, including admins. Settled members can be removed and can rejoin. | S | TRIP-20, TRIP-21, ACT-05 | DEF-022 | Migration 046 |
-| REQ-TRIP-08 | Archive a trip (soft delete); archived trips are not found by members and cannot take new expenses. | S | TRIP-22, AT-07, AT-08 | DEF-009, DEF-017, DEF-025 | Migration 044 |
+| REQ-TRIP-08 | Archive a trip (soft delete); archived trips are not found by members and cannot take new expenses. | S | TRIP-22, AT-07, AT-08 | DEF-009, DEF-017, DEF-025 | Migrations 044 and 062 (the database itself now refuses new expenses, splits and settlements for an archived trip) |
 | REQ-TRIP-09 | Trip names are safe against HTML/JS and long text. | S | TRIP-23, SEC-06 | | |
 | REQ-TRIP-10 | Optional start and end dates, validated (end after start, plausible years). | S | TRIP-24, TRIP-25 | DEF-033 | Migrations 027, 028 |
 | REQ-TRIP-11 | UI uses the word "Trip" (formerly Group) with no schema change. | S | AUTH-17 | | Roadmap 2026-09-07 |
@@ -273,7 +273,7 @@ Status: Fixed (verified on production), Open, Partial. "Layer" is where the fix 
 | DEF-006 | AUTH-04 | AUTH-16 | /reset-password showed the form with no recovery link. | 0869eff | Fixed |
 | DEF-007 | TRIP-06 | TRIP-18 | A PDF was accepted as a cover photo. | 0869eff | Fixed |
 | DEF-008 | TRIP-06 | TRIP-19 | A 14.1 MB image was stored and served in full. | a5b64e1 (downscale to JPEG) | Fixed (avatar path not live-tested) |
-| DEF-009 | TRIP-08 | TRIP-22 | An archived trip stayed reachable to its creator and accepted an expense. | TripView treats archived as not found | Partial: server RLS still allows inserts into an archived trip (see DEF-025) |
+| DEF-009 | TRIP-08 | TRIP-22 | An archived trip stayed reachable to its creator and accepted an expense. | TripView treats archived as not found | Partial at the time; completed by DEF-025 (migration 062): server RLS used to allow inserts into an archived trip (see DEF-025) |
 | DEF-010 | ADM-06 | AT-04 | Active users tile did nothing. | 0869eff | Fixed |
 | DEF-011 | EXP-02 | EXP-07 | Exact split off by 0.01 was accepted. | 0869eff | Fixed |
 | DEF-012 | EXP-03 | EXP-29 | Future-dated expense gave no warning. | 0869eff (warn, still saves) | Fixed |
