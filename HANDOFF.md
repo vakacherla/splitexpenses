@@ -120,3 +120,8 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 
 ## Sprint 8 started (3 Oct 2026)
 - **Sprint 8 - Usage insights phase 2** is **active** on the board with REQ-USE-10, 11, 12, 23, 24 (SE-162..166). The board allows one active sprint, so **Sprint 6 (regression sweep, settlement summary, amount calculator, DEF-025) cannot be started until Sprint 8 is closed.** REQ-INV-03 (SE-169, invite visibility) is not in Sprint 8 yet.
+
+## REQ-USE-10 feature adoption built (3 Oct 2026, Sprint 8)
+- Migration 056 (`admin_usage_feature_adoption`) is applied to production (pasted into the SQL editor). Admin > Usage > Features is live in the code; **the app change is committed, not yet pushed**.
+- New tracking: itemized split, settle up (online path), circles, reminders (saving a trip end date), offline queue, tour. Rates, help and invite link are derived from existing events. Not run live: settle up and circles (they would create settlements/circles). Remaining Sprint 8: REQ-USE-11, 12, 23, 24.
+- Live test rows: `E2E-TEST 056 itemized` and `E2E-TEST 056 offline` in trip `E2E-TEST 047 write check` (not archived).

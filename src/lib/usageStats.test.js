@@ -3,6 +3,9 @@ import {
   MIN_USERS,
   addDays,
   biggestDrop,
+  featureDiagnosis,
+  featureRows,
+  FEATURES,
   changeText,
   formatDuration,
   notEnoughData,
@@ -186,5 +189,55 @@ describe('stuck users', () => {
 
   it('exports just the header for an empty list', () => {
     expect(stuckToCSV([], 'quiet', now).split('\n')).toHaveLength(1)
+  })
+})
+
+describe('feature adoption diagnosis (REQ-USE-10)', () => {
+  const base = { totalUsers: 40, active: 20 }
+
+  it('says nothing with fewer than 10 users or nobody active', () => {
+    expect(featureDiagnosis({ ...base, totalUsers: 9, tried: 10, repeated: 10 })).toBeNull()
+    expect(featureDiagnosis({ ...base, totalUsers: 10, tried: 0, repeated: 0, active: 0 })).toBeNull()
+  })
+
+  it('a discovery gap is tried by under 15% of active users', () => {
+    expect(featureDiagnosis({ ...base, tried: 2, repeated: 2 })).toBe('discovery') // 10%
+    expect(featureDiagnosis({ ...base, tried: 0, repeated: 0 })).toBe('discovery')
+  })
+
+  it('exactly 15% tried is not a discovery gap', () => {
+    expect(featureDiagnosis({ ...base, tried: 3, repeated: 3 })).toBe('healthy') // 15%, all repeated
+    expect(featureDiagnosis({ ...base, tried: 3, repeated: 0 })).toBe('quality')
+  })
+
+  it('a quality gap is tried by 15%+ but repeated by under 30% of those', () => {
+    expect(featureDiagnosis({ ...base, tried: 10, repeated: 2 })).toBe('quality') // 20%
+    expect(featureDiagnosis({ ...base, tried: 10, repeated: 0 })).toBe('quality')
+  })
+
+  it('exactly 30% repeated is healthy', () => {
+    expect(featureDiagnosis({ ...base, tried: 10, repeated: 3 })).toBe('healthy')
+    expect(featureDiagnosis({ ...base, tried: 10, repeated: 9 })).toBe('healthy')
+  })
+
+  it('exactly 10 users is enough for a diagnosis', () => {
+    expect(featureDiagnosis({ totalUsers: 10, active: 10, tried: 1, repeated: 1 })).toBe('discovery')
+  })
+})
+
+describe('feature rows', () => {
+  it('lists every feature in a fixed order, zero when untracked', () => {
+    const rows = featureRows({ active_users: 20, total_users: 40, features: [{ feature: 'receipt_scan', tried: 8, repeated: 4 }] })
+    expect(rows.map((r) => r.key)).toEqual(FEATURES.map((f) => f.key))
+    const scan = rows.find((r) => r.key === 'receipt_scan')
+    expect(scan).toMatchObject({ tried: 8, repeated: 4, triedOnce: 4, pctTried: 40, pctRepeated: 20, diagnosis: 'healthy' })
+    expect(rows.find((r) => r.key === 'tour')).toMatchObject({ tried: 0, repeated: 0, pctTried: 0, diagnosis: 'discovery' })
+  })
+
+  it('never lets repeated exceed tried, and copes with no data', () => {
+    expect(featureRows({ active_users: 5, total_users: 5, features: [{ feature: 'help', tried: 1, repeated: 3 }] }).find((r) => r.key === 'help').repeated).toBe(1)
+    const empty = featureRows(null)
+    expect(empty).toHaveLength(FEATURES.length)
+    expect(empty[0]).toMatchObject({ tried: 0, pctTried: null, diagnosis: null })
   })
 })

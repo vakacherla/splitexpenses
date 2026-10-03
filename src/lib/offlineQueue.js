@@ -237,6 +237,7 @@ async function applyExpenseCreate(op) {
   if (expenseError) throw expenseError
 
   track('expense_added', { split_type: String(payload.split_type ?? 'equal') })
+  if (payload.split_type === 'itemized') track('feature_used', { feature: 'itemized_split' })
   const summary = `${payload.description} — ${payload.amount} ${payload.currency}`
   logActivity({
     groupId: op.groupId,
@@ -308,6 +309,7 @@ async function applyExpenseUpdate(op) {
     })),
   })
   if (updateError) throw updateError
+  if (payload.split_type === 'itemized') track('feature_used', { feature: 'itemized_split' })
 
   logActivity({
     groupId: op.groupId,
@@ -425,6 +427,7 @@ export async function runSync() {
   if (!navigator.onLine) return
   syncing = true
   lastConflicts = []
+  let appliedAny = false
   listeners.forEach((l) => l())
   try {
     // Snapshot once, in arrival order — the collapsing invariant above is
@@ -443,6 +446,7 @@ export async function runSync() {
         const result = (await applier(op)) || {}
         if (result.conflict) lastConflicts.push(result.conflict)
         removeOp(op.opId)
+        appliedAny = true
       } catch (err) {
         const attempts = op.attempts + 1
         updateOp(op.opId, {
@@ -455,6 +459,7 @@ export async function runSync() {
   } finally {
     syncing = false
     listeners.forEach((l) => l())
+    if (appliedAny) track('feature_used', { feature: 'offline_queue' })
   }
 }
 

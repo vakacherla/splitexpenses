@@ -239,7 +239,7 @@ Recorded 3 Oct 2026 on branch `feat/usage-insights-phase1`. Nothing here is appl
 | REQ-USE-09 | "never invited" | added expenses, is not in any trip that has someone else in it, and no `invite_shared` event | Does not depend on tracking data existing. The first version only looked at trips the person had created, so people who joined someone else's trip were wrongly listed; found by the owner on 3 Oct 2026 and fixed in migration 052. |
 | REQ-USE-03 | events listed | also fires `feature_used` for receipt scan, text parse, CSV import and export, push opt-in and opening a trip's Reports tab | Collection cannot be backfilled, so the cheap ones start now; the Phase 2 adoption report needs them. |
 
-Feature adoption (REQ-USE-10), devices (REQ-USE-23) and the device filter (REQ-USE-24) are not built; their data is already being collected by REQ-USE-03.
+Feature adoption (REQ-USE-10) is built (3 Oct 2026, migration 056). Devices (REQ-USE-23) and the device filter (REQ-USE-24) are not built; their data is already being collected by REQ-USE-03.
 
 ### Verification done
 

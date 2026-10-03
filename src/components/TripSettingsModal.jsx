@@ -5,6 +5,7 @@ import TripBanner from './TripBanner'
 import { downscaleImage } from '../lib/imageResize'
 import { validateTripDates, MIN_TRIP_DATE, MAX_TRIP_DATE } from '../lib/tripDates'
 import HelpLink from './HelpLink'
+import { track } from '../lib/track'
 
 export default function TripSettingsModal({
   group,
@@ -203,6 +204,8 @@ export default function TripSettingsModal({
     if (!validateTripDates(startDateDraft, endDateDraft).valid) return
     setSavingDates(true)
     await onUpdateTripDates(startDateDraft || null, endDateDraft || null)
+    // An end date is what switches the automatic "you still owe" reminders on.
+    if (endDateDraft) track('feature_used', { feature: 'reminders' })
     setSavingDates(false)
   }
 

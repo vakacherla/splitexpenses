@@ -9,6 +9,7 @@ import { buildPaymentLink, paymentProviderLabel } from '../lib/paymentLinks'
 import { logActivity, notifyGroup } from '../lib/activity'
 import { MAX_AMOUNT, isAmountTooLarge } from '../lib/amountBounds'
 import CurrencySelect from './CurrencySelect'
+import { track } from '../lib/track'
 
 export default function SettleUpModal({ group, suggestion, membersMap, currentUserId, onDone, onClose }) {
   const [currency, setCurrency] = useState(group.home_currency)
@@ -121,6 +122,7 @@ export default function SettleUpModal({ group, suggestion, membersMap, currentUs
       return
     }
 
+    track('settled_up')
     const actorName = membersMap[currentUserId]?.display_name ?? 'Someone'
     const amountText = `${parsedAmount} ${currency}`
     logActivity({

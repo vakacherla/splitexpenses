@@ -4,11 +4,15 @@ import { supabase } from '../lib/supabaseClient'
 import { useTheme } from '../context/ThemeContext'
 import { downloadCSV } from '../lib/csvExport'
 import {
+  DIAGNOSES,
+  DISCOVERY_GAP_BELOW_PCT,
   PERIODS,
+  QUALITY_GAP_BELOW_PCT,
   STUCK_SEGMENTS,
   adminTimeZone,
   biggestDrop,
   changeText,
+  featureRows,
   formatDuration,
   notEnoughData,
   periodRange,
@@ -48,6 +52,7 @@ const COLORS = {
 const VIEWS = [
   { id: 'overview', label: 'Overview' },
   { id: 'funnel', label: 'Funnel' },
+  { id: 'features', label: 'Features' },
   { id: 'stuck', label: 'Stuck users' },
 ]
 
@@ -609,6 +614,118 @@ function StuckView({ exclude }) {
   )
 }
 
+// ---------------------------------------------------------------- Features
+
+// Text always accompanies the colour, so the diagnosis never relies on colour alone.
+const DIAGNOSIS_PILL = {
+  discovery: 'bg-accent-tint text-ink',
+  quality: 'bg-owe/10 text-owe',
+  healthy: 'bg-owed/10 text-owed',
+}
+
+function DiagnosisPill({ diagnosis }) {
+  if (!diagnosis) return null
+  return (
+    <span
+      title={DIAGNOSES[diagnosis].hint}
+      className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${DIAGNOSIS_PILL[diagnosis]}`}
+    >
+      {DIAGNOSES[diagnosis].label}
+    </span>
+  )
+}
+
+function FeaturesView({ days, exclude, tz }) {
+  const { theme } = useTheme()
+  const c = COLORS[theme]
+  const { data, error, loading, reload } = useRpc('admin_usage_feature_adoption', { p_days: days, p_tz: tz, p_exclude: exclude })
+
+  if (loading) return <SkeletonChart />
+  if (error) return <ErrorNote message={error} onRetry={reload} />
+  const active = data?.active_users ?? 0
+  if (!data?.has_tracking || active === 0) {
+    return (
+      <EmptyState
+        title="No activity in this period yet"
+        subtitle="Feature use appears here once people have been using the app while tracking is on. Try a longer period."
+      />
+    )
+  }
+
+  const rows = featureRows(data)
+  const noDiagnosis = notEnoughData(data.total_users)
+  const discovery = rows.filter((r) => r.diagnosis === 'discovery').length
+  const quality = rows.filter((r) => r.diagnosis === 'quality').length
+  const pct = (n) => (n == null ? '—' : `${n}%`)
+  const width = (n) => `${Math.min(100, (n / active) * 100)}%`
+
+  const chart = (
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-soft">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: c.bar }} /> Came back on another day
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: c.ramp[0] }} /> Tried, used on one day only
+        </span>
+        <span>Bar length is a share of the {active} active {active === 1 ? 'person' : 'people'}</span>
+      </div>
+      {rows.map((r) => (
+        <div key={r.key} className="px-2">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-sm">
+            <span className="text-ink flex items-center gap-2">
+              {r.label}
+              <DiagnosisPill diagnosis={r.diagnosis} />
+            </span>
+            <span className="num text-ink-soft shrink-0">
+              {r.tried} tried ({pct(r.pctTried)}) · {r.repeated} came back ({pct(r.pctRepeated)})
+            </span>
+          </div>
+          <div
+            className="mt-1 flex h-4 overflow-hidden rounded-sm bg-line/50"
+            role="img"
+            aria-label={`${r.label}: ${r.repeated} came back, ${r.triedOnce} tried once, out of ${active} active`}
+          >
+            <div className="h-full" style={{ width: width(r.repeated), background: c.bar }} />
+            <div className="h-full" style={{ width: width(r.triedOnce), background: c.ramp[0] }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
+  const table = (
+    <Table
+      head={['Feature', 'Tried', '% of active', 'Came back', '% of active', 'Diagnosis']}
+      rows={rows.map((r) => [
+        r.label,
+        r.tried,
+        pct(r.pctTried),
+        r.repeated,
+        pct(r.pctRepeated),
+        r.diagnosis ? DIAGNOSES[r.diagnosis].label : '—',
+      ])}
+    />
+  )
+
+  return (
+    <div className="space-y-4">
+      <SmallSampleNote users={data.total_users} />
+      <Card
+        title="Which features are tried, and which are repeated"
+        subtitle={`Last ${data.days} days · ${active} active ${active === 1 ? 'person' : 'people'}. "Came back" means used on two or more separate days.`}
+        chart={chart}
+        table={table}
+        insight={
+          noDiagnosis
+            ? 'No diagnosis yet: it needs at least 10 users. The counts above are still real.'
+            : `${discovery} ${discovery === 1 ? 'feature is' : 'features are'} a discovery gap (tried by under ${DISCOVERY_GAP_BELOW_PCT}% of active people) and ${quality} ${quality === 1 ? 'is' : 'are'} a quality gap (tried by ${DISCOVERY_GAP_BELOW_PCT}% or more, but fewer than ${QUALITY_GAP_BELOW_PCT}% of those came back).`
+        }
+      />
+    </div>
+  )
+}
+
 // ------------------------------------------------------------------- Panel
 
 export default function UsagePanel() {
@@ -634,12 +751,6 @@ export default function UsagePanel() {
               {v.label}
             </button>
           ))}
-          <span
-            className="rounded-full border border-dashed border-line px-3 py-1 text-sm text-ink-soft/70"
-            title="Feature adoption needs a few weeks of tracking data first"
-          >
-            Features · soon
-          </span>
           <HelpLink to="admin-usage" className="self-center" />
         </div>
       </div>
@@ -670,6 +781,7 @@ export default function UsagePanel() {
 
       {view === 'overview' && <OverviewView days={days} exclude={exclude} tz={tz} />}
       {view === 'funnel' && <FunnelView days={days} exclude={exclude} tz={tz} />}
+      {view === 'features' && <FeaturesView days={days} exclude={exclude} tz={tz} />}
       {view === 'stuck' && <StuckView exclude={exclude} />}
     </div>
   )

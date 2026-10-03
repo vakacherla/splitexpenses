@@ -211,6 +211,7 @@ export default function Dashboard() {
       setError(memberError.message)
       return
     }
+    track('feature_used', { feature: 'circles' })
     navigate(`/circles/${circle.id}`)
   }
 
@@ -231,6 +232,7 @@ export default function Dashboard() {
       setError(error.message)
       return
     }
+    track('feature_used', { feature: 'circles' })
     navigate(`/circles/${data.id}`)
   }
 

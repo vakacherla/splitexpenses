@@ -612,6 +612,8 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
       return
     }
 
+    if (splitMode === 'itemized') track('feature_used', { feature: 'itemized_split' })
+
     // Best-effort extras — the expense itself is already safely saved, so a
     // failure in either of these shouldn't block closing the form.
     const actorName = members.find((m) => m.user_id === currentUserId)?.display_name ?? 'Someone'

@@ -170,3 +170,67 @@ export function stuckToCSV(rows, segmentKey, now = new Date()) {
   ])
   return [header, ...lines].map((line) => line.map(csvEscape).join(',')).join('\n')
 }
+
+// ---- Feature adoption (REQ-USE-10) -------------------------------------
+// The database counts (migration 056); the diagnosis is decided here so the
+// thresholds can be tuned in one place. Percentages are of active users.
+export const DISCOVERY_GAP_BELOW_PCT = 15
+export const QUALITY_GAP_BELOW_PCT = 30
+
+export const FEATURES = [
+  { key: 'receipt_scan', label: 'Receipt scan' },
+  { key: 'text_parse', label: 'Describe it (text parse)' },
+  { key: 'itemized_split', label: 'Itemized split' },
+  { key: 'csv_import', label: 'CSV import' },
+  { key: 'csv_export', label: 'CSV export' },
+  { key: 'settle_up', label: 'Settle up' },
+  { key: 'invite_link', label: 'Invite link' },
+  { key: 'circles', label: 'Circles' },
+  { key: 'trip_reports', label: 'Trip reports' },
+  { key: 'rates', label: 'Exchange rates page' },
+  { key: 'reminders', label: 'Trip end date (reminders)' },
+  { key: 'push_optin', label: 'Push notifications' },
+  { key: 'offline_queue', label: 'Offline queue' },
+  { key: 'help', label: 'Help' },
+  { key: 'tour', label: 'Welcome tour' },
+]
+
+export const DIAGNOSES = {
+  discovery: { label: 'Discovery gap', hint: 'Few people have tried it: they may not know it exists.' },
+  quality: { label: 'Quality gap', hint: 'Plenty tried it but few came back: it may not be good enough yet.' },
+  healthy: { label: 'Healthy', hint: 'Tried by many and repeated by enough of them.' },
+}
+
+// null means "no diagnosis": too few users, or nobody was active. Integer
+// arithmetic keeps the boundaries exact (exactly 15% is not a discovery gap,
+// exactly 30% is not a quality gap).
+export function featureDiagnosis({ tried, repeated, active, totalUsers }) {
+  if (notEnoughData(totalUsers)) return null
+  if (!(Number(active) > 0)) return null
+  const t = Number(tried) || 0
+  const r = Number(repeated) || 0
+  if (t * 100 < DISCOVERY_GAP_BELOW_PCT * active) return 'discovery'
+  if (r * 100 < QUALITY_GAP_BELOW_PCT * t) return 'quality'
+  return 'healthy'
+}
+
+// Turns the database response into display rows, in the fixed feature order.
+export function featureRows(result) {
+  const active = Number(result?.active_users) || 0
+  const totalUsers = Number(result?.total_users) || 0
+  const byKey = new Map((result?.features ?? []).map((f) => [f.feature, f]))
+  return FEATURES.map((f) => {
+    const tried = Number(byKey.get(f.key)?.tried) || 0
+    const repeated = Math.min(Number(byKey.get(f.key)?.repeated) || 0, tried)
+    return {
+      key: f.key,
+      label: f.label,
+      tried,
+      repeated,
+      triedOnce: tried - repeated,
+      pctTried: pctOf(tried, active),
+      pctRepeated: pctOf(repeated, active),
+      diagnosis: featureDiagnosis({ tried, repeated, active, totalUsers }),
+    }
+  })
+}

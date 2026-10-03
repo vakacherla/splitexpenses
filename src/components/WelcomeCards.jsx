@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { WELCOME_CARDS, welcomeTitle } from '../lib/welcomeTour'
 import WelcomeArt from './WelcomeArt'
+import { track } from '../lib/track'
 
 // A short, dismissible first-run tour: four illustrated cards that explain
 // Trip vs Circle and point to the first action. The parent decides when it
@@ -104,7 +105,11 @@ export default function WelcomeCards({ firstName, always, onAlwaysChange, onDism
             ) : (
               <button
                 type="button"
-                onClick={() => setStep(step + 1)}
+                onClick={() => {
+                  // Moving past the first card means the tour was actually read.
+                  if (step === 0) track('feature_used', { feature: 'tour' })
+                  setStep(step + 1)
+                }}
                 className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary transition-colors hover:bg-primary-dark"
               >
                 Next
