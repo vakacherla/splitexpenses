@@ -28,6 +28,7 @@ const PARAM_ROUTES = [
   [/^\/trips\/[^/]+$/, '/trips/:id'],
   [/^\/groups\/[^/]+$/, '/trips/:id'],
   [/^\/circles\/[^/]+$/, '/circles/:id'],
+  [/^\/join\/[^/]+$/, '/join/:token'],
 ]
 
 export function routePattern(pathname) {

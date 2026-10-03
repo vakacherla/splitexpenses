@@ -139,6 +139,7 @@ describe('routePattern', () => {
     expect(routePattern('/trips/3f0c8a52-1d2e-4c0b-9d7a-0123456789ab')).toBe('/trips/:id')
     expect(routePattern('/groups/abc')).toBe('/trips/:id')
     expect(routePattern('/circles/xyz123')).toBe('/circles/:id')
+    expect(routePattern('/join/0123456789abcdef0123456789abcdef')).toBe('/join/:token')
   })
 
   it('ignores query, hash and a trailing slash', () => {

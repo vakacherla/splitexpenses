@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-do
 import { lazy, Suspense } from 'react'
 import { useAuth } from './context/AuthContext'
 import { shouldForceResetPassword } from './lib/authRecovery'
+import { getPendingInvite, joinPath } from './lib/invite'
 import { useUsageTracking } from './lib/useUsageTracking'
 import ConfigGate from './components/ConfigGate'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -23,6 +24,7 @@ const AdminPage = lazy(() => import('./pages/AdminPage'))
 const HelpPage = lazy(() => import('./pages/HelpPage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const RatesPage = lazy(() => import('./pages/RatesPage'))
+const JoinPage = lazy(() => import('./pages/JoinPage'))
 
 function AppShell({ children }) {
   const { user, suspended } = useAuth()
@@ -45,6 +47,18 @@ function Root() {
   if (loading) return <LoadingScreen />
   if (user) return <Navigate to="/dashboard" replace />
   return <Overview />
+}
+
+// Someone who opened an invite link, then signed up or signed in somewhere along
+// the way (for example after a confirmation email) and ended up on another page:
+// bring them back to the invite so they land in the trip. JoinPage forgets the
+// invite once it has been used or is no longer good, so this cannot loop.
+function PendingInviteRedirect() {
+  const { user, loading, suspended } = useAuth()
+  const location = useLocation()
+  if (loading || !user || suspended || location.pathname.startsWith('/join/')) return null
+  const pending = getPendingInvite(localStorage)
+  return pending ? <Navigate to={joinPath(pending)} replace /> : null
 }
 
 // Old /groups/:id links (bookmarks, shared links, push-notification
@@ -75,6 +89,7 @@ export default function App() {
     <ConfigGate>
       <AppShell>
         <RecoveryGuard>
+        <PendingInviteRedirect />
         <Routes>
           <Route path="/" element={<Root />} />
           <Route path="/login" element={<Login />} />
@@ -123,6 +138,14 @@ export default function App() {
               <ProtectedRoute>
                 <TripView />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/join/:token"
+            element={
+              <Suspense fallback={<LoadingScreen />}>
+                <JoinPage />
+              </Suspense>
             }
           />
           <Route path="/groups/:groupId" element={<OldGroupLinkRedirect />} />

@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import ThemeToggle from '../components/ThemeToggle'
 import TurnstileWidget from '../components/TurnstileWidget'
 import { captchaOptions } from '../lib/turnstile'
+import { postAuthPath } from '../lib/invite'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -40,7 +41,7 @@ export default function Login() {
       setError(isBannedAuthError(error) ? SUSPENDED_MESSAGE : error.message)
       return
     }
-    navigate(location.state?.from ?? '/dashboard', { replace: true })
+    navigate(postAuthPath(location.state?.from, localStorage), { replace: true })
   }
 
   return (

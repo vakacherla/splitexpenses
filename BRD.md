@@ -34,7 +34,7 @@ Rules for keeping it traceable:
 | Epic | Title | Requirements | Shipped | Open |
 |---|---|---|---|---|
 | EP-01 | Accounts, access and abuse protection | 11 | 10 | 1 (blocked: email confirmation) |
-| EP-02 | Trips | 14 | 11 | 3 (invite link and per-invite links not built, 1 blocked: email invites) |
+| EP-02 | Trips | 16 | 11 | 5 (3 not built, 1 blocked: email invites, 1 superseded by REQ-INV-01) |
 | EP-03 | Circles | 9 | 8 | 1 (circle balances, not built) |
 | EP-04 | Expenses and splits | 16 | 12 | 4 (1 quick win, 1 parked, 1 not built, 1 blocked) |
 | EP-05 | Balances and settling up | 9 | 7 | 2 (1 quick win, 1 parked) |
@@ -44,7 +44,7 @@ Rules for keeping it traceable:
 | EP-09 | Platform admin | 10 | 9 | 1 (not built) |
 | EP-10 | Onboarding and navigation | 4 | 4 | 0 |
 | EP-11 | Security and data integrity | 6 | 6 | 0 |
-| EP-12 | Growth (parked) | 4 | 0 | 4 |
+| EP-12 | Growth (parked) | 4 | 0 | 4 (1 superseded by REQ-INV-01) |
 | EP-13 | Shared Fund mode (blocked) | 1 | 0 | 1 |
 | EP-14 | Usage insights (admin) | 25 | 9 | 16 (6 not built or not yet shipped, 10 parked) |
 
@@ -83,8 +83,10 @@ Status key: **S** Shipped, **Q** Planned quick win, **P** Parked, **B** Blocked,
 | REQ-TRIP-09 | Trip names are safe against HTML/JS and long text. | S | TRIP-23, SEC-06 | | |
 | REQ-TRIP-10 | Optional start and end dates, validated (end after start, plausible years). | S | TRIP-24, TRIP-25 | DEF-033 | Migrations 027, 028 |
 | REQ-TRIP-11 | UI uses the word "Trip" (formerly Group) with no schema change. | S | AUTH-17 | | Roadmap 2026-09-07 |
-| REQ-TRIP-12 | Shareable invite link in addition to the code. | N | FEAT-04 | | See REQ-GRO-01 |
-| REQ-INV-01 | Per-invite share links: each invite is a unique, expiring, revocable link (own token, not the trip code) shared via the device share sheet, copy, or a prefilled `mailto:` "Email" option; optional "Who is this for?" label (name only); `invites` table records creator, label, accepted-by and time; accept via a `SECURITY DEFINER` function; per-user daily cap. Feeds the Usage funnel (shared vs joined). | N | none yet | | `USAGE-INSIGHTS-STORIES.md`. Builds on REQ-TRIP-12 and REQ-GRO-01 (shares the join route); see section 7 item 7. |
+| REQ-TRIP-12 | Shareable invite link in addition to the code. | X | FEAT-04 | | Superseded by REQ-INV-01 (owner decision 3 Oct 2026) |
+| REQ-INV-01 | Per-invite share links, phase 1. A member makes a link for a trip or Circle (`/join/<token>`); it works for up to 20 people for 14 days, once per person (a removed member cannot reuse it), at most 20 new links per person per day. Join screen for signed-out and signed-in people showing the trip's cover photo or a playful illustration, and the inviter's first name and photo; the invite survives sign-up, sign-in and the confirmation email. Share by the phone share sheet, WhatsApp, email or copy, with a friendly message; the dashboard join box accepts a pasted link; fixed link-preview card; six-letter codes unchanged. Records who made each link, when and how it was shared, opens, and who joined (and whether their account was new). | N | INV-01..INV-12 (not run) | | `INVITE-LINKS` design: https://claude.ai/artifact/3ZVMNDBLeLPPgMU7TpCur6. Migration 054. Built on branch `feat/invite-links-phase1`; mark Shipped once migration 054 is applied and checked. Supersedes REQ-TRIP-12 and REQ-GRO-01 (link, join page, sign-up survival, preview). |
+| REQ-INV-03 | Invite visibility, phase 2: "Invites you sent" list with share-again and turn-off (the trip creator sees every member's); an invites report in Admin → Usage (created, opened, joined, new accounts, by channel); the funnel's "Shared an invite" step reads real invites; `list_invites` and `revoke_invite` functions. | N | none yet | | Phase 2 of the invite design |
+| REQ-INV-04 | Invite links, phase 3: link-preview card with the real trip name and cover photo (small server function); "reset code" for the old six-letter code; "just one person" links. | P | none yet | | Phase 3 of the invite design |
 | REQ-INV-02 | Email invites and one reminder, sent from the app address with the inviter's name as display name (never the inviter's address as sender), opt-in reply-to, unsubscribe and suppression list, daily cap, friend's email deleted on join or after 30 days. | B | none yet | | Blocked on a verified sending domain in Resend (as REQ-AUTH-11). `USAGE-INSIGHTS-STORIES.md`. |
 
 ### EP-03 Circles
@@ -206,7 +208,7 @@ Status key: **S** Shipped, **Q** Planned quick win, **P** Parked, **B** Blocked,
 
 | ID | Requirement | St | Notes |
 |---|---|---|---|
-| REQ-GRO-01 | Join by link (`/join/trip/:code`, `/join/circle/:code`), Copy/Share link, invite survives sign-up, Open Graph preview, admin Growth tab. Done when a logged-out person can tap a link, sign up, and land inside the trip. | P | `growth-brief-join-link.md` (not yet in repo). Effort small to medium. |
+| REQ-GRO-01 | Join by link, Copy/Share link, invite survives sign-up, Open Graph preview, admin Growth tab. | X | none yet | | Superseded by REQ-INV-01 for the link, join page, sign-up survival and preview; the admin Growth tab is covered by the Usage tab (REQ-INV-03). Owner decision 3 Oct 2026. |
 | REQ-GRO-02 | Read-only balance link (hashed, expiring, revocable; privacy review first; "Join this trip" call to action). | P | Depends on REQ-GRO-01. |
 | REQ-GRO-03 | End-of-trip PDF or Excel export. Open decision: free core or Plus. | P | |
 | REQ-GRO-04 | Automatic recurring expenses. Open decision: free core or Plus. | P | pg_cron already exists. |
@@ -310,7 +312,7 @@ Status: Fixed (verified on production), Open, Partial. "Layer" is where the fix 
 4. Which "Not built" expense items (REQ-EXP-15) testers actually want.
 5. Native store app: Capacitor wrapper needs an Apple developer account, review, and retest of push and UPI deep links on iOS.
 6. Confirm the Gemini API tier (see `website-sync-notes.md`) since the AI caps assume the free quota.
-7. REQ-INV-01 (per-invite links) overlaps REQ-TRIP-12 and REQ-GRO-01 (join by link). Decide whether INV-01 replaces the link part of those two, or ships after them and only adds per-invite tokens, labels and tracking on the same `/join` route.
+7. Resolved 3 Oct 2026: REQ-INV-01 supersedes REQ-TRIP-12 and REQ-GRO-01 (join by link). The one open piece is the Supabase redirect list: add the app's address with a `/join/**` wildcard so confirmation emails can return to an invite.
 
 ## 8. Out of scope (deliberately)
 
@@ -347,6 +349,7 @@ Sprints are working bursts, assigned by the date a story or bug first shipped (f
 | Sprint 6 | 3 Oct onward (planned) | Regression sweep, AT-09 and ATR-03, settlement summary, amount calculator, DEF-025, DEF-026 | 4 |
 | Sprint 7 | 3 Oct (shipped) | Usage insights phase 1: start collecting usage data and ship the Usage tab with overview, funnel, time to first expense and stuck users. Shipped in push 24e35ae, with SQL-editor fixes and a performance fix (migrations 049 to 051) in b8972d5 | 9 (REQ-USE-01..09) |
 | Sprint 8 | proposed, movable | Usage insights phase 2: feature adoption, top events, user timeline, devices, device filter (their data is already being collected) | 5 (REQ-USE-10, 11, 12, 23, 24) |
+| Sprint 9 | proposed | Invite links phase 1: per-invite share links, join screen, invite survives sign-up, share sheet, playful invitation | 1 (REQ-INV-01) |
 
 Not in any sprint: parked and not-built requirements, and open bugs DEF-028, DEF-030, DEF-031, DEF-035, DEF-036. Story dates for requirements are estimates from the roadmap and commit history; bug dates come from their fix commits.
 
