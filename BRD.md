@@ -291,7 +291,7 @@ Status: Fixed (verified on production), Open, Partial. "Layer" is where the fix 
 | DEF-022 | TRIP-07 | ACT-05, TRIP-20 | Admin removal with an unsettled balance orphaned a member's name and balance. | Migration 046 + "Former member" label | Fixed |
 | DEF-023 | ADM-02 | AU-08 | Deleting a user with history gave "Database error deleting user". | f8cdde5 (admin-users) | Fixed |
 | DEF-024 | AUTH-07 | AU-04 | A suspended user's live session kept working. | Migration 047 + session revoke | Fixed |
-| DEF-025 | TRIP-08 | TRIP-22 | Server RLS still allows expense inserts into an archived trip. | Needs a migration | Open |
+| DEF-025 | TRIP-08 | TRIP-22 | Server RLS still allows expense inserts into an archived trip. | Migration 062: `is_group_archived()` helper; insert rules on expenses, expense_splits and settlements now require the trip not to be archived (an existing expense in an archived trip also cannot be re-saved; soft-delete and admin tools unchanged) | Fixed 3 Oct 2026 (migration applied; verified live) |
 | DEF-026 | EXP-16 | RES-09 | Dropped connection mid-save can leave a phantom expense. | Migration 055 (atomic save functions) plus the app's five write sites routed through them; one fixed id per open Add form so a retry returns the saved expense | Fixed 3 Oct 2026 (migration applied; app change committed, awaiting push) |
 | DEF-038 | EXP-16 | RES-09 | After a save whose response was lost, the Add form shows the raw browser text "Failed to fetch", which reads as "not saved" although it was. | Needs a friendlier message that says to check the ledger before retrying | Open |
 | DEF-027 | AUTH-05 | AUTH-20 | Admin link and name missing right after a fresh load. | See Sheet | Fixed |

@@ -67,7 +67,7 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 ## Open findings (not fixed) — also in BRD section 6
 1. **RES-09 / DEF-026 (P1): fixed in code 3 Oct 2026.** Migration 055 (atomic `create_expense_with_splits` / `update_expense_with_splits`) is applied to production; the five write sites use it; verified live (online create and edit, dropped response, retry, CSV import, offline queue). **The app change is committed but not pushed.** Open leftover: DEF-038, the raw "Failed to fetch" text.
    plpgsql functions and route the 6 call sites through them. Needs a migration + approval.
-2. **DEF-025:** RLS still allows expense inserts into an archived trip.
+2. ~~DEF-025~~ fixed 3 Oct 2026 (migration 062: archived trips take no new expenses, splits or settlements).
 3. DEF-036 inline create-circle does 3 non-atomic writes; DEF-031 admin has no circle purge; DEF-035 admin dropdowns list archived circles / trips the user is already in;
    DEF-028 iOS web push disappears after display (unconfirmed); DEF-030 offline sign-out only partly fixed.
 4. Stale banner cache on same-extension replace; avatar upload has no `image/*` check; CSV export has no settlements; ~13 NOT-BUILT features (REC-03..07, 09, 10, 12, 13, FEAT-04).
@@ -148,3 +148,6 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 
 ## Sprint 6 started (3 Oct 2026)
 - **Sprint 6 - Regression sweep and quick wins** is **active** on the board (goal refreshed; 3 to 9 Oct): SE-69 settlement summary (REQ-BAL-08), SE-58 amount calculator (REQ-EXP-13), SE-139 DEF-025 (archived-trip expense inserts), SE-140 DEF-026 (already done). The regression sweep itself is test work, not a board issue. Briefs: `brief-settlement-summary.md`, `brief-amount-calculator.md`. Order proposed: DEF-025, settlement summary, amount calculator, then the sweep.
+
+## DEF-025 fixed (3 Oct 2026, Sprint 6, SE-139)
+- Migration 062 applied (SQL editor): `is_group_archived(gid)` helper (needed because members cannot see an archived trip, so a plain check inside the policy would let them through) and stricter insert rules on `expenses`, `expense_splits`, `settlements`. Side effect by design: an existing expense in an archived trip cannot be re-saved either. Soft-delete and admin restore still work. Verified live with a stale tab: save refused with the row-level-security error, nothing left behind, live trips unaffected. Test data: archived trip `E2E-TEST 062 archived trip` (archived with owner OK) and one expense `E2E-TEST 062 live trip still works` in `E2E-TEST 047 write check`. App unchanged. Not yet committed/pushed until the owner approves.
