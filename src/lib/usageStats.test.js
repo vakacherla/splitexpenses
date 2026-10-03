@@ -20,6 +20,7 @@ import {
   periodRange,
   stageRows,
   stoppedAtText,
+  timelineGroups,
   topEventRows,
   STUCK_SEGMENTS,
   stuckForDays,
@@ -391,5 +392,47 @@ describe('device filter (REQ-USE-24)', () => {
     expect(deviceFilterText('', 'browser')).toBe('browser')
     expect(deviceFilterText('unknown', '')).toBe('unknown device')
     expect(deviceFilterText('', '')).toBe('')
+  })
+})
+
+describe('per-user timeline (REQ-USE-12)', () => {
+  const now = new Date('2026-10-03T15:00:00Z')
+
+  it('labels the ledger actions in words', () => {
+    expect(eventLabel('signed_up')).toBe('Signed up')
+    expect(eventLabel('trip_joined')).toBe('Joined a trip')
+    expect(eventLabel('trip_created')).toBe('Created a trip')
+    expect(eventLabel('expense_added')).toBe('Added an expense')
+  })
+
+  it('groups newest-first events by day with Today and Yesterday', () => {
+    const groups = timelineGroups(
+      [
+        { at: '2026-10-03T14:30:00Z', event: 'app_open' },
+        { at: '2026-10-03T13:00:00Z', event: 'page_view:/rates' },
+        { at: '2026-10-02T20:00:00Z', event: 'expense_added' },
+        { at: '2026-09-28T09:00:00Z', event: 'signed_up' },
+      ],
+      'UTC',
+      now
+    )
+    expect(groups.map((g) => g.heading).slice(0, 2)).toEqual(['Today', 'Yesterday'])
+    expect(groups).toHaveLength(3)
+    expect(groups[0].items.map((i) => i.label)).toEqual(['Opened the app', 'Viewed Exchange rates'])
+    expect(groups[2].items[0].label).toBe('Signed up')
+  })
+
+  it('the day boundary follows the timezone', () => {
+    // 02:30 UTC on 4 Oct is still 3 Oct evening in New York.
+    const events = [{ at: '2026-10-04T02:30:00Z', event: 'app_open' }]
+    expect(timelineGroups(events, 'America/New_York', new Date('2026-10-03T23:00:00-04:00'))[0].heading).toBe('Today')
+    expect(timelineGroups(events, 'UTC', new Date('2026-10-04T10:00:00Z'))[0].heading).toBe('Today')
+    expect(timelineGroups(events, 'Asia/Kolkata', new Date('2026-10-05T10:00:00Z'))[0].heading).toBe('Yesterday')
+  })
+
+  it('copes with no events and with a bad date', () => {
+    expect(timelineGroups([], 'UTC', now)).toEqual([])
+    expect(timelineGroups(null, 'UTC', now)).toEqual([])
+    expect(timelineGroups([{ at: 'not a date', event: 'app_open' }], 'UTC', now)).toEqual([])
   })
 })

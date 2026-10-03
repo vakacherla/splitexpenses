@@ -46,7 +46,7 @@ Rules for keeping it traceable:
 | EP-11 | Security and data integrity | 6 | 6 | 0 |
 | EP-12 | Growth (parked) | 4 | 0 | 4 (1 superseded by REQ-INV-01) |
 | EP-13 | Shared Fund mode (blocked) | 1 | 0 | 1 |
-| EP-14 | Usage insights (admin) | 26 | 15 | 11 (1 not built, 10 parked) |
+| EP-14 | Usage insights (admin) | 26 | 16 | 10 (0 not built, 10 parked) |
 
 ## 4. Requirements by epic
 
@@ -236,7 +236,7 @@ Design and mockups: https://claude.ai/artifact/2AjyRgZHFTwj1YTGGmy3re. Full acce
 | REQ-USE-09 | Stuck users by segment (no trip, trip but no expense, never invited, quiet 14+ days); "never invited" means added expenses and is not in any trip with someone else in it (people who joined another person's trip are not listed; fixed in migration 052, applied 3 Oct 2026); names and avatars only; CSV export without emails. | S | USE-08, USE-09 (not run) | | Track B |
 | REQ-USE-10 | Feature adoption: tried vs repeated (2+ days), discovery gap and quality gap diagnosis, minimum-sample rule. | S | `056_usage_feature_adoption.test.sql` (7 checks), `usageStats.test.js`; verified live 3 Oct 2026 | | Track C. Migration 056 (applied 3 Oct 2026), Admin > Usage > Features. Settle up and Circles tracking added but not run live; other tracking points were. Pushed with the next release |
 | REQ-USE-11 | Top events this week by distinct users. | S | `057_usage_top_events.test.sql` (6 checks), `usageStats.test.js`; verified live 3 Oct 2026 | | Track C. Migration 057 (applied 3 Oct 2026), card on Admin > Usage > Overview. Pushed with the next release |
-| REQ-USE-12 | Per-user activity timeline for admins; names and avatars only. | N | none yet | | Track C |
+| REQ-USE-12 | Per-user activity timeline for admins; names and avatars only. | S | `061_usage_user_timeline.test.sql` (7 checks), `usageStats.test.js`; verified live 3 Oct 2026 | | Track C. Migration 061 (applied 3 Oct 2026). Opens from Stuck users, the Funnel drop-off list and the Users tab. App ledger actions plus app events, no trip names, amounts or emails. Pushed with the next release |
 | REQ-USE-13 | Trip pulse for trip creators (who has not added an expense, who has not joined, who is owed). | P | none yet | | Later, after REQ-INV-01. Belongs to Trips. |
 | REQ-USE-14 | Weekly retention cohorts. | P | none yet | | Parked until a few hundred users |
 | REQ-USE-15 | "Tried feature X vs not" retention comparison. | P | none yet | | Parked until a few hundred users |
@@ -350,7 +350,7 @@ Sprints are working bursts, assigned by the date a story or bug first shipped (f
 | Sprint 5 | 2 Oct | Abuse protection, onboarding, navigation, install prompt, removal-with-balance block | 15 |
 | Sprint 6 | 3 Oct onward (planned) | Regression sweep, AT-09 and ATR-03, settlement summary, amount calculator, DEF-025, DEF-026 | 4 |
 | Sprint 7 | 3 Oct (closed) | Usage insights phase 1, the never-signed-in group and per-invite share links. Shipped in pushes 24e35ae (migrations 049 to 051 fixes in b8972d5), 9a14398 (REQ-USE-25) and e3e3cfd (REQ-INV-01, migration 054) | 11 (REQ-USE-01..09, REQ-USE-25, REQ-INV-01) |
-| Sprint 8 | 3 Oct (active) | Usage insights phase 2: feature adoption, top events this week, per-user timeline, devices and install mode, device filter, live users now (REQ-USE-26, added at the owner's request) (their data is already being collected). Started on the board 3 Oct 2026; no end date set | 6 (REQ-USE-10, 11, 12, 23, 24, 26) |
+| Sprint 8 | 3 Oct (all stories built; close after the last push) | Usage insights phase 2: feature adoption, top events this week, per-user timeline, devices and install mode, device filter, live users now (REQ-USE-26, added at the owner's request) (their data is already being collected). Started on the board 3 Oct 2026; no end date set | 6 (REQ-USE-10, 11, 12, 23, 24, 26) |
 
 The board has one Sprint 7 for both the usage and invite stories; the earlier draft split them into Sprints 7 and 9. Not in any sprint: parked and not-built requirements, and open bugs DEF-028, DEF-030, DEF-031, DEF-035, DEF-036. Story dates for requirements are estimates from the roadmap and commit history; bug dates come from their fix commits.
 

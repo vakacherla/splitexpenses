@@ -4,9 +4,11 @@ import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import { formatMoney } from '../lib/fx'
 import { Skeleton, SkeletonRows, SkeletonStatGrid, SkeletonChart } from '../components/Skeleton'
+import { adminTimeZone } from '../lib/usageStats'
 
 // Recharts is heavy, so the Usage tab loads only when an admin opens it.
 const UsagePanel = lazy(() => import('../components/UsagePanel'))
+const UserTimeline = lazy(() => import('../components/UserTimeline'))
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
@@ -98,6 +100,7 @@ export default function AdminPage() {
   const [trash, setTrash] = useState(null)
   const [users, setUsers] = useState(null)
   const [usersFilter, setUsersFilter] = useState('all') // 'all' | 'active' — AT-04
+  const [timelineUser, setTimelineUser] = useState(null) // REQ-USE-12
   const [groups, setGroups] = useState(null)
   const [requests, setRequests] = useState(null)
   const [settlementsList, setSettlementsList] = useState(null)
@@ -660,6 +663,13 @@ export default function AdminPage() {
                     )}
                   </p>
                     <p className="text-xs text-ink-soft mt-0.5 truncate">{u.email}</p>
+                    <button
+                      type="button"
+                      onClick={() => setTimelineUser({ id: u.id, name: u.display_name ?? u.email, avatarPath: u.avatar_path })}
+                      className="text-xs font-medium text-primary hover:underline mt-1"
+                    >
+                      View activity
+                    </button>
                   </div>
                   {u.id !== user.id && (
                   <div className="flex items-center gap-3 shrink-0 flex-wrap justify-end">
@@ -1039,6 +1049,12 @@ export default function AdminPage() {
       {tab === 'usage' && (
         <Suspense fallback={<SkeletonChart />}>
           <UsagePanel />
+        </Suspense>
+      )}
+
+      {timelineUser && (
+        <Suspense fallback={null}>
+          <UserTimeline user={timelineUser} tz={adminTimeZone()} onClose={() => setTimelineUser(null)} />
         </Suspense>
       )}
 

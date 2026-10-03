@@ -239,6 +239,8 @@ export function featureRows(result) {
 // Event keys come from migration 057: feature_used:<feature>,
 // page_view:<route>, or the plain event name.
 const EVENT_NAMES = {
+  signed_up: 'Signed up',
+  trip_joined: 'Joined a trip',
   app_open: 'Opened the app',
   trip_created: 'Created a trip',
   expense_added: 'Added an expense',
@@ -391,4 +393,50 @@ export function deviceFilterText(formFactor, installMode) {
   const ff = FORM_FACTOR_FILTERS.find((o) => o.value === formFactor && o.value)
   const im = INSTALL_MODE_FILTERS.find((o) => o.value === installMode && o.value)
   return [ff?.label.toLowerCase(), im?.label.toLowerCase()].filter(Boolean).join(', ')
+}
+
+// ---- Per-user timeline (REQ-USE-12) -------------------------------------
+// Groups the timeline events (newest first) by calendar day in the admin's
+// timezone, with "Today" and "Yesterday" for the last two days.
+function dayKey(date, tz) {
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date)
+  } catch {
+    return date.toISOString().slice(0, 10)
+  }
+}
+
+function timeLabel(date, tz) {
+  try {
+    return new Intl.DateTimeFormat(undefined, { timeZone: tz, hour: 'numeric', minute: '2-digit' }).format(date)
+  } catch {
+    return date.toISOString().slice(11, 16)
+  }
+}
+
+function dayHeading(key, today, tz) {
+  if (key === today) return 'Today'
+  if (key === addDays(today, -1)) return 'Yesterday'
+  try {
+    return new Intl.DateTimeFormat(undefined, { timeZone: tz, weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(`${key}T12:00:00Z`))
+  } catch {
+    return key
+  }
+}
+
+export function timelineGroups(events, tz = 'UTC', now = new Date()) {
+  const today = dayKey(now, tz)
+  const groups = []
+  for (const e of events ?? []) {
+    const at = new Date(e.at)
+    if (Number.isNaN(at.getTime())) continue
+    const key = dayKey(at, tz)
+    let g = groups[groups.length - 1]
+    if (!g || g.key !== key) {
+      g = { key, heading: dayHeading(key, today, tz), items: [] }
+      groups.push(g)
+    }
+    g.items.push({ key: e.event, label: eventLabel(e.event), time: timeLabel(at, tz) })
+  }
+  return groups
 }

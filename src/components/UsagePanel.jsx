@@ -33,6 +33,7 @@ import {
   topEventRows,
 } from '../lib/usageStats'
 import Avatar from './Avatar'
+import UserTimeline from './UserTimeline'
 import HelpLink from './HelpLink'
 import EmptyState from './EmptyState'
 import { Skeleton, SkeletonChart, SkeletonStatGrid } from './Skeleton'
@@ -489,7 +490,21 @@ function OverviewView({ days, exclude, tz }) {
 
 // ------------------------------------------------------------------ Funnel
 
-function UserList({ rows, empty }) {
+// A person's name as a button that opens their timeline (REQ-USE-12).
+function PersonButton({ u, onOpenUser, className = '' }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onOpenUser({ id: u.user_id, name: u.display_name, avatarPath: u.avatar_path })}
+      title="See what this person has been doing"
+      className={`text-left text-ink hover:text-primary hover:underline underline-offset-2 ${className}`}
+    >
+      {u.display_name}
+    </button>
+  )
+}
+
+function UserList({ rows, empty, onOpenUser }) {
   if (rows.length === 0) return <p className="text-sm text-ink-soft">{empty}</p>
   return (
     <ul className="divide-y divide-line border-y border-line">
@@ -497,7 +512,7 @@ function UserList({ rows, empty }) {
         <li key={u.user_id} className="flex items-center justify-between gap-3 py-2 text-sm">
           <span className="flex items-center gap-2 min-w-0">
             <Avatar avatarPath={u.avatar_path} name={u.display_name} size="sm" />
-            <span className="truncate text-ink">{u.display_name}</span>
+            <PersonButton u={u} onOpenUser={onOpenUser} className="truncate" />
           </span>
           <span className="text-xs text-ink-soft text-right shrink-0">
             Signed up {timeAgo(u.signed_up_at)} · seen {timeAgo(u.last_seen_at)}
@@ -547,7 +562,7 @@ function FunnelBar({ row, color, scaleTo, selected, onSelect }) {
   )
 }
 
-function FunnelView({ days, exclude, tz, device }) {
+function FunnelView({ days, exclude, tz, device, onOpenUser }) {
   const { theme } = useTheme()
   const c = COLORS[theme]
   const range = useMemo(() => periodRange(days, tz), [days, tz])
@@ -671,7 +686,7 @@ function FunnelView({ days, exclude, tz, device }) {
           <Skeleton className="h-24 w-full" />
         ) : (
           <>
-            <UserList rows={whoRows} empty="Nobody. Everyone who got to the previous step also got here." />
+            <UserList rows={whoRows} empty="Nobody. Everyone who got to the previous step also got here." onOpenUser={onOpenUser} />
             {total > PAGE && (
               <div className="flex items-center justify-between text-sm">
                 <button disabled={page === 0} onClick={() => setPage(page - 1)} className="text-primary disabled:text-ink-soft disabled:opacity-50">
@@ -701,7 +716,7 @@ function FunnelView({ days, exclude, tz, device }) {
 
 // ------------------------------------------------------------- Stuck users
 
-function StuckView({ exclude, device }) {
+function StuckView({ exclude, device, onOpenUser }) {
   const [segment, setSegment] = useState('never_signed_in')
   const [pages, setPages] = useState(1)
   const PAGE = 20
@@ -778,7 +793,7 @@ function StuckView({ exclude, device }) {
                     <td className="py-2 pr-4">
                       <span className="flex items-center gap-2">
                         <Avatar avatarPath={u.avatar_path} name={u.display_name} size="sm" />
-                        <span className="text-ink">{u.display_name}</span>
+                        <PersonButton u={u} onOpenUser={onOpenUser} />
                       </span>
                     </td>
                     <td className="py-2 pr-4 text-ink-soft">{stoppedAtText(u, segment)}</td>
@@ -995,6 +1010,7 @@ export default function UsagePanel() {
   const [days, setDays] = useState(30)
   const [exclude, setExclude] = useState(true)
   const [formFactor, setFormFactor] = useState('')
+  const [timelineUser, setTimelineUser] = useState(null)
   const [installMode, setInstallMode] = useState('')
   const tz = useMemo(() => adminTimeZone(), [])
   const device = useMemo(() => deviceFilterArgs(formFactor, installMode), [formFactor, installMode])
@@ -1104,10 +1120,11 @@ export default function UsagePanel() {
       )}
 
       {view === 'overview' && <OverviewView days={days} exclude={exclude} tz={tz} />}
-      {view === 'funnel' && <FunnelView days={days} exclude={exclude} tz={tz} device={device} />}
+      {view === 'funnel' && <FunnelView days={days} exclude={exclude} tz={tz} device={device} onOpenUser={setTimelineUser} />}
       {view === 'features' && <FeaturesView days={days} exclude={exclude} tz={tz} device={device} />}
       {view === 'devices' && <DevicesView days={days} exclude={exclude} tz={tz} />}
-      {view === 'stuck' && <StuckView exclude={exclude} device={device} />}
+      {view === 'stuck' && <StuckView exclude={exclude} device={device} onOpenUser={setTimelineUser} />}
+      {timelineUser && <UserTimeline user={timelineUser} tz={tz} onClose={() => setTimelineUser(null)} />}
     </div>
   )
 }
