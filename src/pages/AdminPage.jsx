@@ -1,15 +1,19 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import { formatMoney } from '../lib/fx'
 import { Skeleton, SkeletonRows, SkeletonStatGrid, SkeletonChart } from '../components/Skeleton'
 
+// Recharts is heavy, so the Usage tab loads only when an admin opens it.
+const UsagePanel = lazy(() => import('../components/UsagePanel'))
+
 const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'users', label: 'Users' },
   { id: 'groups', label: 'Trips' },
   { id: 'reports', label: 'Reports' },
+  { id: 'usage', label: 'Usage' },
   { id: 'settlements', label: 'Settlements' },
   { id: 'trash', label: 'Trash' },
   { id: 'feedback', label: 'Feedback' },
@@ -567,7 +571,7 @@ export default function AdminPage() {
         <p className="text-sm text-ink-soft mt-0.5">Platform-wide user and trip management.</p>
       </div>
 
-      <div className="flex gap-1 border-b border-line mb-6">
+      <div className="flex gap-1 border-b border-line mb-6 overflow-x-auto">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -575,7 +579,7 @@ export default function AdminPage() {
               setTab(t.id)
               if (t.id === 'users') setUsersFilter('all')
             }}
-            className={`px-3.5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+            className={`px-3.5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
               tab === t.id ? 'border-primary text-ink' : 'border-transparent text-ink-soft hover:text-ink'
             }`}
           >
@@ -1031,6 +1035,12 @@ export default function AdminPage() {
             </div>
           </div>
         ))}
+
+      {tab === 'usage' && (
+        <Suspense fallback={<SkeletonChart />}>
+          <UsagePanel />
+        </Suspense>
+      )}
 
       {tab === 'settlements' &&
         (settlementsList === null ? (

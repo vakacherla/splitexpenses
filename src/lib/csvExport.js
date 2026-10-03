@@ -1,4 +1,4 @@
-function csvEscape(value) {
+export function csvEscape(value) {
   const s = String(value ?? '')
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
