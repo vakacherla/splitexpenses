@@ -1,6 +1,6 @@
 # Production releases (one per push to main)
 
-Each push to `main` deploys to production on Vercel. A release label `rel-<date>-<tip sha>` marks the push. Dates are US Eastern time from the local push log. Sep 6 releases arrived by fetch from another machine. Story ship commits are estimates from the roadmap and git history; bug ship commits come from the fixes. Rebuild with `jira/build_releases.py`.
+Each push to `main` deploys to production on Vercel. A release label `rel-<date>-<tip sha>` marks the push. Dates up to the 2 Oct 16:08 push are US Eastern time from the local push log; from 3 Oct 2026 they are the commit time in UTC. Sep 6 releases arrived by fetch from another machine. Story ship commits are estimates from the roadmap and git history; bug ship commits come from the fixes. Rebuild with `jira/build_releases.py`.
 
 | Release label | Pushed (ET) | Tip commit | Issues first shipped |
 |---|---|---|---|
@@ -64,3 +64,12 @@ Each push to `main` deploys to production on Vercel. A release label `rel-<date>
 | rel-2026-10-02-92681e1 | 2026-10-02 15:21 | 92681e1 Add BRD with requirement/test/defect traceability, regression brief, a | (docs, QA records or no tracked issue) |
 | rel-2026-10-02-bf032cb | 2026-10-02 15:29 | bf032cb BRD: add Jira key index; stories and bugs linked to epics on the board | (docs, QA records or no tracked issue) |
 | rel-2026-10-02-54d0419 | 2026-10-02 15:44 | 54d0419 BRD: sprint plan (S0 to S6), DEF-029 marked fixed | (docs, QA records or no tracked issue) |
+| rel-2026-10-02-6d47ed8 | 2026-10-02 15:55 | 6d47ed8 Add release labels: RELEASES.md, label map and generator; BRD section  | (docs, QA records or no tracked issue) |
+| rel-2026-10-02-0c1e05e | 2026-10-02 16:08 | 0c1e05e Handoff: rewrite as a compact resume point (tracking system, tomorrow' | (docs, QA records or no tracked issue) |
+| rel-2026-10-03-24e35ae | 2026-10-03 01:28 | 24e35ae Merge pull request #3: Usage Insights phase 1 (EP-14, REQ-USE-01 to 09 | REQ-USE-01, REQ-USE-02, REQ-USE-03, REQ-USE-04, REQ-USE-05, REQ-USE-06, REQ-USE-07, REQ-USE-08, REQ-USE-09 |
+| rel-2026-10-03-9a14398 | 2026-10-03 03:26 | 9a14398 Merge pull request #5: Never signed in group (053), never-invited fix  | REQ-USE-25 |
+| rel-2026-10-03-e3e3cfd | 2026-10-03 03:26 | e3e3cfd Merge pull request #6: per-invite share links, phase 1 (REQ-INV-01) | REQ-INV-01 |
+| rel-2026-10-03-b0cd5ed | 2026-10-03 03:47 | b0cd5ed Jira S7 follow-up: SE-152..172 in BRD key index and key map, Sprint 7  | (docs, QA records or no tracked issue) |
+| rel-2026-10-03-3ef4e21 | 2026-10-03 03:48 | 3ef4e21 Key map and BRD index: parked REQ-USE-14..22 added to the board as SE- | (docs, QA records or no tracked issue) |
+| rel-2026-10-03-5750eca | 2026-10-03 03:57 | 5750eca Tests: AT-09 and ATR-03 PASS (30-day permanent delete gate verified li | (docs, QA records or no tracked issue) |
+| rel-2026-10-03-9bc5e7e | 2026-10-03 04:15 | 9bc5e7e Atomic expense save (DEF-026): migration 055, five write sites routed  | DEF-026, REQ-EXP-16 |

@@ -8,6 +8,17 @@ for l in rl:
     d = re.search(r'\{(.+)\}', gd).group(1)
     if gs == 'update by push' or h in ('68ac180', '9d59193', 'c338036'):
         rel.append((d, h))
+# 3 Oct 2026 pushes made from another session arrived by pull, so they are not in the push log
+for h in ('24e35ae', '9a14398', 'e3e3cfd'):
+    rel.append(('', h))
+# From 3 Oct 2026 on, releases are dated by commit time in UTC (the owner's day, and the dates in the
+# S7 labels). Earlier releases keep the Eastern push dates from the log, so existing labels never change.
+import os
+def utc_date(h):
+    return subprocess.run(['git','log','-1','--format=%cd','--date=format-local:%Y-%m-%d %H:%M',h], capture_output=True, text=True, check=True, env=dict(os.environ, TZ='UTC')).stdout.strip()
+def after_cutoff(h):
+    return h != '0c1e05e' and subprocess.run(['git','merge-base','--is-ancestor','0c1e05e',h]).returncode == 0
+rel = [((utc_date(h) if (d == '' or after_cutoff(h)) else d), h) for d, h in rel]
 rel.sort()
 tips = [(d, h) for d, h in rel]
 full = {h: sh('git','rev-parse',h).strip() for _, h in tips}
@@ -30,7 +41,9 @@ M = {  # issue id -> commit that first shipped it
 'REQ-OFF-01':'a62156c','REQ-OFF-02':'a62156c','REQ-OFF-03':'a62156c','REQ-OFF-04':'3ece6b0','REQ-OFF-05':'c3f5946',
 'REQ-ONB-01':'0af6aae','REQ-ONB-02':'4d23709','REQ-ONB-03':'4d23709','REQ-ONB-04':'9c3de3f',
 'DEF-001':'0869eff','DEF-002':'29e95f2','DEF-003':'0869eff','DEF-004':'29e95f2','DEF-005':'0869eff','DEF-005b':'0869eff','DEF-006':'0869eff','DEF-007':'0869eff','DEF-008':'cd00527','DEF-009':'7f3f941','DEF-010':'0869eff','DEF-011':'0869eff','DEF-012':'0869eff','DEF-013':'084a213','DEF-013b':'0869eff','DEF-014':'66669c8','DEF-015':'81cae01','DEF-016':'a823ab2','DEF-017':'d6c4b53','DEF-018':'2cf0fa8','DEF-019':'a5b64e1','DEF-020':'4f5e184','DEF-020b':'a62156c','DEF-021b':'a62156c','DEF-022':'cc7159a','DEF-023':'f8cdde5','DEF-024':'2a12bad','DEF-027':'88c45ec','DEF-029':'1059afb','DEF-032':'19f5b4a','DEF-033':'3eb1e0b','DEF-034':'8ae8e13','DEF-037':'a62156c'}
-for i in range(1, 4): pass
+for i in range(1, 10): M['REQ-USE-%02d' % i] = '24e35ae'
+M['REQ-USE-25'] = '9a14398'; M['REQ-INV-01'] = 'e3e3cfd'
+M['DEF-026'] = '9bc5e7e'; M['REQ-EXP-16'] = '9bc5e7e'
 for a in ['ADM-01','ADM-02','ADM-03']: M['REQ-'+a]='55d2564'
 for a in ['ADM-04','ADM-05','ADM-06','ADM-07','ADM-08','ADM-09']: M['REQ-'+a]='a62156c'
 for a in ['SEC-01','SEC-02','SEC-03','SEC-04','SEC-05','SEC-06']: M['REQ-'+a]='55d2564'
@@ -41,7 +54,7 @@ for k, c in M.items():
     lb = label(*r); out[k] = lb; releases.setdefault(lb, dict(date=r[0], tip=r[1], issues=[]))['issues'].append(k)
 json.dump(out, open('jira/release_labels.json','w'), indent=0)
 with open('RELEASES.md','w') as f:
-    f.write('# Production releases (one per push to main)\n\nEach push to `main` deploys to production on Vercel. A release label `rel-<date>-<tip sha>` marks the push. Dates are US Eastern time from the local push log. Sep 6 releases arrived by fetch from another machine. Story ship commits are estimates from the roadmap and git history; bug ship commits come from the fixes. Rebuild with `jira/build_releases.py`.\n\n| Release label | Pushed (ET) | Tip commit | Issues first shipped |\n|---|---|---|---|\n')
+    f.write('# Production releases (one per push to main)\n\nEach push to `main` deploys to production on Vercel. A release label `rel-<date>-<tip sha>` marks the push. Dates up to the 2 Oct 16:08 push are US Eastern time from the local push log; from 3 Oct 2026 they are the commit time in UTC. Sep 6 releases arrived by fetch from another machine. Story ship commits are estimates from the roadmap and git history; bug ship commits come from the fixes. Rebuild with `jira/build_releases.py`.\n\n| Release label | Pushed (ET) | Tip commit | Issues first shipped |\n|---|---|---|---|\n')
     prev = None
     for d, h in tips:
         lb = label(d, h); subj = sh('git','log','-1','--format=%s',h).strip()[:70].replace('|','/')
