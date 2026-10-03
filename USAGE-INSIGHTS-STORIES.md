@@ -225,7 +225,7 @@ Feature adoption (REQ-USE-10), devices (REQ-USE-23) and the device filter (REQ-U
 ### Verification done
 
 - `supabase/tests/049_usage_insights.test.sql`: 10 checks. `supabase/tests/050_usage_admin_reports.test.sql`: 12 checks with hand-computed expectations. Both run against a scratch Postgres 16 with Supabase-style roles, and were checked to fail when a leaking policy or the admin guard is removed.
-- 99 new unit tests (device, tracker, notice, stats). Full suite 278 passing; lint at the 20-warning baseline; build clean.
+- 59 new unit tests (device 20, tracker 20, notice 2, stats 17). Full suite 278 passing; lint at the 20-warning baseline; build clean.
 - The Usage tab was driven in a real browser (light, dark, phone width) against a mocked backend, and the tracker's real network traffic was captured against a production build: with the switch on, one batched request carries `app_open` and `page_view` with phone/browser/ios/safari labels and route patterns only; with it off, no events and no heartbeat are sent.
 - Not verified: anything against the real Supabase project. Migrations 049 and 050 have not been applied anywhere except the scratch database.
 
