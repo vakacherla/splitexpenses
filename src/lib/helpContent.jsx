@@ -116,6 +116,14 @@ export const HELP_SECTIONS = [
           trip's home currency; pick a different one and you'll see today's converted amount before saving
           (offline, that conversion is filled in once you're back online instead).
         </p>
+        <p>
+          The amount can be a sum: type something like{' '}
+          <strong className="text-ink">12.50+8+3.20</strong> and the result (23.70) shows underneath, then
+          replaces what you typed when you leave the field. Use the buttons under the field for{' '}
+          <strong className="text-ink">+ − × ÷ ( )</strong>, since a phone's number pad doesn't have them.
+          If it can't be worked out, you'll see "Check the calculation" and the expense won't save until
+          it's fixed. The result is rounded to the currency's usual decimals (none for yen, for example).
+        </p>
         <H>Paid by &amp; split with</H>
         <p>
           Payer defaults to you. Split-with is a checkbox list of members — uncheck anyone not part of this

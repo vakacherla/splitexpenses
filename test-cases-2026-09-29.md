@@ -376,6 +376,20 @@ Each was verified by the developer at build time; NOT RUN here means the indepen
 | BAL-21 | Android Chrome: the share sheet opens with the summary | P1 | NOT RUN | OWNER, PHONE. |
 | BAL-22 | Offline: Share summary still works (balances are computed on the device) | P2 | NOT RUN | Not run. Code path has no network call. |
 
+## 20. Amount calculator (added 2026-10-03)
+
+| Ref | Test case | Priority | Status | Evidence |
+|---|---|---|---|---|
+| EXP-40 | Type a sum in Amount (12.50+8+3.20): live "= 23.70" preview, the field settles to 23.70 on leaving, and it saves at that amount | P1 | PASS | 2026-10-03 live (dev server, E2E-TEST 047 trip): typed 12.50+8+3.20 -> preview = 23.70; with ×2 -> 26.90 (precedence right); after Tab the field read 26.90, split showed USD 26.90, ledger $26.90. |
+| EXP-41 | Calculator keys (+ − × ÷ ( ) and delete) under the field insert at the caret, keep the field focused, and have labels | P1 | PASS | 2026-10-03 live, real mouse clicks: after pressing × the next typed digit went into the field (focus kept); delete removed one character; the 7 buttons carry aria-labels. Keys show only while the field is focused and are hidden in Itemized mode. |
+| EXP-42 | Invalid expression (12.50+8+3.20× or 12,50): "Check the calculation" and Save is blocked | P1 | PASS | 2026-10-03 live: with a dangling × the note read Check the calculation (grey while typing, red once the field is left); Save showed "Check the calculation in the amount.", the form stayed open, nothing saved. Replaces the old silent truncation (parseFloat('12.5+8') = 12.5, '12,50' = 12). |
+| EXP-43 | Plain numbers behave exactly as before; editing an expense round-trips, and a sum can be used when editing | P0 | PASS | 2026-10-03 live: 12.345 stays 12.345 on leaving the field; the edit form seeded 26.9 as a plain number; editing it to 26.9+3.1 saved $30.00 with the split updated. 21 parser tests + resolveAmount tests (plain/empty/calc/invalid). |
+| EXP-44 | Zero-decimal currency (JPY): 1000/3 settles to 333, not 333.33 | P1 | PASS | 2026-10-03 live: with JPY selected the preview read = 333 and the field settled to 333. |
+| EXP-45 | Itemized mode unaffected: no calculator keys, total still comes from the items | P1 | PASS | 2026-10-03 live: in Itemized the Total (from items) box shows and there are no keys or note; back to Equal they return. |
+| EXP-46 | iPhone Safari: the keys are visible above the keyboard, tapping them keeps the keyboard open, and a typed sum works | P1 | NOT RUN | OWNER, PHONE. This is the case the keys exist for (the iPhone decimal pad has no + − × ÷). |
+| EXP-47 | Android Chrome: same as EXP-46 | P1 | NOT RUN | OWNER, PHONE. |
+| EXP-48 | Offline add with a sum in Amount is queued at the calculated amount and syncs | P2 | NOT RUN | Not run. The queued payload uses the calculated amount (same value the form saves online). |
+
 ## Appendix A — FAIL details for the developer
 
 ### P0

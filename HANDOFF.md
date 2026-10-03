@@ -155,3 +155,7 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 ## Settlement summary built (3 Oct 2026, Sprint 6, SE-69)
 - App-only change, committed, not yet pushed: `src/lib/settlementSummary.js`, `src/lib/shareText.js`, a "Share summary" button on Balances (`BalancesPanel.jsx`, trip name passed from `TripView.jsx`). Test cases BAL-17..22 added (md and Sheet rows 253-258). Owner to run on a phone: BAL-20 (iPhone Safari share sheet) and BAL-21 (Android Chrome); BAL-22 offline not run.
 - Found, not fixed: the Balances screen says "You owes Jayashree" (should be "You owe"); it predates this change. Only the amount calculator (SE-58) is left in Sprint 6 before the regression sweep.
+
+## Amount calculator built (3 Oct 2026, Sprint 6, SE-58)
+- App-only, committed, not yet pushed: `src/lib/evalAmount.js` (+ tests), `AddExpenseForm.jsx` (calculator keys under the Amount field, live preview, settles on blur to the currency's decimals, "Check the calculation" blocks Save), Help text (`adding-expense`). Test cases EXP-40..48 (md and Sheet rows 259-267). Owner to run on phones: EXP-46 (iPhone Safari) and EXP-47 (Android Chrome); EXP-48 offline not run. Second pass (item, tax and tip fields) not built.
+- Live test rows in `E2E-TEST 047 write check`: `E2E-TEST 058 calc` ($30.00) plus the earlier 055/056/062 rows.

@@ -10,6 +10,7 @@ import { logActivity, notifyGroup } from '../lib/activity'
 import { CATEGORIES } from '../lib/categories'
 import { validateDateInRange, validateExpenseDateAgainstTrip, MIN_TRIP_DATE, MAX_TRIP_DATE } from '../lib/tripDates'
 import { MAX_AMOUNT, isAmountTooLarge } from '../lib/amountBounds'
+import { currencyDecimals, formatResult, resolveAmount } from '../lib/evalAmount'
 import CurrencySelect from './CurrencySelect'
 import HelpLink from './HelpLink'
 
@@ -46,6 +47,8 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
   const [category, setCategory] = useState(seed?.category ?? 'Misc')
   const [amount, setAmount] = useState(seed ? String(seed.amount) : '')
   const [currency, setCurrency] = useState(seed?.currency ?? group.home_currency)
+  const [amountFocused, setAmountFocused] = useState(false)
+  const amountRef = useRef(null)
   const [paidBy, setPaidBy] = useState(seed?.paid_by ?? currentUserId)
   const [date, setDate] = useState(editingExpense?.expense_date ?? (() => new Date().toISOString().slice(0, 10)))
   const isFutureDate = date > new Date().toISOString().slice(0, 10)
@@ -138,7 +141,13 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
   )
   const itemizedTotal = Math.round((itemsTotal + taxNum + tipNum) * 100) / 100
 
-  const parsedAmount = splitMode === 'itemized' ? itemizedTotal : parseFloat(amount) || 0
+  // The amount field takes arithmetic too ("12.50+8+3.20"); a plain number behaves
+  // exactly as it always did. `amountResolved.kind` is 'empty', 'plain', 'calc' or
+  // 'invalid' (not a number and not a working calculation: Save is blocked).
+  const amountDecimals = currencyDecimals(currency)
+  const amountResolved = resolveAmount(amount, amountDecimals)
+  const amountInvalid = splitMode !== 'itemized' && amountResolved.kind === 'invalid'
+  const parsedAmount = splitMode === 'itemized' ? itemizedTotal : amountResolved.value
   // EXP-24: a huge typed amount (e.g. 999999999.99) froze the page — every
   // split-preview calc below re-runs on each keystroke, so an absurd value
   // was getting fed through all of them live, on top of formatMoney's
@@ -232,7 +241,7 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
   // exploring split modes never loses the number you started with.
   function handleSplitModeChange(modeId) {
     if (modeId === 'itemized' && splitMode !== 'itemized' && items.length === 0) {
-      const priorTotal = parseFloat(amount) || 0
+      const priorTotal = amountResolved.value
       if (priorTotal > 0) {
         setItems([
           {
@@ -434,6 +443,39 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
     }
   }
 
+  // Operator buttons under the amount field (REQ-EXP-13): iPhone's decimal keypad
+  // has no + - × ÷ ( ) keys. They insert at the caret and never take focus from the
+  // field (the pointer-down default is cancelled), so the keyboard stays up.
+  function insertIntoAmount(text) {
+    const el = amountRef.current
+    const start = el?.selectionStart ?? amount.length
+    const end = el?.selectionEnd ?? amount.length
+    setAmount(amount.slice(0, start) + text + amount.slice(end))
+    requestAnimationFrame(() => {
+      el?.focus()
+      el?.setSelectionRange(start + text.length, start + text.length)
+    })
+  }
+
+  function backspaceAmount() {
+    const el = amountRef.current
+    const start = el?.selectionStart ?? amount.length
+    const end = el?.selectionEnd ?? amount.length
+    const from = start === end ? Math.max(0, start - 1) : start
+    setAmount(amount.slice(0, from) + amount.slice(end))
+    requestAnimationFrame(() => {
+      el?.focus()
+      el?.setSelectionRange(from, from)
+    })
+  }
+
+  // Leaving the field settles a working calculation into its result, rounded to
+  // the currency's decimals (2 for USD, 0 for JPY).
+  function settleAmount() {
+    setAmountFocused(false)
+    if (amountResolved.kind === 'calc') setAmount(formatResult(amountResolved.value, amountDecimals))
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
@@ -456,6 +498,7 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
         return setError('Assign every item to at least one person.')
       }
     }
+    if (amountInvalid) return setError('Check the calculation in the amount.')
     if (parsedAmount <= 0) return setError('Enter an amount greater than zero.')
     if (isAmountTooLarge(parsedAmount)) return setError(`Amount can't be more than ${MAX_AMOUNT.toLocaleString()}.`)
     if (participantIds.length === 0) return setError('Pick at least one person to split with.')
@@ -852,13 +895,67 @@ export default function AddExpenseForm({ group, members, currentUserId, editingE
                   {parsedAmount.toFixed(2)}
                 </div>
               ) : (
-                <input
-                  inputMode="decimal"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="0.00"
-                  className="num w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-ink text-lg focus:border-primary outline-none"
-                />
+                <>
+                  <input
+                    ref={amountRef}
+                    inputMode="decimal"
+                    autoComplete="off"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    onFocus={() => setAmountFocused(true)}
+                    onBlur={settleAmount}
+                    placeholder="0.00"
+                    aria-invalid={amountInvalid || undefined}
+                    aria-describedby="amount-calc-note"
+                    className={`num w-full rounded-lg border bg-paper px-3.5 py-2.5 text-ink text-lg focus:border-primary outline-none ${
+                      amountInvalid && !amountFocused ? 'border-owe' : 'border-line'
+                    }`}
+                  />
+                  {amountFocused && (
+                    <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="Calculator keys">
+                      {[
+                        ['+', '+', 'Plus'],
+                        ['−', '-', 'Minus'],
+                        ['×', '×', 'Times'],
+                        ['÷', '÷', 'Divided by'],
+                        ['(', '(', 'Open bracket'],
+                        [')', ')', 'Close bracket'],
+                      ].map(([label, insert, name]) => (
+                        <button
+                          key={name}
+                          type="button"
+                          aria-label={name}
+                          onPointerDown={(e) => e.preventDefault()}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => insertIntoAmount(insert)}
+                          className="min-w-10 rounded-lg border border-line bg-paper-raised px-3 py-1.5 text-base text-ink hover:border-primary"
+                        >
+                          {label}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        aria-label="Delete last character"
+                        onPointerDown={(e) => e.preventDefault()}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={backspaceAmount}
+                        className="min-w-10 rounded-lg border border-line bg-paper-raised px-3 py-1.5 text-base text-ink hover:border-primary"
+                      >
+                        ⌫
+                      </button>
+                    </div>
+                  )}
+                  <p
+                    id="amount-calc-note"
+                    aria-live="polite"
+                    className={`text-xs mt-1 ${amountInvalid && !amountFocused ? 'text-owe' : 'text-ink-soft'} ${
+                      amountResolved.kind === 'calc' || amountInvalid ? '' : 'sr-only'
+                    }`}
+                  >
+                    {amountResolved.kind === 'calc' && `= ${formatResult(amountResolved.value, amountDecimals)}`}
+                    {amountInvalid && 'Check the calculation'}
+                  </p>
+                </>
               )}
               {amountTooLarge && (
                 <p className="text-xs text-owe mt-1">Amount can't be more than {MAX_AMOUNT.toLocaleString()}.</p>
