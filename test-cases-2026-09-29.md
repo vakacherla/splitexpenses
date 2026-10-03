@@ -267,7 +267,7 @@ FAIL severity: **P0: 5** (signup broken, malformed circle route leaks DB error, 
 | AT-06 | Rename a trip | P1 | PASS | Verified live 2026-10-02: renamed `E2E-TEST P1 close`, persisted after reload, renamed back. |
 | AT-07 | Delete a trip (archives it) | P0 | PASS | Initially FAIL (RLS error on archive); fixed by migration 044 + CirclePage filter (d6c4b53). Re-verified live 2026-10-01: archive of test copy succeeded, redirected to /dashboard, trip gone from lists. See Appendix N. |
 | AT-08 | Archived trip shows day count + restore works | P0 | PASS | Verified live 2026-10-02: archived trips show "Archived N days ago . N days left to restore"; Restore on `roster check (copy)` moved it back to the active list. |
-| AT-09 | "Permanently delete" only after 30+ days | P0 | NOT RUN | MANUAL: cannot wait 30 days. |
+| AT-09 | "Permanently delete" only after 30+ days | P0 | PASS | 2026-10-03: only `Live Test Delete` (archived 30 days) showed "eligible for permanent deletion" and the bulk button read "Permanently delete 1 eligible (30+ days)"; every other archived trip showed "N days left to restore". Deleted it with its per-row button (owner OK); after a reload it is gone and has no restore. Test 3 (14 days left) untouched. |
 | AT-10 | Admin trip view: real tabs, "Viewing as admin", no add-expense | P1 | PASS | Real Ledger/Balances/Reports/Members; no add-expense button. |
 | AT-11 | Admin "Circle" button attaches any trip to any circle | P1 | PASS | Verified live 2026-10-02: Circle button attached a trip to a circle (breadcrumb showed it on the trip page); set back to standalone. Note: dropdown also lists archived circles. |
 ## 13. Admin — Trash
@@ -276,7 +276,7 @@ FAIL severity: **P0: 5** (signup broken, malformed circle route leaks DB error, 
 |---|---|---|---|---|
 | ATR-01 | Deleted expense lands in Trash; ledger and balances updated | P0 | PASS | 22 items visible with trip name, amount, day count. |
 | ATR-02 | Restore from Trash | P0 | PASS | Verified live 2026-10-02: restored `OFF-06 OFFLINE edit` from Trash; gone from Trash and back in the live trip ledger. |
-| ATR-03 | "Delete permanently" only after 30+ days | P0 | NOT RUN | MANUAL: cannot wait 30 days. |
+| ATR-03 | "Delete permanently" only after 30+ days | P0 | PASS | 2026-10-03: only `Uber $12.52` (Test 3, deleted 30 days) showed "eligible for permanent deletion" with the bulk button at 1 eligible; `Uber $10.00` (16 days) was not eligible. Deleted the $12.52 one with its per-row button (owner OK); after a reload it is gone and the bulk button disappeared. |
 | ATR-04 | Non-admin never sees deleted expenses anywhere | P1 | PASS | Verified live 2026-10-02: Jayashree (non-admin) deleted an expense; absent from Ledger/Balances/Reports for her and for the SU member view; present only in admin Trash. Activity keeps audit lines ("deleted an expense: <name> - 12 USD"). |
 | ATR-05 | Restore an expense whose trip has since been archived | P1 | PASS | Verified live 2026-10-02: restoring `queue-scoping verify` whose trip is archived succeeds with no error; expense stays inside the archived trip. |
 ## 14. Security boundaries
