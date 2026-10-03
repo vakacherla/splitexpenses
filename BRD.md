@@ -350,7 +350,7 @@ Sprints are working bursts, assigned by the date a story or bug first shipped (f
 | Sprint 5 | 2 Oct | Abuse protection, onboarding, navigation, install prompt, removal-with-balance block | 15 |
 | Sprint 6 | 3 Oct onward (planned) | Regression sweep, AT-09 and ATR-03, settlement summary, amount calculator, DEF-025, DEF-026 | 4 |
 | Sprint 7 | 3 Oct (closed) | Usage insights phase 1, the never-signed-in group and per-invite share links. Shipped in pushes 24e35ae (migrations 049 to 051 fixes in b8972d5), 9a14398 (REQ-USE-25) and e3e3cfd (REQ-INV-01, migration 054) | 11 (REQ-USE-01..09, REQ-USE-25, REQ-INV-01) |
-| Sprint 8 | 3 Oct (all stories built; close after the last push) | Usage insights phase 2: feature adoption, top events this week, per-user timeline, devices and install mode, device filter, live users now (REQ-USE-26, added at the owner's request) (their data is already being collected). Started on the board 3 Oct 2026; no end date set | 6 (REQ-USE-10, 11, 12, 23, 24, 26) |
+| Sprint 8 | 3 Oct (closed) | Usage insights phase 2: feature adoption, top events this week, per-user timeline, devices and install mode, device filter, live users now (REQ-USE-26, added at the owner's request) (their data is already being collected). Started and closed on the board 3 Oct 2026; all six issues shipped in pushes 590398c, 8e13de0, 39e82de, 14e5aa5, 758a1cd and 0bbad9b | 6 (REQ-USE-10, 11, 12, 23, 24, 26) |
 
 The board has one Sprint 7 for both the usage and invite stories; the earlier draft split them into Sprints 7 and 9. Not in any sprint: parked and not-built requirements, and open bugs DEF-028, DEF-030, DEF-031, DEF-035, DEF-036. Story dates for requirements are estimates from the roadmap and commit history; bug dates come from their fix commits.
 

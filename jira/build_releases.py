@@ -44,6 +44,8 @@ M = {  # issue id -> commit that first shipped it
 for i in range(1, 10): M['REQ-USE-%02d' % i] = '24e35ae'
 M['REQ-USE-25'] = '9a14398'; M['REQ-INV-01'] = 'e3e3cfd'
 M['DEF-026'] = '9bc5e7e'; M['REQ-EXP-16'] = '9bc5e7e'
+M['REQ-USE-10'] = '590398c'; M['REQ-USE-11'] = '8e13de0'; M['REQ-USE-26'] = '39e82de'
+M['REQ-USE-23'] = '14e5aa5'; M['REQ-USE-24'] = '758a1cd'; M['REQ-USE-12'] = '0bbad9b'
 for a in ['ADM-01','ADM-02','ADM-03']: M['REQ-'+a]='55d2564'
 for a in ['ADM-04','ADM-05','ADM-06','ADM-07','ADM-08','ADM-09']: M['REQ-'+a]='a62156c'
 for a in ['SEC-01','SEC-02','SEC-03','SEC-04','SEC-05','SEC-06']: M['REQ-'+a]='55d2564'

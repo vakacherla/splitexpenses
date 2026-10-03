@@ -141,3 +141,7 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 
 ## REQ-USE-12 per-user timeline built (3 Oct 2026, Sprint 8, SE-164)
 - Migration 061 (`admin_usage_user_timeline`) applied to production (SQL editor). Panel opens from Stuck users, Funnel drop-off list and the Users tab ("View activity"); verified live. App change committed, not yet pushed. This was the last Sprint 8 story: after the push, close Sprint 8 on the board (closing moves unfinished issues to the backlog; all six are done) and then Sprint 6 (regression sweep, settlement summary, amount calculator, DEF-025) can start.
+
+## Sprint 8 closed (3 Oct 2026)
+- All six issues (SE-162..166 and SE-183) are done and pushed, release labels `rel-2026-10-03-590398c`, `-8e13de0`, `-14e5aa5`, `-758a1cd`, `-0bbad9b`, `-39e82de`. Sprint 8 is **closed**; no sprint is active, so **Sprint 6 can be started** (regression sweep, settlement summary, amount calculator, DEF-025; DEF-026 already done). `RELEASES.md` regenerated through `0bbad9b`.
+- Open after Sprint 8: REQ-INV-03 (invite visibility, SE-169) and the parked EP-14 ideas (REQ-USE-13..22); DEF-038 (raw "Failed to fetch" text, SE-182) is open in the backlog. Test rows `E2E-TEST 055/056 ...` remain in the trip `E2E-TEST 047 write check`; container `se-scratch` may still be running (`docker rm -f se-scratch`).

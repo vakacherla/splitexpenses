@@ -73,3 +73,11 @@ Each push to `main` deploys to production on Vercel. A release label `rel-<date>
 | rel-2026-10-03-3ef4e21 | 2026-10-03 03:48 | 3ef4e21 Key map and BRD index: parked REQ-USE-14..22 added to the board as SE- | (docs, QA records or no tracked issue) |
 | rel-2026-10-03-5750eca | 2026-10-03 03:57 | 5750eca Tests: AT-09 and ATR-03 PASS (30-day permanent delete gate verified li | (docs, QA records or no tracked issue) |
 | rel-2026-10-03-9bc5e7e | 2026-10-03 04:15 | 9bc5e7e Atomic expense save (DEF-026): migration 055, five write sites routed  | DEF-026, REQ-EXP-16 |
+| rel-2026-10-03-68ef818 | 2026-10-03 04:20 | 68ef818 Releases: regenerate RELEASES.md with the 3 Oct pushes (S7, DEF-026);  | (docs, QA records or no tracked issue) |
+| rel-2026-10-03-5bf8971 | 2026-10-03 04:23 | 5bf8971 Sprint 8 started on the board: usage insights phase 2 (SE-162..166) | (docs, QA records or no tracked issue) |
+| rel-2026-10-03-590398c | 2026-10-03 11:35 | 590398c Usage insights: feature adoption (REQ-USE-10), migration 056, Admin >  | REQ-USE-10 |
+| rel-2026-10-03-8e13de0 | 2026-10-03 11:47 | 8e13de0 Usage insights: top events this week (REQ-USE-11), migration 057, card | REQ-USE-11 |
+| rel-2026-10-03-39e82de | 2026-10-03 11:57 | 39e82de Usage insights: live users now (REQ-USE-26), migration 058, Live now c | REQ-USE-26 |
+| rel-2026-10-03-14e5aa5 | 2026-10-03 12:01 | 14e5aa5 Usage insights: devices and install mode (REQ-USE-23), migration 059;  | REQ-USE-23 |
+| rel-2026-10-03-758a1cd | 2026-10-03 12:10 | 758a1cd Usage insights: device filter (REQ-USE-24), migration 060, device drop | REQ-USE-24 |
+| rel-2026-10-03-0bbad9b | 2026-10-03 12:16 | 0bbad9b Usage insights: per-user activity timeline (REQ-USE-12), migration 061 | REQ-USE-12 |
