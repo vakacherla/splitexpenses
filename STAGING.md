@@ -1,5 +1,30 @@
 # Staging copy for automated QA (REQ-SEC-07)
 
+## Status (3 Oct 2026)
+
+- Supabase project **split-expenses-staging**, ref `zzuttxfzxmfxohjmibrh`, URL `https://zzuttxfzxmfxohjmibrh.supabase.co`
+  (production is `msaawuwelovlikdboxrn`: never the target of anything below).
+- **Database loaded and verified**: 15 tables and the key functions (atomic save, archived-trip guard, Usage reports,
+  invites, Circles), 18 tables under row-level security, 70 policies. Loaded with `schema.sql` followed by migrations 002 to 062,
+  tolerating the known ordering errors in `schema.sql` (the later migrations recreate those objects). The CLI's one-shot
+  `db push` cannot do this, because `schema.sql` is a snapshot that overlaps the migrations and fails on its own ordering.
+- Auth settings (dummy Turnstile secret, confirm email off): set by the owner. Redirect URLs still need the Preview address.
+- **Still to do**: Vercel Preview variables and branch, redirect URLs, QA accounts, then the acceptance check at the bottom.
+
+### Vercel Preview variables (Project Settings > Environment Variables, tick **Preview only**, never Production)
+
+| Name | Value |
+|---|---|
+| `VITE_SUPABASE_URL` | `https://zzuttxfzxmfxohjmibrh.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | the staging project's **anon / publishable** key (Supabase > Project Settings > API). Never the service_role key |
+| `VITE_TURNSTILE_SITE_KEY` | `1x00000000000000000000AA` |
+| `VITE_PUBLIC_APP_URL` | the staging address once known (step below) |
+
+Then push a branch called `staging` (a copy of `main`); Vercel builds it as a Preview. Its stable address is shown on the
+deployment (`...-git-staging-...vercel.app`). Put that address, and the same with `/join/**`, in the staging project's
+Authentication > URL Configuration, and set `VITE_PUBLIC_APP_URL` to it.
+
+
 **Why.** Cloudflare Turnstile blocks any browser a script drives, so the QA agent (Ganesha, on its own VM)
 cannot sign in. Cloudflare publishes dummy keys that always pass, but sign-in is verified by **Supabase Auth**,
 not by the app, so a test sitekey only works against a backend whose Turnstile secret is the matching dummy

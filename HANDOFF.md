@@ -174,3 +174,6 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 - To add to the board when the login is back: story REQ-SEC-07 (EP-11) in Sprint 6, plus DEF-039 and DEF-040.
 
 Board (3 Oct 2026): DEF-039 = SE-184, DEF-040 = SE-185 (backlog bugs), REQ-SEC-07 = SE-186 (story, Sprint 6, in progress).
+
+## Staging database loaded (3 Oct 2026)
+- Staging Supabase project `zzuttxfzxmfxohjmibrh` has the schema and migrations 002-062 and passed a structure check (see `STAGING.md` Status). Production untouched. Next, owner: Vercel Preview variables (listed in `STAGING.md`), protection choice, then I push the `staging` branch, set the redirect URLs, create the QA accounts and run the acceptance check. The Vercel CLI is not signed in on this machine; the dashboard is used. The password prompt scripts (`staging_db2.sh`) live in the session scratchpad only.
