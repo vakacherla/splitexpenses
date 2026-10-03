@@ -4,7 +4,7 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 
 ## Where things stand
 - **Everything is pushed.** GitHub `main` = `6d47ed8`. Production (Vercel) is live through the install prompt (`c3f5946`).
-- **Supabase prod:** migrations 046 to 052 applied (053, the "Never signed in" group, is written and tested but not yet applied) (049 to 052 are Usage Insights, applied 3 Oct 2026 through the SQL editor; 052 is the stuck users "never invited" fix); Edge Functions `admin-users`, `receipt-scan`, `parse-expense-text` deployed.
+- **Supabase prod:** migrations 046 to 054 applied (049 to 054 are Usage Insights and invite links, applied 3 Oct 2026 through the SQL editor; 052 is the stuck-users "never invited" fix, 053 the "Never signed in" group, 054 the invite-link functions, applied from `supabase/editor-parts` after the editor stopped partway through the full file); Edge Functions `admin-users`, `receipt-scan`, `parse-expense-text` deployed.
 - **Shipped 2026-10-02:** member removal blocked with an unsettled balance (046), suspended users cut off at the DB + suspended screen with
   mailto link to admin (047), AI daily caps (30 scans / 100 parses) + throwaway-email blocklist (048), Cloudflare Turnstile on sign-up/sign-in/reset,
   welcome tour, main navigation (top menu, phone bottom tabs, Trips/Circles views, breadcrumbs), install prompt (owner confirmed on a real iPhone).
@@ -101,8 +101,9 @@ _Last updated: 2026-10-02 (night). Resume here. This file is the memory; read it
 
 ## Invite links (3 Oct 2026)
 
-- Phase 1 is built on branch `feat/invite-links-phase1`, not shipped: per-invite links (`/join/<token>`), the join screen, the invite card (Share, WhatsApp, Email, Copy), sign-up survival, a playful illustration when a trip has no cover photo. Design: https://claude.ai/artifact/3ZVMNDBLeLPPgMU7TpCur6. Stories: `USAGE-INSIGHTS-STORIES.md`. Migration `054_invite_links.sql` is written and tested but not applied.
-- Before shipping: run 054 in the SQL editor; add the app's address with `/join/**` to Supabase's redirect list (Authentication → URL configuration); update the link-preview picture address in `index.html` and set `VITE_PUBLIC_APP_URL` when the app gets its own domain.
+- Phase 1 is LIVE (merged 3 Oct 2026, commit e3e3cfd): per-invite links (`/join/<token>`), the join screen, the invite card (Share, WhatsApp, Email, Copy), sign-up survival, a playful illustration when a trip has no cover photo. Design: https://claude.ai/artifact/3ZVMNDBLeLPPgMU7TpCur6. Stories: `USAGE-INSIGHTS-STORIES.md`. Migration 054 is applied.
+- Done: 054 applied; the app's address with `/join/**` added to Supabase's redirect list. Still to do: update the link-preview picture address in `index.html` and set `VITE_PUBLIC_APP_URL` when the app gets its own domain.
+- Release labels to apply on the board: REQ-USE-25 `rel-2026-10-03-9a14398`; REQ-INV-01 `rel-2026-10-03-e3e3cfd` (dates are UTC).
 - REQ-INV-01 supersedes REQ-TRIP-12 and REQ-GRO-01 (decision 3 Oct 2026). Phase 2 (invites list, admin report, `list_invites` and `revoke_invite`) and phase 3 (real trip name in the preview card, reset code) are not built.
 - The old six-letter codes still work and are still permanent; "reset code" is phase 3.
 - The Supabase SQL editor stopped partway through `054_invite_links.sql` on 3 Oct 2026 (only `create_invite` was created; cause not found, the file parses cleanly). The rest is in `supabase/editor-parts/054_part2..4_*.sql`, to paste one at a time in order; each is safe to repeat. If the whole file ever works, the parts are redundant.
