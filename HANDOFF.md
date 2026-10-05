@@ -177,3 +177,10 @@ Board (3 Oct 2026): DEF-039 = SE-184, DEF-040 = SE-185 (backlog bugs), REQ-SEC-0
 
 ## Staging database loaded (3 Oct 2026)
 - Staging Supabase project `zzuttxfzxmfxohjmibrh` has the schema and migrations 002-062 and passed a structure check (see `STAGING.md` Status). Production untouched. Next, owner: Vercel Preview variables (listed in `STAGING.md`), protection choice, then I push the `staging` branch, set the redirect URLs, create the QA accounts and run the acceptance check. The Vercel CLI is not signed in on this machine; the dashboard is used. The password prompt scripts (`staging_db2.sh`) live in the session scratchpad only.
+
+## Story points added (5 Oct 2026)
+- All stories and bugs on the board (170 of 172) now have points (`estimate`) and a planning effort (`time_estimate_minutes`), with the basis written in each description; rubric and velocity in BRD section 11. 60 measured from git, 110 estimated by comparison. Re-point an item in the board if its real size turns out different. The two superseded stories are unpointed on purpose.
+- Staging is waiting on one fix: `VITE_SUPABASE_URL` in the Vercel Preview variables was saved as `ps://zzutt...` (missing `htt`), so the Preview app is blank. After the owner corrects it to `https://zzuttxfzxmfxohjmibrh.supabase.co`, push another commit to the `staging` branch to rebuild, then recheck `https://varanasi-git-staging-vakacherla-1857.vercel.app/login`.
+
+## Non-code work on the board (5 Oct 2026)
+- New epic EP-15 (SE-187) with 15 retrospective stories SE-188..202 (roadmap and research, decks, requirements/BRD, briefs, website copy, test strategy, tracking system, usage and invite design, Help content, points calibration), all done, 90 points, placed in the sprint where each happened. Velocity now includes them (BRD section 11 has both the with and without figures). Evidence for each is in its description. Going forward, non-code work gets a story under EP-15 when it is done or planned.

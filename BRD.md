@@ -47,6 +47,7 @@ Rules for keeping it traceable:
 | EP-12 | Growth (parked) | 4 | 0 | 4 (1 superseded by REQ-INV-01) |
 | EP-13 | Shared Fund mode (blocked) | 1 | 0 | 1 |
 | EP-14 | Usage insights (admin) | 26 | 16 | 10 (0 not built, 10 parked) |
+| EP-15 | Product, research and delivery (non-code work) | 15 | 15 | 0 |
 
 ## 4. Requirements by epic
 
@@ -253,6 +254,28 @@ Design and mockups: https://claude.ai/artifact/2AjyRgZHFTwj1YTGGmy3re. Full acce
 | REQ-USE-25 | "Never signed in" group on Stuck users: accounts over an hour old with no sign-in and no activity, with a yes/no for whether the email was ever confirmed (never the address); first group on the screen; CSV includes the yes/no. Migration 053. Added 3 Oct 2026 after two real users could not get past sign-up. | S | USE-14 (not run) | | Shipped 3 Oct 2026 (merge 9a14398); migration 053 applied. |
 | REQ-USE-26 | Live users now: a section on Admin > Usage > Overview listing the people in the app right now (heartbeat within 5 minutes, the same rule as the Overview "active now" number), with the part of the app they last opened, their device and how long ago they were seen. Refreshes every 30 seconds. The "Active now" tile is a button that jumps to the list (added 3 Oct 2026: the number alone was not useful). Names and avatars only, no email; at most 50 listed, count is the true total. | S | `058_usage_live_now.test.sql` (7 checks), `usageStats.test.js`; verified live 3 Oct 2026 | | Track C. Added 3 Oct 2026 at the owner's request, Sprint 8 (SE-183). Migration 058 (applied 3 Oct 2026). Pushed with the next release |
 
+### EP-15 Product, research and delivery (non-code work)
+
+Added 5 Oct 2026 so this work counts in velocity. Stories were added retrospectively from the artifacts and git history, in the sprint where the work happened; points follow the rubric in section 11 (sized from document lines, commits and iterations). Board key in the last column.
+
+| ID | Work | Sprint | Points | Board |
+|---|---|---|---|---|
+| REQ-PRD-01 | Architecture and README documentation | S0 | 5 | SE-188 |
+| REQ-PRD-02 | Product roadmap and competitor research (Splitwise, Venmo) | S1 | 13 | SE-189 |
+| REQ-PRD-03 | Help content: field-by-field rewrite of every screen | S1 | 3 | SE-190 |
+| REQ-PRD-04 | Competitive-landscape deck (about 14 versions) | S3 | 8 | SE-191 |
+| REQ-PRD-05 | Test strategy and test cases (about 267) and the first QA sweep | S4 | 13 | SE-192 |
+| REQ-PRD-06 | Requirements gathering: the BRD (98 requirements, 13 epics, 40 defects, traceability) | S5 | 8 | SE-193 |
+| REQ-PRD-07 | Feature briefs: settlement summary, amount calculator, join-by-link growth | S5 | 3 | SE-194 |
+| REQ-PRD-08 | Investor pitch deck (final PDF) and deck-to-website alignment | S5 | 5 | SE-195 |
+| REQ-PRD-09 | Website and home-page copy synced with the deck | S5 | 3 | SE-196 |
+| REQ-PRD-10 | Delivery tracking system: Jira-lite import, epics, release labels, sprint plan | S5 | 8 | SE-197 |
+| REQ-PRD-11 | Usage Insights requirements and design (stories, definitions, mockups, decisions) | S7 | 8 | SE-198 |
+| REQ-PRD-12 | Invite links requirements and design (REQ-INV-01..04) | S7 | 5 | SE-199 |
+| REQ-PRD-13 | Testing-agent brief and QA hand-off | S6 | 3 | SE-200 |
+| REQ-PRD-14 | Story points and velocity calibration on the board | S6 | 3 | SE-201 |
+| REQ-PRD-15 | Help content refresh for Usage, calculator and summary | S6 | 2 | SE-202 |
+
 ## 5. Quick wins (planned, not started)
 
 1. **REQ-BAL-08** one-tap settlement summary, effort small.
@@ -337,7 +360,7 @@ Board: Jira-lite, project SplitExpenses (key SE), imported 2026-10-02; EP-14 sto
 |---|---|
 | Epics | EP-01 = SE-1, EP-02 = SE-2, EP-03 = SE-3, EP-04 = SE-4, EP-05 = SE-5, EP-06 = SE-6, EP-07 = SE-7, EP-08 = SE-8, EP-09 = SE-9, EP-10 = SE-10, EP-11 = SE-11, EP-12 = SE-12, EP-13 = SE-13, EP-14 = SE-152 |
 | Stories | REQ-AUTH-01 = SE-14, REQ-AUTH-02 = SE-15, REQ-AUTH-03 = SE-16, REQ-AUTH-04 = SE-17, REQ-AUTH-05 = SE-18, REQ-AUTH-06 = SE-19, REQ-AUTH-07 = SE-20, REQ-AUTH-08 = SE-21, REQ-AUTH-09 = SE-22, REQ-AUTH-10 = SE-23, REQ-AUTH-11 = SE-24, REQ-TRIP-01 = SE-25, REQ-TRIP-02 = SE-26, REQ-TRIP-03 = SE-27, REQ-TRIP-04 = SE-28, REQ-TRIP-05 = SE-29, REQ-TRIP-06 = SE-30, REQ-TRIP-07 = SE-31, REQ-TRIP-08 = SE-32, REQ-TRIP-09 = SE-33, REQ-TRIP-10 = SE-34, REQ-TRIP-11 = SE-35, REQ-TRIP-12 = SE-36, REQ-CIRC-01 = SE-37, REQ-CIRC-02 = SE-38, REQ-CIRC-03 = SE-39, REQ-CIRC-04 = SE-40, REQ-CIRC-05 = SE-41, REQ-CIRC-06 = SE-42, REQ-CIRC-07 = SE-43, REQ-CIRC-08 = SE-44, REQ-CIRC-09 = SE-45, REQ-EXP-01 = SE-46, REQ-EXP-02 = SE-47, REQ-EXP-03 = SE-48, REQ-EXP-04 = SE-49, REQ-EXP-05 = SE-50, REQ-EXP-06 = SE-51, REQ-EXP-07 = SE-52, REQ-EXP-08 = SE-53, REQ-EXP-09 = SE-54, REQ-EXP-10 = SE-55, REQ-EXP-11 = SE-56, REQ-EXP-12 = SE-57, REQ-EXP-13 = SE-58, REQ-EXP-14 = SE-59, REQ-EXP-15 = SE-60, REQ-EXP-16 = SE-61, REQ-BAL-01 = SE-62, REQ-BAL-02 = SE-63, REQ-BAL-03 = SE-64, REQ-BAL-04 = SE-65, REQ-BAL-05 = SE-66, REQ-BAL-06 = SE-67, REQ-BAL-07 = SE-68, REQ-BAL-08 = SE-69, REQ-BAL-09 = SE-70, REQ-REP-01 = SE-71, REQ-REP-02 = SE-72, REQ-REP-03 = SE-73, REQ-REP-04 = SE-74, REQ-REP-05 = SE-75, REQ-REP-06 = SE-76, REQ-ACT-01 = SE-77, REQ-ACT-02 = SE-78, REQ-ACT-03 = SE-79, REQ-ACT-04 = SE-80, REQ-ACT-05 = SE-81, REQ-OFF-01 = SE-82, REQ-OFF-02 = SE-83, REQ-OFF-03 = SE-84, REQ-OFF-04 = SE-85, REQ-OFF-05 = SE-86, REQ-ADM-01 = SE-87, REQ-ADM-02 = SE-88, REQ-ADM-03 = SE-89, REQ-ADM-04 = SE-90, REQ-ADM-05 = SE-91, REQ-ADM-06 = SE-92, REQ-ADM-07 = SE-93, REQ-ADM-08 = SE-94, REQ-ADM-09 = SE-95, REQ-ADM-10 = SE-96, REQ-ONB-01 = SE-97, REQ-ONB-02 = SE-98, REQ-ONB-03 = SE-99, REQ-ONB-04 = SE-100, REQ-SEC-01 = SE-101, REQ-SEC-02 = SE-102, REQ-SEC-03 = SE-103, REQ-SEC-04 = SE-104, REQ-SEC-05 = SE-105, REQ-SEC-06 = SE-106, REQ-GRO-01 = SE-107, REQ-GRO-02 = SE-108, REQ-GRO-03 = SE-109, REQ-GRO-04 = SE-110, REQ-FUND-01 = SE-111, REQ-USE-01 = SE-153, REQ-USE-02 = SE-154, REQ-USE-03 = SE-155, REQ-USE-04 = SE-156, REQ-USE-05 = SE-157, REQ-USE-06 = SE-158, REQ-USE-07 = SE-159, REQ-USE-08 = SE-160, REQ-USE-09 = SE-161, REQ-USE-10 = SE-162, REQ-USE-11 = SE-163, REQ-USE-12 = SE-164, REQ-USE-23 = SE-165, REQ-USE-24 = SE-166, REQ-USE-25 = SE-167, REQ-INV-01 = SE-168, REQ-INV-03 = SE-169, REQ-INV-04 = SE-170, REQ-INV-02 = SE-171, REQ-USE-13 = SE-172, REQ-USE-14 = SE-173, REQ-USE-15 = SE-174, REQ-USE-16 = SE-175, REQ-USE-17 = SE-176, REQ-USE-18 = SE-177, REQ-USE-19 = SE-178, REQ-USE-20 = SE-179, REQ-USE-21 = SE-180, REQ-USE-22 = SE-181 |
-| Bugs | DEF-001 = SE-112, DEF-002 = SE-113, DEF-003 = SE-114, DEF-004 = SE-115, DEF-005 = SE-116, DEF-005b = SE-117, DEF-006 = SE-118, DEF-007 = SE-119, DEF-008 = SE-120, DEF-009 = SE-121, DEF-010 = SE-122, DEF-011 = SE-123, DEF-012 = SE-124, DEF-013 = SE-125, DEF-013b = SE-126, DEF-014 = SE-127, DEF-015 = SE-128, DEF-016 = SE-129, DEF-017 = SE-130, DEF-018 = SE-131, DEF-019 = SE-132, DEF-020 = SE-133, DEF-020b = SE-134, DEF-021b = SE-135, DEF-022 = SE-136, DEF-023 = SE-137, DEF-024 = SE-138, DEF-025 = SE-139, DEF-026 = SE-140, DEF-027 = SE-141, DEF-028 = SE-142, DEF-029 = SE-143, DEF-030 = SE-144, DEF-031 = SE-145, DEF-032 = SE-146, DEF-033 = SE-147, DEF-034 = SE-148, DEF-035 = SE-149, DEF-036 = SE-150, DEF-037 = SE-151, DEF-038 = SE-182, REQ-USE-26 = SE-183, DEF-039 = SE-184, DEF-040 = SE-185, REQ-SEC-07 = SE-186 |
+| Bugs | DEF-001 = SE-112, DEF-002 = SE-113, DEF-003 = SE-114, DEF-004 = SE-115, DEF-005 = SE-116, DEF-005b = SE-117, DEF-006 = SE-118, DEF-007 = SE-119, DEF-008 = SE-120, DEF-009 = SE-121, DEF-010 = SE-122, DEF-011 = SE-123, DEF-012 = SE-124, DEF-013 = SE-125, DEF-013b = SE-126, DEF-014 = SE-127, DEF-015 = SE-128, DEF-016 = SE-129, DEF-017 = SE-130, DEF-018 = SE-131, DEF-019 = SE-132, DEF-020 = SE-133, DEF-020b = SE-134, DEF-021b = SE-135, DEF-022 = SE-136, DEF-023 = SE-137, DEF-024 = SE-138, DEF-025 = SE-139, DEF-026 = SE-140, DEF-027 = SE-141, DEF-028 = SE-142, DEF-029 = SE-143, DEF-030 = SE-144, DEF-031 = SE-145, DEF-032 = SE-146, DEF-033 = SE-147, DEF-034 = SE-148, DEF-035 = SE-149, DEF-036 = SE-150, DEF-037 = SE-151, DEF-038 = SE-182, REQ-USE-26 = SE-183, DEF-039 = SE-184, DEF-040 = SE-185, REQ-SEC-07 = SE-186, EP-15 = SE-187, REQ-PRD-01 = SE-188, REQ-PRD-02 = SE-189, REQ-PRD-03 = SE-190, REQ-PRD-04 = SE-191, REQ-PRD-05 = SE-192, REQ-PRD-06 = SE-193, REQ-PRD-07 = SE-194, REQ-PRD-08 = SE-195, REQ-PRD-09 = SE-196, REQ-PRD-10 = SE-197, REQ-PRD-11 = SE-198, REQ-PRD-12 = SE-199, REQ-PRD-13 = SE-200, REQ-PRD-14 = SE-201, REQ-PRD-15 = SE-202 |
 
 ## 11. Sprint plan
 
@@ -355,7 +378,16 @@ Sprints are working bursts, assigned by the date a story or bug first shipped (f
 | Sprint 7 | 3 Oct (closed) | Usage insights phase 1, the never-signed-in group and per-invite share links. Shipped in pushes 24e35ae (migrations 049 to 051 fixes in b8972d5), 9a14398 (REQ-USE-25) and e3e3cfd (REQ-INV-01, migration 054) | 11 (REQ-USE-01..09, REQ-USE-25, REQ-INV-01) |
 | Sprint 8 | 3 Oct (closed) | Usage insights phase 2: feature adoption, top events this week, per-user timeline, devices and install mode, device filter, live users now (REQ-USE-26, added at the owner's request) (their data is already being collected). Started and closed on the board 3 Oct 2026; all six issues shipped in pushes 590398c, 8e13de0, 39e82de, 14e5aa5, 758a1cd and 0bbad9b | 6 (REQ-USE-10, 11, 12, 23, 24, 26) |
 
-The board has one Sprint 7 for both the usage and invite stories; the earlier draft split them into Sprints 7 and 9. Not in any sprint: parked and not-built requirements, and open bugs DEF-028, DEF-030, DEF-031, DEF-035, DEF-036. Story dates for requirements are estimates from the roadmap and commit history; bug dates come from their fix commits.
+The board has one Sprint 7 for both the usage and invite stories; the earlier draft split them into Sprints 7 and 9. ### Story points and velocity (added 5 Oct 2026)
+
+Every story and bug on the Jira-lite board (185 of 187; the two superseded stories REQ-TRIP-12 and REQ-GRO-01 are left out) now carries points, so the board's velocity report works. Epics are not pointed; they roll up from their children.
+
+- **Scale:** 1, 2, 3, 5, 8, 13 (relative size, not hours).
+- **Where the numbers come from:** 60 items shipped in their own commit (or with one or two others), so their size is measured from git: score = app lines / 60 + SQL lines / 50 + test lines / 120, banded under 1.5 = 1, up to 2.5 = 2, up to 4.5 = 3, up to 7 = 5, up to 11 = 8, above = 13. A band is added for production-data-integrity or infrastructure risk and for diagnosis-heavy bugs, and points are split when one commit fixes a requirement and a bug together. The other 110 (most of Sprint 0, which landed as one large commit, and everything not built yet) are estimated by comparison with the measured ones. Each issue's description states which applies.
+- **Planning effort:** each issue also has a planning effort (1 = under 1 hour, 2 = about 2 hours, 3 = about half a day, 5 = about a day, 8 = about 2 days, 13 = about 4 days). It is derived from the points and is not a time log; no time was tracked.
+- **Velocity so far (closed sprints), including the non-code stories of EP-15:** S0 171 points, S1 74, S2 12, S3 25, S4 33, S5 67, S7 73, S8 39 (board average 61.75). Code only, before EP-15 was added: S0 166, S1 58, S2 12, S3 17, S4 20, S5 40, S7 60, S8 39. Sprint 0 was the whole first build in three days and sprints are working bursts of different lengths, so read the trend over S3 to S8, not the average. Sprint 6 (active): 32 points, 24 done.
+
+Not in any sprint: parked and not-built requirements, and open bugs DEF-028, DEF-030, DEF-031, DEF-035, DEF-036. Story dates for requirements are estimates from the roadmap and commit history; bug dates come from their fix commits.
 
 ## 12. Release labels
 
