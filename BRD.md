@@ -355,7 +355,16 @@ Sprints are working bursts, assigned by the date a story or bug first shipped (f
 | Sprint 7 | 3 Oct (closed) | Usage insights phase 1, the never-signed-in group and per-invite share links. Shipped in pushes 24e35ae (migrations 049 to 051 fixes in b8972d5), 9a14398 (REQ-USE-25) and e3e3cfd (REQ-INV-01, migration 054) | 11 (REQ-USE-01..09, REQ-USE-25, REQ-INV-01) |
 | Sprint 8 | 3 Oct (closed) | Usage insights phase 2: feature adoption, top events this week, per-user timeline, devices and install mode, device filter, live users now (REQ-USE-26, added at the owner's request) (their data is already being collected). Started and closed on the board 3 Oct 2026; all six issues shipped in pushes 590398c, 8e13de0, 39e82de, 14e5aa5, 758a1cd and 0bbad9b | 6 (REQ-USE-10, 11, 12, 23, 24, 26) |
 
-The board has one Sprint 7 for both the usage and invite stories; the earlier draft split them into Sprints 7 and 9. Not in any sprint: parked and not-built requirements, and open bugs DEF-028, DEF-030, DEF-031, DEF-035, DEF-036. Story dates for requirements are estimates from the roadmap and commit history; bug dates come from their fix commits.
+The board has one Sprint 7 for both the usage and invite stories; the earlier draft split them into Sprints 7 and 9. ### Story points and velocity (added 5 Oct 2026)
+
+Every story and bug on the Jira-lite board (170 of 172; the two superseded stories REQ-TRIP-12 and REQ-GRO-01 are left out) now carries points, so the board's velocity report works. Epics are not pointed; they roll up from their children.
+
+- **Scale:** 1, 2, 3, 5, 8, 13 (relative size, not hours).
+- **Where the numbers come from:** 60 items shipped in their own commit (or with one or two others), so their size is measured from git: score = app lines / 60 + SQL lines / 50 + test lines / 120, banded under 1.5 = 1, up to 2.5 = 2, up to 4.5 = 3, up to 7 = 5, up to 11 = 8, above = 13. A band is added for production-data-integrity or infrastructure risk and for diagnosis-heavy bugs, and points are split when one commit fixes a requirement and a bug together. The other 110 (most of Sprint 0, which landed as one large commit, and everything not built yet) are estimated by comparison with the measured ones. Each issue's description states which applies.
+- **Planning effort:** each issue also has a planning effort (1 = under 1 hour, 2 = about 2 hours, 3 = about half a day, 5 = about a day, 8 = about 2 days, 13 = about 4 days). It is derived from the points and is not a time log; no time was tracked.
+- **Velocity so far (closed sprints):** S0 166 points, S1 58, S2 12, S3 17, S4 20, S5 40, S7 60, S8 39. The board average (51.5) is pulled up by Sprint 0, which was the whole first build in three days, and sprints are working bursts of different lengths, so read the trend over S3 to S8 and not the average. Sprint 6 (active): 24 points, 16 done.
+
+Not in any sprint: parked and not-built requirements, and open bugs DEF-028, DEF-030, DEF-031, DEF-035, DEF-036. Story dates for requirements are estimates from the roadmap and commit history; bug dates come from their fix commits.
 
 ## 12. Release labels
 
