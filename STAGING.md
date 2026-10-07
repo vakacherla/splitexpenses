@@ -9,7 +9,9 @@
   tolerating the known ordering errors in `schema.sql` (the later migrations recreate those objects). The CLI's one-shot
   `db push` cannot do this, because `schema.sql` is a snapshot that overlaps the migrations and fails on its own ordering.
 - Auth settings (dummy Turnstile secret, confirm email off): set by the owner. Redirect URLs still need the Preview address.
-- **Still to do**: Vercel Preview variables and branch, redirect URLs, QA accounts, then the acceptance check at the bottom.
+- **Vercel Preview is live** (5 Oct 2026): the `staging` branch builds a Preview at **`https://varanasi-git-staging-vakacherla-1857.vercel.app`**. Checked: the build uses the staging Supabase URL and Cloudflare's test sitekey, none of production's values, and the login page shows Cloudflare's "for testing only" widget. Vercel Authentication is off, so the address opens without a Vercel login.
+- **Lessons from setting it up:** (1) a saved Vercel variable only affects the next build, so rebuild after editing; (2) the Preview and Production rows live in the same project, and a staging value saved on Production by mistake would point the live app at staging at its next deploy (it was caught and restored before any production build); (3) check the value baked into the build, not only the dashboard: `grep -o 'VITE_SUPABASE_URL:\`[^\`]*\`'` on the deployed `/assets/index-*.js`. A scheme typo (`ps://` instead of `https://`) makes the app render blank with no console error.
+- **Still to do**: the staging project's Auth redirect URLs (the Preview address and `/**`, plus `/join/**`), the QA accounts (sign up on the Preview, which the test key lets through), then the acceptance check at the bottom.
 
 ### Vercel Preview variables (Project Settings > Environment Variables, tick **Preview only**, never Production)
 

@@ -184,3 +184,6 @@ Board (3 Oct 2026): DEF-039 = SE-184, DEF-040 = SE-185 (backlog bugs), REQ-SEC-0
 
 ## Non-code work on the board (5 Oct 2026)
 - New epic EP-15 (SE-187) with 15 retrospective stories SE-188..202 (roadmap and research, decks, requirements/BRD, briefs, website copy, test strategy, tracking system, usage and invite design, Help content, points calibration), all done, 90 points, placed in the sprint where each happened. Velocity now includes them (BRD section 11 has both the with and without figures). Evidence for each is in its description. Going forward, non-code work gets a story under EP-15 when it is done or planned.
+
+## Staging Preview live (5 Oct 2026)
+- `https://varanasi-git-staging-vakacherla-1857.vercel.app/login` loads against the staging Supabase project with Cloudflare's test captcha. Production was briefly given the staging URL by mistake in Vercel and restored before any production build; the live production site was never affected (it is the 3 Oct deployment of c7a708c). **Next production deploy: confirm the Production `VITE_SUPABASE_URL` is `https://msaawuwelovlikdboxrn.supabase.co` first** (owner reveals the row in Vercel; the value is not secret). Open: staging redirect URLs, QA accounts, acceptance check with Ganesha.

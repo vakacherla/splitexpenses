@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     // (not the caller's own) needs to bypass their own-rows-only RLS.
     const serviceClient = createClient(supabaseUrl, serviceRoleKey)
     const [{ data: debtorProfile }, { data: creditorProfile }] = await Promise.all([
-      serviceClient.from('profiles').select('email, display_name').eq('id', debtorUserId).single(),
+      serviceClient.from('profiles').select('email, display_name, is_placeholder').eq('id', debtorUserId).single(),
       serviceClient.from('profiles').select('display_name').eq('id', user.id).single(),
     ])
 
@@ -99,7 +99,8 @@ Deno.serve(async (req) => {
     const text = `${creditorName} reminded you: you owe ${amountText} in "${group.name}".`
 
     const results: Record<string, unknown> = {}
-    if (debtorProfile?.email) {
+    // A placeholder has no real address: nothing to send.
+    if (debtorProfile?.email && !debtorProfile.is_placeholder) {
       try {
         results.email = await sendReminderEmail(debtorProfile.email, subject, text)
       } catch (err) {

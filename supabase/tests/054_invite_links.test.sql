@@ -190,7 +190,7 @@ begin
   assert r->>'banner_path' = 'd0000000-0000-0000-0000-00000000000a/banner.jpg', 'trip cover photo';
   assert r->'target_id' = 'null'::jsonb, 'target id hidden from a stranger';
   assert (select array_agg(k order by k) from jsonb_object_keys(r) k) =
-         array['banner_path','icon_seed','inviter_avatar_path','inviter_first_name','kind','name','state','target_id'],
+         array['already_member','banner_path','icon_seed','inviter_avatar_path','inviter_first_name','kind','name','placeholder_name','state','target_id'],  -- already_member and placeholder_name added by 063
          'unexpected keys in the preview';
   assert r::text !~* '@|Lee|Max|Moss', 'preview leaked a surname, member or email';
   assert opens_after = opens_before + 1, 'open not counted';
