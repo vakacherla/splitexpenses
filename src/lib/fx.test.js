@@ -80,3 +80,47 @@ describe('getRate', () => {
     await expect(getRate('USD', 'AUD', '2019-03-03')).rejects.toThrow(/2019-03-03/)
   })
 })
+
+describe('back-up rate sources (currencies the ECB lacks)', () => {
+  beforeEach(() => {
+    global.fetch = vi.fn()
+  })
+
+  it('uses open.er-api.com when the ECB feed has no rate (AED)', async () => {
+    global.fetch
+      .mockResolvedValueOnce({ ok: false, json: async () => ({ message: 'not found' }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ result: 'success', rates: { AED: 3.6725 } }) })
+    expect(await getRate('USD', 'AED')).toBe(3.6725)
+    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('open.er-api.com/v6/latest/USD'))
+  })
+
+  it('falls through to the CDN source when open.er-api.com fails', async () => {
+    global.fetch
+      .mockResolvedValueOnce({ ok: false })
+      .mockResolvedValueOnce({ ok: false })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ usd: { sar: 3.75 } }) })
+    expect(await getRate('USD', 'SAR')).toBe(3.75)
+  })
+
+  it('a past date for an ECB-less currency comes from the dated CDN source only', async () => {
+    global.fetch
+      .mockResolvedValueOnce({ ok: false })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ usd: { pkr: 276.5 } }) })
+    expect(await getRate('USD', 'PKR', '2026-09-30')).toBe(276.5)
+    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('@2026-09-30/v1/currencies/usd.json'))
+    expect(global.fetch).not.toHaveBeenCalledWith(expect.stringContaining('open.er-api.com'))
+  })
+
+  it('still throws a plain error when every source fails', async () => {
+    global.fetch.mockResolvedValue({ ok: false })
+    await expect(getRate('USD', 'QAR')).rejects.toThrow(/exchange rate/)
+  })
+
+  it('ignores zero, negative and non-numeric back-up rates', async () => {
+    global.fetch
+      .mockResolvedValueOnce({ ok: false })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ result: 'success', rates: { BDT: 0 } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ usd: { bdt: 'x' } }) })
+    await expect(getRate('USD', 'BDT')).rejects.toThrow()
+  })
+})

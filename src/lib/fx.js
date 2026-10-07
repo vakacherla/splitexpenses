@@ -3,6 +3,11 @@
 // Rates publish once per weekday, so we cache aggressively.
 
 const API_BASE = 'https://api.frankfurter.dev/v1'
+// Back-up sources, used only when the ECB feed has no rate (it covers 30 currencies and leaves out
+// AED, SAR, PKR and others). Same chain as the mobile app (checked against the ECB on 2026-10-07:
+// majors within 0.1%-0.7%, and the two agree with each other on the Gulf / South Asian currencies).
+const ER_API = 'https://open.er-api.com/v6/latest'
+const CDN_API = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api'
 const rateCache = new Map() // `${from}_${to}` -> { rate, date }
 const CACHE_KEY = 'ledger_fx_cache_v1'
 // Separate, unpersisted cache for historical (backdated) lookups, keyed by
@@ -50,15 +55,58 @@ export const FALLBACK_CURRENCIES = {
   IDR: 'Indonesian Rupiah',
 }
 
+// Currencies the back-up sources add to the ECB's 30.
+export const EXTRA_CURRENCIES = {
+  AED: 'UAE Dirham', SAR: 'Saudi Riyal', QAR: 'Qatari Riyal', KWD: 'Kuwaiti Dinar', BHD: 'Bahraini Dinar',
+  OMR: 'Omani Rial', PKR: 'Pakistani Rupee', LKR: 'Sri Lankan Rupee', BDT: 'Bangladeshi Taka',
+  NPR: 'Nepalese Rupee', EGP: 'Egyptian Pound', VND: 'Vietnamese Dong', MMK: 'Myanmar Kyat',
+  KES: 'Kenyan Shilling', NGN: 'Nigerian Naira', MAD: 'Moroccan Dirham', JOD: 'Jordanian Dinar',
+}
+
 export async function fetchSupportedCurrencies() {
   try {
     const res = await fetch(`${API_BASE}/currencies`)
     if (!res.ok) throw new Error('bad response')
     const data = await res.json()
-    return data
+    return { ...EXTRA_CURRENCIES, ...data }
   } catch {
-    return FALLBACK_CURRENCIES
+    return { ...EXTRA_CURRENCIES, ...FALLBACK_CURRENCIES }
   }
+}
+
+const isRate = (n) => typeof n === 'number' && Number.isFinite(n) && n > 0
+
+async function getJson(url) {
+  try {
+    const res = await fetch(url)
+    return res && res.ok ? await res.json() : null
+  } catch {
+    return null
+  }
+}
+
+async function backupTable(base, date) {
+  if (!date) {
+    const er = await getJson(`${ER_API}/${encodeURIComponent(base)}`)
+    if (er && er.result !== 'error' && er.rates) return er.rates
+  }
+  const lower = base.toLowerCase()
+  const cdn = await getJson(`${CDN_API}@${date ?? 'latest'}/v1/currencies/${lower}.json`)
+  const table = cdn?.[lower]
+  if (!table) return null
+  return Object.fromEntries(Object.entries(table).map(([k, v]) => [k.toUpperCase(), v]))
+}
+
+// One pair from the back-up sources; null when neither has it. A past date can only come from the CDN source.
+async function backupRate(from, to, date) {
+  const table = await backupTable(from, date)
+  const rate = table?.[to]
+  if (isRate(rate)) return rate
+  if (!date) {
+    const cdn = await backupTable(from, undefined) // er-api failed or lacked it: try the CDN table too
+    return isRate(cdn?.[to]) ? cdn[to] : null
+  }
+  return null
 }
 
 // Returns the multiplier such that `amount * rate` converts `from` -> `to`.
@@ -79,10 +127,18 @@ export async function getRate(from, to, date) {
     if (cachedHistorical !== undefined) return cachedHistorical
 
     const res = await fetch(`${API_BASE}/${date}?base=${from}&symbols=${to}`)
-    if (!res.ok) throw new Error(`Could not fetch the ${date} exchange rate for ${from} → ${to}`)
-    const data = await res.json()
-    const rate = data.rates?.[to]
-    if (typeof rate !== 'number') throw new Error(`No rate available for ${from} → ${to} on ${date}`)
+    let rate = null
+    let failed = !res || !res.ok
+    if (!failed) {
+      const data = await res.json()
+      rate = data.rates?.[to]
+    }
+    if (typeof rate !== 'number') {
+      rate = await backupRate(from, to, date)
+      if (rate === null) {
+        throw new Error(failed ? `Could not fetch the ${date} exchange rate for ${from} → ${to}` : `No rate available for ${from} → ${to} on ${date}`)
+      }
+    }
     historicalRateCache.set(historicalKey, rate)
     return rate
   }
@@ -92,15 +148,14 @@ export async function getRate(from, to, date) {
   if (cached && cached.date === today) return cached.rate
 
   const res = await fetch(`${API_BASE}/latest?base=${from}&symbols=${to}`)
-  if (!res.ok) {
-    if (cached) return cached.rate // stale but better than nothing
-    throw new Error(`Could not fetch exchange rate for ${from} → ${to}`)
-  }
-  const data = await res.json()
-  const rate = data.rates?.[to]
+  const ecbFailed = !res || !res.ok
+  let rate = ecbFailed ? undefined : (await res.json()).rates?.[to]
   if (typeof rate !== 'number') {
-    if (cached) return cached.rate
-    throw new Error(`No rate available for ${from} → ${to}`)
+    rate = await backupRate(from, to)
+    if (rate === null) {
+      if (cached) return cached.rate // stale but better than nothing
+      throw new Error(ecbFailed ? `Could not fetch exchange rate for ${from} → ${to}` : `No rate available for ${from} → ${to}`)
+    }
   }
   rateCache.set(key, { rate, date: today })
   persistCache()
@@ -132,12 +187,21 @@ export async function getAllRates(base) {
   if (cached && cached.date === today) return cached.rates
 
   const res = await fetch(`${API_BASE}/latest?base=${base}`)
-  if (!res.ok) {
-    if (cached) return cached.rates
-    throw new Error(`Could not fetch exchange rates for ${base}`)
+  let rates
+  if (!res || !res.ok) {
+    rates = (await backupTable(base)) ?? null
+    if (!rates) {
+      if (cached) return cached.rates
+      throw new Error(`Could not fetch exchange rates for ${base}`)
+    }
+  } else {
+    const data = await res.json()
+    rates = { ...(data.rates ?? {}) }
+    if (Object.keys(EXTRA_CURRENCIES).some((c) => c !== base && rates[c] === undefined)) {
+      const extra = await backupTable(base)
+      if (extra) for (const c of Object.keys(EXTRA_CURRENCIES)) if (rates[c] === undefined && isRate(extra[c])) rates[c] = extra[c]
+    }
   }
-  const data = await res.json()
-  const rates = data.rates ?? {}
   rateCache.set(cacheKey, { rates, date: today })
   persistCache()
   return rates
