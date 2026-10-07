@@ -72,10 +72,11 @@ Deno.serve(async (req) => {
       const { data, error } = await admin.auth.admin.listUsers({ perPage: 1000 })
       if (error) return json({ error: error.message }, 400)
 
-      const { data: profiles } = await admin.from('profiles').select('id, display_name, is_admin, is_super_admin')
+      const { data: profiles } = await admin.from('profiles').select('id, display_name, is_admin, is_super_admin, is_placeholder')
       const byId = Object.fromEntries((profiles ?? []).map((p) => [p.id, p]))
 
-      const users = data.users.map((u) => ({
+      // Placeholders (people added to a trip before they joined) are not real accounts.
+      const users = data.users.filter((u) => !byId[u.id]?.is_placeholder).map((u) => ({
         id: u.id,
         email: u.email,
         display_name: byId[u.id]?.display_name ?? null,

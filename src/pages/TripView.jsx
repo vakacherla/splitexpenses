@@ -86,7 +86,7 @@ export default function TripView() {
         supabase
           .from('group_members')
           .select(
-            'user_id, nickname, is_manager, profiles(display_name, email, payment_provider, payment_handle, avatar_path, phone_home, phone_travel)'
+            'user_id, nickname, is_manager, profiles(display_name, email, is_placeholder, payment_provider, payment_handle, avatar_path, phone_home, phone_travel)'
           )
           .eq('group_id', groupId),
         supabase

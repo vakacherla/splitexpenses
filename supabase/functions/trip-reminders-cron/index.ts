@@ -63,7 +63,7 @@ Deno.serve(async (_req) => {
       for (const t of transactions) {
         const { data: debtorProfile } = await supabase
           .from('profiles')
-          .select('email')
+          .select('email, is_placeholder')
           .eq('id', t.from)
           .single()
 
@@ -71,7 +71,8 @@ Deno.serve(async (_req) => {
         const subject = `Trip ended — you still owe ${amountText} in "${group.name}"`
         const text = `"${group.name}" ended on ${group.end_date}. You still owe ${amountText} — settle up when you get a chance.`
 
-        if (debtorProfile?.email) {
+        // A placeholder has no real address: nothing to send.
+        if (debtorProfile?.email && !debtorProfile.is_placeholder) {
           try {
             await sendReminderEmail(debtorProfile.email, subject, text)
             remindersSent += 1
