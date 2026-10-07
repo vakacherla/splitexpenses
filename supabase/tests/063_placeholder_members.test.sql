@@ -335,7 +335,98 @@ begin
   raise notice 'PASS 12 ordinary links behave exactly as before';
 end $$;
 
--- 13. Limits: 20 people waiting per trip, and 20 added per person per day.
+-- 13. Only organizers and admins may rename a placeholder (any member may add and invite).
+insert into auth.users (id, email) values
+  ('a1000000-0000-0000-0000-0000000000b1', 'mia@test.invalid'),
+  ('a1000000-0000-0000-0000-0000000000b2', 'ned@test.invalid'),
+  ('a1000000-0000-0000-0000-0000000000b3', 'oli@test.invalid'),
+  ('a1000000-0000-0000-0000-0000000000f1', 'root@test.invalid');
+select set_config('request.jwt.claim.sub', '', true);   -- no signed-in user, so the admin flag is not reverted
+update public.profiles set is_admin = true where id = 'a1000000-0000-0000-0000-0000000000f1';
+select pg_temp.mkph('a1000000-0000-0000-0000-0000000000b1', 'b1000000-0000-0000-0000-00000000000a', 'Mia', 'a1000000-0000-0000-0000-00000000000c');   -- added by Cara, a plain member
+select pg_temp.mkph('a1000000-0000-0000-0000-0000000000b2', 'b1000000-0000-0000-0000-00000000000a', 'Ned', 'a1000000-0000-0000-0000-00000000000a');
+select pg_temp.mkph('a1000000-0000-0000-0000-0000000000b3', 'b1000000-0000-0000-0000-00000000000a', 'Oli', 'a1000000-0000-0000-0000-00000000000a');
+do $$
+declare failed boolean;
+begin
+  -- Cara added Mia, but she is not a manager: she cannot change Mia.
+  perform pg_temp.as_user('a1000000-0000-0000-0000-00000000000c');
+  failed := false; begin perform public.rename_placeholder('a1000000-0000-0000-0000-0000000000b1', 'Mia Rao'); exception when insufficient_privilege then failed := true; end;
+  assert failed, 'the member who added a placeholder renamed them';
+  failed := false; begin perform public.remove_placeholder('a1000000-0000-0000-0000-0000000000b1'); exception when insufficient_privilege then failed := true; end;
+  assert failed, 'the member who added a placeholder removed them';
+  -- an outsider cannot either
+  perform pg_temp.as_user('a1000000-0000-0000-0000-00000000000d');
+  failed := false; begin perform public.rename_placeholder('a1000000-0000-0000-0000-0000000000b1', 'Hacked'); exception when insufficient_privilege then failed := true; end;
+  assert failed, 'an outsider renamed a placeholder';
+  -- the trip creator (organizer) can, with the name tidied
+  perform pg_temp.as_user('a1000000-0000-0000-0000-00000000000a');
+  assert (public.rename_placeholder('a1000000-0000-0000-0000-0000000000b1', '   Mia Rao   ') ->> 'display_name') = 'Mia Rao', 'organizer rename';
+  failed := false; begin perform public.rename_placeholder('a1000000-0000-0000-0000-0000000000b1', '  '); exception when sqlstate '22023' then failed := true; end;
+  assert failed, 'blank name accepted';
+  assert length(public.rename_placeholder('a1000000-0000-0000-0000-0000000000b1', repeat('z', 90)) ->> 'display_name') = 40, 'name cut to 40';
+  -- a real member is not a placeholder
+  failed := false; begin perform public.rename_placeholder('a1000000-0000-0000-0000-00000000000c', 'Nope'); exception when sqlstate '22023' then failed := true; end;
+  assert failed, 'renamed a real person through the placeholder function';
+  -- a platform admin who is not in the trip can
+  perform pg_temp.as_user('a1000000-0000-0000-0000-0000000000f1');
+  assert (public.rename_placeholder('a1000000-0000-0000-0000-0000000000b2', 'Ned N') ->> 'display_name') = 'Ned N', 'admin rename';
+  -- a trip manager who is not the creator can
+  perform pg_temp.as_owner();
+  update public.group_members set is_manager = true where group_id = 'b1000000-0000-0000-0000-00000000000a' and user_id = 'a1000000-0000-0000-0000-00000000000c';
+  perform pg_temp.as_user('a1000000-0000-0000-0000-00000000000c');
+  assert (public.rename_placeholder('a1000000-0000-0000-0000-0000000000b3', 'Oli O') ->> 'display_name') = 'Oli O', 'manager rename';
+  perform pg_temp.as_owner();
+  update public.group_members set is_manager = false where group_id = 'b1000000-0000-0000-0000-00000000000a' and user_id = 'a1000000-0000-0000-0000-00000000000c';
+  -- signed out
+  failed := false; begin perform public.rename_placeholder('a1000000-0000-0000-0000-0000000000b1', 'x'); exception when insufficient_privilege then failed := true; end;
+  assert failed, 'signed-out rename';
+  raise notice 'PASS 13 only organizers, managers and admins can rename a placeholder; the adder, outsiders and signed-out callers cannot';
+end $$;
+
+-- 14. Removing a placeholder: organizers and admins only, not while a balance is outstanding.
+insert into public.expenses (id, group_id, description, paid_by, currency, amount, exchange_rate, amount_in_home, created_by, category) values
+  ('e3000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-00000000000a', 'Tea', 'a1000000-0000-0000-0000-00000000000a', 'INR', 100, 1, 100, 'a1000000-0000-0000-0000-00000000000a', 'Food');
+insert into public.expense_splits (expense_id, user_id, share_amount, share_in_home) values
+  ('e3000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-00000000000a', 50, 50),
+  ('e3000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-0000000000b2', 50, 50);
+do $$
+declare failed boolean; tok text;
+begin
+  -- Ned owes 50: cannot be removed yet.
+  perform pg_temp.as_user('a1000000-0000-0000-0000-00000000000a');
+  failed := false; begin perform public.remove_placeholder('a1000000-0000-0000-0000-0000000000b2'); exception when sqlstate '22023' then failed := true; end;
+  assert failed, 'removed a placeholder who still owes';
+  -- Settle up, then it works. History stays; the account is kept hidden because expenses still refer to it.
+  perform pg_temp.as_owner();
+  insert into public.settlements (group_id, from_user, to_user, currency, amount, exchange_rate, amount_in_home, created_by)
+    values ('b1000000-0000-0000-0000-00000000000a', 'a1000000-0000-0000-0000-0000000000b2', 'a1000000-0000-0000-0000-00000000000a', 'INR', 50, 1, 50, 'a1000000-0000-0000-0000-00000000000a');
+  tok := pg_temp.mkinv('a1000000-0000-0000-0000-00000000000a', 'b1000000-0000-0000-0000-00000000000a', 'a1000000-0000-0000-0000-0000000000b2');
+  -- a plain member cannot, the organizer can
+  perform pg_temp.as_user('a1000000-0000-0000-0000-00000000000c');
+  failed := false; begin perform public.remove_placeholder('a1000000-0000-0000-0000-0000000000b2'); exception when insufficient_privilege then failed := true; end;
+  assert failed, 'a plain member removed a placeholder';
+  perform pg_temp.as_user('a1000000-0000-0000-0000-00000000000a');
+  perform public.remove_placeholder('a1000000-0000-0000-0000-0000000000b2');
+  perform pg_temp.as_owner();
+  assert not exists (select 1 from public.group_members where user_id = 'a1000000-0000-0000-0000-0000000000b2'), 'removed from the trip';
+  assert exists (select 1 from public.profiles where id = 'a1000000-0000-0000-0000-0000000000b2'), 'account kept (history still refers to it)';
+  assert (select count(*) from public.expense_splits where user_id = 'a1000000-0000-0000-0000-0000000000b2') = 1, 'history stays in the ledger';
+  assert (select revoked_at is not null from public.invites where token = tok), 'its invite link was turned off';
+  -- Oli has no history at all: the account goes away completely. An admin can do it.
+  perform pg_temp.as_user('a1000000-0000-0000-0000-0000000000f1');
+  perform public.remove_placeholder('a1000000-0000-0000-0000-0000000000b3');
+  perform pg_temp.as_owner();
+  assert not exists (select 1 from public.profiles where id = 'a1000000-0000-0000-0000-0000000000b3'), 'unused placeholder account deleted';
+  -- a removed placeholder cannot be changed again
+  perform pg_temp.as_user('a1000000-0000-0000-0000-00000000000a');
+  failed := false; begin perform public.rename_placeholder('a1000000-0000-0000-0000-0000000000b3', 'Ghost'); exception when sqlstate '22023' then failed := true; end;
+  perform pg_temp.as_owner();
+  assert failed, 'renamed a placeholder that no longer exists';
+  raise notice 'PASS 14 removal: organizers and admins only, blocked while a balance is outstanding, history kept, unused accounts deleted, links turned off';
+end $$;
+
+-- 15. Limits: 20 people waiting per trip, and 20 added per person per day.
 do $$
 declare i int; failed boolean; uid uuid; msg text; actor uuid;
 begin
@@ -358,7 +449,7 @@ begin
   begin perform public.register_placeholder(uid, 'b1000000-0000-0000-0000-00000000000a', 'Over the day', 'a1000000-0000-0000-0000-00000000000c');
   exception when sqlstate '54000' then failed := true; msg := sqlerrm; end;
   assert failed and msg like '%added a lot of people today%', format('daily limit: %s', msg);
-  raise notice 'PASS 13 at most 20 people waiting per trip and 20 added per person per day';
+  raise notice 'PASS 15 at most 20 people waiting per trip and 20 added per person per day';
 end $$;
 
 rollback;

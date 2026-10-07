@@ -42,7 +42,7 @@ export default function TripMembersPanel({
                         </span>
                       )}
                     </p>
-                    <span className="text-xs text-ink-soft shrink-0">{m.is_placeholder ? 'not joined yet' : m.email}</span>
+                    <span className="text-xs text-ink-soft shrink-0">{m.is_placeholder ? 'Pending Registration (not joined yet)' : m.email}</span>
                   </div>
                   {m.payment_handle && (
                     <p className="text-xs text-ink-soft mt-0.5">

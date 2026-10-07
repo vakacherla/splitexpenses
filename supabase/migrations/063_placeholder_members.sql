@@ -16,6 +16,8 @@
 --   accept_invite   claims the placeholder (also when the person is already in the trip: merge)
 --   register_placeholder()  server-only: flags the new account and adds it to the trip
 --   claim_placeholder()     internal: the move
+--   rename_placeholder() / remove_placeholder()  only a trip organizer, platform admin or super admin
+--                           may change someone who has not joined yet (any member may add and invite)
 --   usage_eligible()        placeholders never count as users in usage reports
 --
 -- Safe to run more than once. Apply to staging first (owner's OK). Not yet on production.
@@ -231,6 +233,93 @@ end;
 $$;
 
 revoke all on function public.claim_placeholder(uuid, uuid, uuid) from public, anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 4b. Changing a placeholder: organizers and admins only
+-- ---------------------------------------------------------------------------
+-- Any member may add and invite someone who has not joined yet, but after that only
+-- the trip's creator or a manager, or a platform admin or super admin, may rename or
+-- remove them. The placeholder cannot sign in, so nobody else can edit them either.
+
+create or replace function public.rename_placeholder(p_placeholder uuid, p_name text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  g uuid;
+  clean text := left(btrim(coalesce(p_name, '')), 40);
+begin
+  if auth.uid() is null then
+    raise exception 'Sign in first.' using errcode = '42501';
+  end if;
+  g := (select p.placeholder_group from public.profiles p where p.id = p_placeholder and p.is_placeholder and p.claimed_into is null);
+  if g is null then
+    raise exception 'That person is not waiting to join.' using errcode = '22023';
+  end if;
+  if not (public.is_group_manager(g) or public.is_platform_admin()) then
+    raise exception 'Only a trip organizer can change someone who has not joined yet.' using errcode = '42501';
+  end if;
+  if clean = '' then
+    raise exception 'Give the person a name.' using errcode = '22023';
+  end if;
+  update public.profiles set display_name = clean where id = p_placeholder;
+  return jsonb_build_object('id', p_placeholder, 'display_name', clean);
+end;
+$$;
+
+-- Same rule as removing anyone on the web: not while they still have an outstanding
+-- balance. Past expenses stay in the ledger. Their unused invite links are turned off.
+-- The account itself is deleted if nothing refers to it any more, else kept hidden.
+create or replace function public.remove_placeholder(p_placeholder uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  g uuid;
+  bal numeric;
+begin
+  if auth.uid() is null then
+    raise exception 'Sign in first.' using errcode = '42501';
+  end if;
+  g := (select p.placeholder_group from public.profiles p where p.id = p_placeholder and p.is_placeholder and p.claimed_into is null);
+  if g is null then
+    raise exception 'That person is not waiting to join.' using errcode = '22023';
+  end if;
+  if not (public.is_group_manager(g) or public.is_platform_admin()) then
+    raise exception 'Only a trip organizer can change someone who has not joined yet.' using errcode = '42501';
+  end if;
+
+  bal := coalesce((select sum(e.amount_in_home) from public.expenses e where e.group_id = g and e.deleted_at is null and e.paid_by = p_placeholder), 0)
+       - coalesce((select sum(s.share_in_home) from public.expense_splits s join public.expenses e on e.id = s.expense_id where e.group_id = g and e.deleted_at is null and s.user_id = p_placeholder), 0)
+       + coalesce((select sum(t.amount_in_home) from public.settlements t where t.group_id = g and t.from_user = p_placeholder), 0)
+       - coalesce((select sum(t.amount_in_home) from public.settlements t where t.group_id = g and t.to_user = p_placeholder), 0);
+  if abs(bal) > 0.01 then
+    raise exception 'They still have an outstanding balance in this trip. Settle up first.' using errcode = '22023';
+  end if;
+
+  update public.invites set revoked_at = now() where placeholder_id = p_placeholder and revoked_at is null;
+  delete from public.group_members where group_id = g and user_id = p_placeholder;
+
+  if not exists (select 1 from public.expenses e where e.paid_by = p_placeholder or e.created_by = p_placeholder)
+     and not exists (select 1 from public.expense_splits s where s.user_id = p_placeholder)
+     and not exists (select 1 from public.settlements t where t.from_user = p_placeholder or t.to_user = p_placeholder or t.created_by = p_placeholder) then
+    begin
+      delete from auth.users where id = p_placeholder;
+    exception when others then
+      null; -- stays hidden; harmless
+    end;
+  end if;
+end;
+$$;
+
+revoke all on function public.rename_placeholder(uuid, text) from public, anon;
+revoke all on function public.remove_placeholder(uuid) from public, anon;
+grant execute on function public.rename_placeholder(uuid, text) to authenticated;
+grant execute on function public.remove_placeholder(uuid) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- 5. Invite functions with placeholder support (054 versions plus the changes)
