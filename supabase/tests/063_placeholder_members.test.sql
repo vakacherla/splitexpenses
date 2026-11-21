@@ -371,13 +371,15 @@ begin
   -- a platform admin who is not in the trip can
   perform pg_temp.as_user('a1000000-0000-0000-0000-0000000000f1');
   assert (public.rename_placeholder('a1000000-0000-0000-0000-0000000000b2', 'Ned N') ->> 'display_name') = 'Ned N', 'admin rename';
-  -- a trip manager who is not the creator can
-  perform pg_temp.as_owner();
+  -- a trip manager who is not the creator can (appointed by the actual
+  -- creator, Alice, the only one who can flip is_manager -- see migration 064)
+  perform pg_temp.as_user('a1000000-0000-0000-0000-00000000000a');
   update public.group_members set is_manager = true where group_id = 'b1000000-0000-0000-0000-00000000000a' and user_id = 'a1000000-0000-0000-0000-00000000000c';
   perform pg_temp.as_user('a1000000-0000-0000-0000-00000000000c');
   assert (public.rename_placeholder('a1000000-0000-0000-0000-0000000000b3', 'Oli O') ->> 'display_name') = 'Oli O', 'manager rename';
-  perform pg_temp.as_owner();
+  perform pg_temp.as_user('a1000000-0000-0000-0000-00000000000a');
   update public.group_members set is_manager = false where group_id = 'b1000000-0000-0000-0000-00000000000a' and user_id = 'a1000000-0000-0000-0000-00000000000c';
+  perform pg_temp.as_owner();
   -- signed out
   failed := false; begin perform public.rename_placeholder('a1000000-0000-0000-0000-0000000000b1', 'x'); exception when insufficient_privilege then failed := true; end;
   assert failed, 'signed-out rename';
